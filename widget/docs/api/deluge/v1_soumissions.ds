@@ -1,0 +1,160 @@
+// ============================================================================
+//  CUSTOM API  ·  GET v1_soumissions
+//  https://www.zohoapis.com/creator/custom/groupecanva/v1_soumissions?publickey=…
+//
+//  Le client interroge nos soumissions. Deux usages dans une seule fonction :
+//     ?id=4153107000023150044   → l'objet complet (contrat v1.0)
+//     (sans id)                 → liste paginée de résumés
+//
+//  Deluge ne calcule RIEN ici : le contrat a déjà été construit par le widget et
+//  stocké dans Soumission_JSON. On lit, on met l'enveloppe, on renvoie.
+//
+//  Contraintes Deluge apprises à nos dépens — respectées ici :
+//    · pas de `while`        → `for each` + compteur
+//    · pas de `left(s, n)`   → lève une erreur si n > longueur
+//    · pas de `.first()`     → `for each` sur la collection
+//    · `insert into` / affectations : toujours via une variable d'enregistrement
+// ============================================================================
+
+map v1_soumissions(string id, string statut, string page, string par_page)
+{
+	reponse = Map();
+
+	// ── pagination ──────────────────────────────────────────────────────
+	p = 1;
+	if (id_ne_pas_vide(page))
+	{
+		p = page.toLong();
+	}
+	pp = 100;
+	if (id_ne_pas_vide(par_page))
+	{
+		pp = par_page.toLong();
+	}
+	if (p < 1 || pp < 1 || pp > 200)
+	{
+		return erreur_api("PARAMETRE_INVALIDE", "page >= 1 et 1 <= par_page <= 200.");
+	}
+
+	// ── critère ─────────────────────────────────────────────────────────
+	// On n'expose QUE les soumissions qui portent un contrat : un brouillon
+	// sans JSON n'a rien à faire dans une API publique.
+	crit = "Soumission_JSON != \"\"";
+	if (id_ne_pas_vide(id))
+	{
+		crit = crit + " && ID == " + id;
+	}
+	if (id_ne_pas_vide(statut))
+	{
+		crit = crit + " && Statut == \"" + statut + "\"";
+	}
+
+	// ── un seul objet ───────────────────────────────────────────────────
+	if (id_ne_pas_vide(id))
+	{
+		trouve = false;
+		for each  s in Form1[crit]
+		{
+			reponse.put("donnees", json_ou_brut(s.Soumission_JSON));
+			trouve = true;
+		}
+		if (!trouve)
+		{
+			return erreur_api("SOUMISSION_INTROUVABLE", "Aucune soumission avec l'id " + id + ".");
+		}
+		return reponse;
+	}
+
+	// ── liste paginée ───────────────────────────────────────────────────
+	// Pas de `while` : compteur incrémenté dans le `for each`.
+	debut = (p - 1) * pp;
+	fin = debut + pp;
+	n = 0;
+	liste = List();
+
+	for each  s in Form1[crit] sort by ID desc
+	{
+		if (n >= debut && n < fin)
+		{
+			ligne = Map();
+			ligne.put("id", s.ID.toString());
+			ligne.put("statut", ifnull(s.Statut, ""));
+			ligne.put("client", ifnull(s.Client, ""));
+			ligne.put("no_piece", ifnull(s.No_Pi_ce, ""));
+			ligne.put("modele", ifnull(s.Mod_le, ""));
+			ligne.put("quantite", ifnull(s.Quantit, 0));
+			ligne.put("cout_revient", ifnull(s.Montant, 0));
+			ligne.put("prix_vendant", ifnull(s.Total, 0));
+			ligne.put("prix_unitaire", ifnull(s.Prix_Unitaire, 0));
+			ligne.put("webhook_statut", ifnull(s.Webhook_Statut, ""));
+			liste.add(ligne);
+		}
+		n = n + 1;
+	}
+
+	reponse.put("donnees", liste);
+	reponse.put("page", p);
+	reponse.put("par_page", pp);
+	reponse.put("total", n);
+	if (fin < n)
+	{
+		reponse.put("page_suivante", p + 1);
+	}
+	else
+	{
+		reponse.put("page_suivante", null);
+	}
+	return reponse;
+}
+
+// ============================================================================
+//  Fonctions utilitaires — à créer une fois, réutilisées par tous les endpoints
+// ============================================================================
+
+/** Vrai si la chaîne porte une valeur. Deluge distingue mal null et "" selon le contexte. */
+boolean id_ne_pas_vide(string v)
+{
+	if (v == null)
+	{
+		return false;
+	}
+	return v.trim() != "";
+}
+
+/** Le contrat est stocké en texte. On le renvoie en vrai JSON imbriqué si Deluge
+ *  sait le parser, sinon en brut — le client parsera lui-même plutôt que rien. */
+map json_ou_brut(string brut)
+{
+	sortie = Map();
+	ok = false;
+	try
+	{
+		// Verifier `toMap()` dans l'autocompletion : selon l'edition, toJSONMap().
+		sortie = brut.toMap();
+		ok = true;
+	}
+	catch (e)
+	{
+		ok = false;
+	}
+	if (!ok)
+	{
+		sortie = Map();
+		sortie.put("json_brut", brut);
+		sortie.put("avertissement", "JSON non parse cote Zoho - a parser cote client.");
+	}
+	// Deluge exige un retour garanti au niveau du corps : un `return` place
+	// uniquement dans un try/catch est refuse ("Missing return statement").
+	return sortie;
+}
+
+/** Format d'erreur unique, identique sur tous les endpoints. */
+map erreur_api(string code, string message)
+{
+	err = Map();
+	err.put("code", code);
+	err.put("message", message);
+	out = Map();
+	out.put("erreur", err);
+	return out;
+}

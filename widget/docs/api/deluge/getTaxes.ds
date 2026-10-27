@@ -1,0 +1,24 @@
+// Correction du 1er octobre 2026.
+//
+// AVANT : cette fonction interrogeait l'API Inventory (www.zohoapis.com/inventory/v1) avec la
+// connexion « zoho_inventory1 ». Chez Groupe Canva, le compte n'a pas acces a Zoho Inventory :
+// l'appel renvoyait { "code": 6018, "message": "votre compte est desactive" }, et comme le code
+// d'erreur est DANS LE CORPS de la reponse, l'appelant le prenait pour un succes et repartait
+// avec une liste de taxes vide.
+//
+// APRES : les taxes sont une donnee comptable, et Zoho Books les expose sur son propre point
+// d'entree. On passe donc par l'API Books et la connexion « zohobooks1 », qui fonctionne —
+// verifie le meme jour par ZohoBooks.getCurrencies, qui l'utilise et repond correctement.
+//
+// La forme de la reponse est identique ({"taxes":[{tax_id, tax_name, tax_percentage, ...}]}),
+// donc aucun appelant n'a besoin d'etre adapte.
+string ZohoBooks.getTaxes(string orgId)
+{
+	response = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/settings/taxes?organization_id=" + orgId
+		type :GET
+		connection:"zohobooks1"
+	];
+	return response;
+}

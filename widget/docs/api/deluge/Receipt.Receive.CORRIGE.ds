@@ -1,0 +1,101 @@
+void Receipt.Receive(int receiptID)
+{
+	receipt = Order_Receive[ID == receiptID];
+	devRec = Dev_params[ID != NULL];
+	approved = false;
+	if(!devRec.Reception_Approval)
+	{
+		approved = true;
+	}
+	if(receipt.Approve && devRec.Reception_Approval)
+	{
+		approved = true;
+	}
+	vendorOrder = Purchase_Order[ID == receipt.Purchase_Order];
+	vendorOrder.Status=receipt.Status1;
+	if(approved)
+	{
+		for each  productIndex in receipt.Products
+		{
+			ajustementID = null;
+			// LE STOCK EN PREMIER. Mesure du 5 octobre : appelee par l'action de rapport
+			// « Receive_Order_Approve », cette fonction ecrivait Last_Cost puis n'executait plus
+			// la partie stock ; appelee directement, elle faisait tout. Le code etant identique,
+			// l'hypothese retenue est une troncature de l'execution dans ce contexte. On place
+			// donc le travail critique en tete de boucle.
+			produitLigne = Product[ID == productIndex.P_N_SKU];
+			entrepotRecu = Warehouse[ID == receipt.Warehouse];
+			ligneStock = Stock[Product == produitLigne.ID && Warehouse == entrepotRecu.ID];
+			if(ligneStock.ID == null && receipt.Warehouse != null)
+			{
+				idStock = insert into Stock
+				[
+					Product=produitLigne.ID
+					Warehouse=entrepotRecu.ID
+					In_stock=0
+					Added=0
+					Removed=0
+					Min=0
+					Value=0
+				];
+				ligneStock = Stock[ID == idStock];
+			}
+			ligneRecue = SF_Products_PO[ID == productIndex.ID];
+			ligneRecue.Qty_Available=ifnull(ligneStock.In_stock,0);
+			if(ligneStock.ID != null && productIndex.Qty_Received != 0)
+			{
+				qteRecue = productIndex.Qty_Received;
+				coutUnitaire = ifnull(productIndex.Unit_price,0);
+				ajustementID = insert into Stock_Adjustment
+				[
+					Organization=ligneStock.Warehouse.Organization
+					Added_User=zoho.loginuser
+					Adjustment_Date=zoho.currentdate
+					Warehouse=ligneStock.Warehouse
+					Details="Commande fournisseur " + vendorOrder.Order_Number + " réceptionnée."
+					Purchase_Order=receipt.Purchase_Order
+					Mode_of_adjustment="Quantity"
+				];
+				insert into SF_Adjustment
+				[
+					Quantity=qteRecue
+					Warehouse=ligneStock.Warehouse
+					Category=ligneStock.Product.Product_Category
+					Part_number=ligneStock.Product
+					Added_User=zoho.loginuser
+					Stock_Adjustment=ajustementID
+					Cost=coutUnitaire
+					Value=qteRecue * coutUnitaire
+				];
+				ligneStock.In_stock=ifnull(ligneStock.In_stock,0) + qteRecue;
+				ligneStock.Added=ifnull(ligneStock.Added,0) + qteRecue;
+			}
+			product = Product[ID == productIndex.P_N_SKU];
+			produitRecu = Product[ID == productIndex.P_N_SKU];
+			if(productIndex.Qty_Received != 0)
+			{
+				produitRecu.Last_Cost=productIndex.Unit_price;
+				produitRecu.Last_Purchase=if(isnull(receipt.Receiption_Date),vendorOrder.Order_Date,receipt.Receiption_Date);
+			}
+			if(Status[ID == receipt.Purchase_Order.Status].Index_field == 4 || Status[ID == receipt.Purchase_Order.Status].Index_field == 5)
+			{
+				productLine = SF_Products_PO[ID == productIndex.Parent];
+				productLine.Qty_To_Receive=productIndex.Qty_To_Receive - productIndex.Qty_Received;
+			}
+			//productIndex.Qte_com > productIndex.Qte &&
+			if(productIndex.Qty_Received != 0)
+			{
+				receptionPartielle = insert into SF_Receptions
+				[
+					Added_User=zoho.loginuser
+					Purchase_Order=receipt.Purchase_Order
+					P_N_SKU=productIndex.P_N_SKU
+					Quantity=productIndex.Qty_Received
+					Receipt_Number=receipt.Purchase_Receive
+					Date_Time=if(isnull(productIndex.Receiption_Date),zoho.currenttime,productIndex.Receiption_Date)
+					Unit_price=productIndex.Unit_price
+				];
+			}
+		}
+	}
+}

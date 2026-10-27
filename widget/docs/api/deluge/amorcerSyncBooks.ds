@@ -1,0 +1,188 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// amorcerSyncBooks()  —  mise en service de la synchronisation Creator -> Books
+// Cree le 1er octobre 2026.
+//
+// POURQUOI CETTE FONCTION EXISTE
+//
+// Le module Achats exige que le fournisseur ET l'article existent deja dans Zoho Books :
+// « Validation Create -PO » lit leurs identifiants dans les sous-formulaires
+// Zoho_Books_Vendors_Sync et Zoho_Books_Items_Sync, et annule la commande s'ils sont vides.
+// Or cette synchronisation initiale n'a jamais ete faite chez ce client — le formulaire
+// Logger etait entierement vide le 1er oct. 2026, preuve qu'aucune fonction d'integration
+// n'avait jamais tourne.
+//
+// ZohoBooks.CreateVendor cree bien le contact dans Books, mais n'enregistre PAS l'identifiant
+// retourne : le bloc qui le ferait est en commentaire, et il ne peut pas etre simplement
+// decommente (il reference une variable `fournisseur` qui n'existe pas dans cette fonction).
+// Resultat : sans ce qui suit, chaque tentative recreerait un fournisseur en double.
+//
+// Cette fonction comble ce trou. Elle est IDEMPOTENTE : si l'identifiant est deja present,
+// elle ne refait rien. Elle peut donc etre relancee sans risque de doublon.
+//
+// CHERCHER AVANT DE CREER (revision du 2 oct. 2026)
+//
+// Premier essai : la fonction creait directement, et Books a repondu
+//     fournisseur -> {"code":3062, "... existe deja"}
+//     article     -> {"code":1001, "L'article ... existe deja."}
+// Le catalogue de Groupe Canva est DEJA dans Books. Il ne s'agit donc pas de creer, mais de
+// RETROUVER les identifiants et de les enregistrer cote Creator — ce qui manquait reellement.
+// On interroge donc Books d'abord ; la creation n'intervient qu'en dernier recours.
+//
+// Pas d'argument : l'executeur de l'editeur ne sait pas remplir un parametre de type `map`.
+// ─────────────────────────────────────────────────────────────────────────────
+void amorcerSyncBooks()
+{
+	// ── parametres ──────────────────────────────────────────────────────
+	// On cible par IDENTIFIANT, pas par libelle : le fournisseur porte un tiret cadratin
+	// (« TEST BSP — Fournisseur d'essai ») et une comparaison de chaines echouait sur ce
+	// seul caractere, en renvoyant « Fournisseur introuvable ».
+	ID_FOURNISSEUR = 4153107000023380120;
+	ID_PRODUIT = 4153107000022549672;
+	CPT_ACHAT = "2915591000000034003";
+	CPT_STOCK = "2915591000000034001";
+	CPT_VENTE = "2915591000000000388";
+	journal = "";
+	org = Organization[Books_org_ID != ""];
+	if(org.count() == 0)
+	{
+		info "Aucune organisation avec un Books_org_ID : rien ne peut etre synchronise.";
+		return;
+	}
+	orgId = org.Books_org_ID;
+	// ── 1. le fournisseur ───────────────────────────────────────────────
+	four = Vendor[ID == ID_FOURNISSEUR];
+	if(four.count() == 0)
+	{
+		info "Fournisseur introuvable : " + ID_FOURNISSEUR;
+		return;
+	}
+	ligneF = Zoho_Books_Vendors_Sync[Vendor == four.ID && Organization == org.ID];
+	if(ligneF.count() > 0 && ligneF.ZBOOKS_ID != null && ligneF.ZBOOKS_ID != "")
+	{
+		journal = journal + "fournisseur : deja synchronise (" + ligneF.ZBOOKS_ID + ")\n";
+	}
+	else
+	{
+		contacts = List();
+		cp = Map();
+		cp.put("first_name","Test");
+		cp.put("last_name","BSP");
+		cp.put("email","groupecanva@bspcorp.co");
+		cp.put("is_primary_contact",true);
+		contacts.add(cp);
+		jf = Map();
+		jf.put("contact_name",four.Vendor_Name);
+		jf.put("company_name","TEST BSP");
+		jf.put("contact_type","vendor");
+		jf.put("contact_persons",contacts);
+		// 1) chercher le contact existant dans Books
+		idF = "";
+		recherche = invokeurl
+		[
+			url :"https://www.zohoapis.com/books/v3/contacts?organization_id=" + orgId + "&contact_name=" + four.Vendor_Name.urlEncode()
+			type :GET
+			connection:"zohobooks1"
+		];
+		if(recherche.getJSON("code") == 0)
+		{
+			for each  c in recherche.getJSON("contacts").toJSONList()
+			{
+				if(idF == "")
+				{
+					idF = c.getJSON("contact_id");
+				}
+			}
+		}
+		rf = {"code":0};
+		if(idF == "")
+		{
+			rf = thisapp.ZohoBooks.CreateVendor(jf,orgId);
+			if(rf.getJSON("code") == 0)
+			{
+				idF = rf.getJSON("contact").getJSON("contact_id");
+			}
+		}
+		if(idF != "")
+		{
+			// C'est precisement l'ecriture que CreateVendor ne fait pas.
+			if(ligneF.count() > 0)
+			{
+				majF = Zoho_Books_Vendors_Sync[ID == ligneF.ID];
+				majF.ZBOOKS_ID=idF;
+			}
+			journal = journal + "fournisseur : cree dans Books (" + idF + ")\n";
+		}
+		else
+		{
+			journal = journal + "fournisseur : ECHEC " + rf.toString() + "\n";
+		}
+	}
+	// ── 2. l'article ────────────────────────────────────────────────────
+	prod = Product[ID == ID_PRODUIT];
+	if(prod.count() == 0)
+	{
+		info journal + "Produit introuvable : " + ID_PRODUIT;
+		return;
+	}
+	ligneP = Zoho_Books_Items_Sync[Product == prod.ID && Organization == org.ID];
+	if(ligneP.count() > 0 && ligneP.ZBOOKS_ID != null && ligneP.ZBOOKS_ID != "")
+	{
+		journal = journal + "article : deja synchronise (" + ligneP.ZBOOKS_ID + ")\n";
+	}
+	else
+	{
+		jp = Map();
+		jp.put("name",prod.Name);
+		jp.put("item_type","inventory");
+		jp.put("product_type","goods");
+		jp.put("rate",0);
+		jp.put("purchase_rate",ifnull(prod.Last_Cost,0));
+		jp.put("account_id",CPT_VENTE);
+		jp.put("purchase_account_id",CPT_ACHAT);
+		jp.put("inventory_account_id",CPT_STOCK);
+		jp.put("initial_stock",0);
+		jp.put("initial_stock_rate",0);
+		idP = "";
+		rechercheP = invokeurl
+		[
+			url :"https://www.zohoapis.com/books/v3/items?organization_id=" + orgId + "&name=" + prod.Name.urlEncode()
+			type :GET
+			connection:"zohobooks1"
+		];
+		if(rechercheP.getJSON("code") == 0)
+		{
+			for each  it in rechercheP.getJSON("items").toJSONList()
+			{
+				if(idP == "" && it.getJSON("name") == prod.Name)
+				{
+					idP = it.getJSON("item_id");
+				}
+			}
+		}
+		rp = {"code":0};
+		if(idP == "")
+		{
+			rp = thisapp.ZohoBooks.CreateProduct(jp,orgId);
+			if(rp.getJSON("code") == 0)
+			{
+				idP = rp.getJSON("item").getJSON("item_id");
+			}
+		}
+		if(idP != "")
+		{
+			insert into Zoho_Books_Items_Sync
+			[
+				Added_User=zoho.loginuser
+				Organization=org.ID
+				ZBOOKS_ID=idP
+				Purchase_account=CPT_ACHAT
+			]
+			journal = journal + "article : cree dans Books (" + idP + ")\n";
+		}
+		else
+		{
+			journal = journal + "article : ECHEC " + rp.toString() + "\n";
+		}
+	}
+	info journal;
+}

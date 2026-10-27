@@ -1,0 +1,48 @@
+string Tools.ConvertIntegerToCurrency(decimal number)
+{
+	separator = ",";
+	// --- specify your type of separator (i'm using a comma)
+	divisor = 3;
+	// specify how many digits in between each separator
+	// --- convert integer to string & remove hyphen if number is negative
+	string = number.toString().remove("-");
+	// --- get length of string
+	stringLen = string.length();
+	separators = 0;
+	// --- calculate how many separators will be needed to construct your currency string
+	// ------ if equally divisible 3, reduce number of separators by one (basically checks to see if number of digits is exactly divisible by 3 which means there will be one less separator)
+	if(stringLen / divisor = (stringLen / divisor).floor())
+	{
+		separators = stringLen / divisor - 1;
+	}
+	// ------ if there is a remainder after dividing by 3, set the # of separators (basically, this means there is 1 or 2 digits at the front of the number, in front of the very first separator)
+	else
+	{
+		separators = (stringLen / divisor).floor();
+	}
+	// --- build your List needed for 'for each' loop
+	// ------ makeRange is a custom function required to build the List
+	range = thisapp.Tools.MakeRange(1,separators);
+	stringBuild = "";
+	// --- declare stringBuild variable used to continually construct the sting
+	// --- execute 'for each' loop to parse through the number and add separators
+	for each  i in range
+	{
+		// --- append separator to front of substring and add suffix of stringBuild value from previous loop iteration
+		stringBuild = separator + string.substring(stringLen - i * divisor,stringLen - (i - 1) * divisor) + stringBuild;
+	}
+	// --- get the first set of leading digits before the first separator
+	stringBuild = string.substring(0,stringLen - separators * divisor) + stringBuild;
+	// --- now let's bring it all together
+	// ------ check to see if number is positive or negative and format accordingly (you can change how you want to handle negative numbers, I wrap them in parentheses but you can modify this code to add a hyphen as the prefix, with no parentheses)
+	decimal = number;
+	result = decimal.round(2).toString().replaceAll("(?<!\.\d)(?<=\d)(?=(?:\d\d\d)+\b)",",");
+	// 	if(number < 0)
+	// 	{
+	// 		return "" + result;
+	// 	}
+	// 	else
+	// 	{
+	return "" + result;
+	// 	}
+}

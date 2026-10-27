@@ -1,0 +1,482 @@
+{
+  "schema_version": "1.2",
+  "soumission": {
+    "id": "4153107000022542146",
+    "no_soumission": "S-2026-0142",
+    "initiales": "RB",
+    "statut": "Valide",
+    "source": "widget",
+    "date_soumission": "2026-09-10",
+    "date_requise": "2026-09-26",
+    "reference_externe": null,
+    "notes": "Client demande une épreuve PDF avant production."
+  },
+  "client": {
+    "no_client": "C-0084",
+    "nom": "BSP"
+  },
+  "piece": {
+    "no_piece": "4152464",
+    "modele": "Panneau de contrôle",
+    "autre": "",
+    "dimensions_po": {
+      "largeur": 7,
+      "hauteur": 1.4
+    },
+    "codes": {
+      "M": "M-118",
+      "R": "",
+      "E": ""
+    }
+  },
+  "production": {
+    "quantite": 50,
+    "perte_pct": 10,
+    "nb_up": 4,
+    "matrice_po": {
+      "largeur": 8,
+      "hauteur": 9.5
+    },
+    "nb_matrices": 14,
+    "nb_matrices_exact": 13.75,
+    "surface_matrice_po2": 76,
+    "multiprint": false,
+    "numerique_multiup": false,
+    "surplus": true,
+    "quantites_alternatives": [
+      {
+        "quantite": 100,
+        "cout_unitaire": 5.8064,
+        "prix_unitaire": 8.4056,
+        "prix_vendu_unitaire": 11.75
+      },
+      {
+        "quantite": 200,
+        "cout_unitaire": 3.6141,
+        "prix_unitaire": 5.0914,
+        "prix_vendu_unitaire": null
+      }
+    ]
+  },
+  "impression": {
+    "couleurs_visibles": 2,
+    "faces": {
+      "separateur": 1,
+      "recto": 1,
+      "verso": 1
+    },
+    "separateur": {
+      "haut": 1,
+      "bas": 1
+    },
+    "passes_additionnelles": {
+      "a": null,
+      "b": null
+    },
+    "ajustement_additionnel": 5,
+    "nettoyage": {
+      "a": null,
+      "b": null
+    },
+    "recto_verso": {
+      "a": null,
+      "b": null
+    },
+    "encres_pct": 100,
+    "sans_uv": false,
+    "hppl": null,
+    "texture_pct": 100,
+    "ajustement_impression_pct": 0,
+    "argent_clavier": null,
+    "temps": {
+      "heures": 2,
+      "minutes": 38,
+      "minutes_totales": 157.94
+    }
+  },
+  "exclusions": {
+    "sans_adhesif": false,
+    "sans_materiau": false,
+    "sans_coupe": false,
+    "sans_encre": false
+  },
+  "materiaux": [
+    {
+      "ligne": "lexan",
+      "nom": "Lexan Clair ,005x24x48",
+      "cout_pi2": 0.36,
+      "perte_pct": null,
+      "montant": 3.57,
+      "temps_debitage_min": 2.06
+    },
+    {
+      "ligne": "vinyle",
+      "nom": "Vinyle Blanc Opaque V-23 ,002x30x38",
+      "cout_pi2": 0.89,
+      "perte_pct": null,
+      "montant": 8.7,
+      "temps_debitage_min": 2.06
+    },
+    {
+      "ligne": "alu_foil",
+      "nom": "Foil 7942 Argent Brillant ,0037x20x27",
+      "cout_pi2": 1.62,
+      "perte_pct": null,
+      "montant": 15.89,
+      "temps_debitage_min": 2.06
+    },
+    {
+      "ligne": "adhesif",
+      "nom": "Adhésif 467 ,002x24x6480",
+      "cout_pi2": 0.68,
+      "perte_pct": null,
+      "montant": 6.69,
+      "temps_debitage_min": 0
+    }
+  ],
+  "materiaux_options": {
+    "difference_decoupe_pct": 0,
+    "perte_materiau_pct": 0,
+    "perte_adhesif_pct": 0,
+    "fini": null,
+    "montant_premask": 0
+  },
+  "decoupe": {
+    "adhesif_lamine": {
+      "quantite": 0,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "position_adhesif_lamine": {
+      "quantite": 0,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "overlaminating": {
+      "quantite": null,
+      "quantite_b": null,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "premask": {
+      "quantite": null,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "protecteur": {
+      "quantite": null,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "protecteur_fenetre": {
+      "quantite": null,
+      "quantite_b": null,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "slit": {
+      "quantite": null,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "guillotine": {
+      "quantite": null,
+      "taux": 0.05,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "assemblage": {
+      "quantite": null,
+      "taux": 0.5,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "autres": {
+      "quantite": null,
+      "taux": 0.25,
+      "temps": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "platine": {
+      "adhesif": {
+        "nb_die": null,
+        "up": null,
+        "temps": {
+          "heures": 0,
+          "minutes": 0,
+          "minutes_totales": 0
+        }
+      },
+      "coupe": {
+        "nb_die": 1,
+        "up": 4,
+        "temps": {
+          "heures": 0,
+          "minutes": 35,
+          "minutes_totales": 34.66
+        }
+      },
+      "kiss_cut": {
+        "nb_die": null,
+        "up": null,
+        "temps": {
+          "heures": 0,
+          "minutes": 0,
+          "minutes_totales": 0
+        }
+      },
+      "embossage": {
+        "nb_die": null,
+        "up": null,
+        "temps": {
+          "heures": 0,
+          "minutes": 0,
+          "minutes_totales": 0
+        }
+      },
+      "ajustement_pct": 0,
+      "temps_total": {
+        "heures": 0,
+        "minutes": 35,
+        "minutes_totales": 34.66
+      }
+    },
+    "zund": {
+      "adhesif": {
+        "contour": null,
+        "cut_out": null,
+        "temps": {
+          "heures": 0,
+          "minutes": 0,
+          "minutes_totales": 0
+        }
+      },
+      "coupe": {
+        "contour": null,
+        "cut_out": null,
+        "temps": {
+          "heures": 0,
+          "minutes": 0,
+          "minutes_totales": 0
+        }
+      },
+      "kiss_cut": {
+        "contour": null,
+        "cut_out": null,
+        "temps": {
+          "heures": 0,
+          "minutes": 0,
+          "minutes_totales": 0
+        }
+      },
+      "ajustement_pct": 0,
+      "temps_total": {
+        "heures": 0,
+        "minutes": 0,
+        "minutes_totales": 0
+      }
+    },
+    "finition": {
+      "decorticage": {
+        "quantite": null,
+        "taux": 0.2,
+        "temps": {
+          "heures": 0,
+          "minutes": 0,
+          "minutes_totales": 0
+        }
+      },
+      "coins_ronds": {
+        "quantite": null,
+        "taux": 0.015,
+        "temps": {
+          "heures": 0,
+          "minutes": 0,
+          "minutes_totales": 0
+        }
+      },
+      "laser": {
+        "quantite": null,
+        "ajustement": 0,
+        "temps": {
+          "heures": 0,
+          "minutes": 0,
+          "minutes_totales": 0
+        }
+      },
+      "autres": [
+        {
+          "libelle": "Autres",
+          "quantite": null,
+          "taux_a": 0,
+          "taux_b": 0,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        {
+          "libelle": "Autres",
+          "quantite": null,
+          "taux_a": 0,
+          "taux_b": 0,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        }
+      ],
+      "verification": {
+        "quantite": 1,
+        "taux": 0.02,
+        "temps": {
+          "heures": 0,
+          "minutes": 1,
+          "minutes_totales": 0.89
+        }
+      },
+      "emballage": {
+        "quantite": 1,
+        "taux": 0.01,
+        "temps": {
+          "heures": 0,
+          "minutes": 4,
+          "minutes_totales": 4.05
+        }
+      }
+    }
+  },
+  "machines": {
+    "presse": "Cameo 18",
+    "zund": null,
+    "platine": null,
+    "laminoir": null,
+    "slitter": null,
+    "guillotine": null,
+    "matrice_job": null
+  },
+  "sous_contrat": [
+    {
+      "fournisseur": "Gravure Laser Québec",
+      "cout": 85,
+      "marge_pct": 35,
+      "montant": 114.75
+    }
+  ],
+  "frais": {
+    "transport": 20,
+    "autres": null
+  },
+  "prix": {
+    "devise": "CAD",
+    "facteur_marge_pct": 25,
+    "cout_revient": 509.93,
+    "prix_vendant": 752.16,
+    "prix_unitaire": 15.0433,
+    "prix_vendu_unitaire": 15.5,
+    "prix_vendu_total": 775,
+    "taux_us": null,
+    "prix_unitaire_us": null,
+    "temps_total": {
+      "heures": 5,
+      "minutes": 28,
+      "minutes_totales": 328.14
+    }
+  },
+  "ventilation_couts": [
+    {
+      "code": "materiaux",
+      "libelle": "Matières premières",
+      "montant": 34.86,
+      "temps": null
+    },
+    {
+      "code": "soies_encres",
+      "libelle": "Soies / encres / développement",
+      "montant": 374,
+      "temps": {
+        "heures": 4,
+        "minutes": 30,
+        "minutes_totales": 270
+      }
+    },
+    {
+      "code": "setup_decoupe",
+      "libelle": "Set-up découpe",
+      "montant": 40.2,
+      "temps": {
+        "heures": 0,
+        "minutes": 25,
+        "minutes_totales": 25
+      }
+    },
+    {
+      "code": "serigraphie",
+      "libelle": "Sérigraphie",
+      "montant": 24.6,
+      "temps": {
+        "heures": 0,
+        "minutes": 20,
+        "minutes_totales": 19.94
+      }
+    },
+    {
+      "code": "decoupe_numerique",
+      "libelle": "Découpe / numérique",
+      "montant": 10.18,
+      "temps": {
+        "heures": 0,
+        "minutes": 8,
+        "minutes_totales": 8.25
+      }
+    },
+    {
+      "code": "divers",
+      "libelle": "Divers",
+      "montant": 26.1,
+      "temps": {
+        "heures": 0,
+        "minutes": 5,
+        "minutes_totales": 4.95
+      }
+    },
+    {
+      "code": "sous_contrat",
+      "libelle": "Sous-contrat",
+      "montant": 114.75,
+      "temps": null
+    }
+  ]
+}

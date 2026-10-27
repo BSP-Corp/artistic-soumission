@@ -1,0 +1,34 @@
+void Stock.UpdateStockQties(int productID, int branchID)
+{
+	stockRec = Stock[Product == productID && Warehouse == branchID];
+	if(stockRec.count() > 0)
+	{
+		stockRec.To_Send=SF_Products_PO[P_N_SKU == productID && Purchase_Order.Warehouse == branchID && Purchase_Order.STATUS_INDEX == 2].sum(Qty);
+		stockRec.In_Purchase=SF_Products_PO[P_N_SKU == productID && Purchase_Order.Warehouse == branchID && Purchase_Order.STATUS_INDEX == 3 || Purchase_Order.STATUS_INDEX == 4 || Purchase_Order.STATUS_INDEX == 11].sum(Qty_To_Receive);
+		stockRec.Purchase_Orders=SF_Products_PO[P_N_SKU == productID && Purchase_Order.Warehouse == branchID && Qty_To_Receive > 0 && Purchase_Order.STATUS_INDEX == 3 || Purchase_Order.STATUS_INDEX == 4 || Purchase_Order.STATUS_INDEX == 11].Purchase_Order.getAll();
+		//stockRec.WO_Open=Work_Order_Production[Status.Index_field == 3 && BOM.Final_Product == productID && Warehouse == branchID].sum(Quantity);
+		//	stockRec.QTY_RESERVED=SF_BOM[Work_Order_Production != null && Work_Order_Production.Warehouse == branchID && Product == productID && Work_Order_Production.Status == Status[Index_field == 3].ID && Product.Stockable].sum(Reserved);
+		//
+		WOList = List();
+		//SFBomRecs = SF_BOM[Work_Order_Production != null && Work_Order_Production.Warehouse == branchID && Product == productID && Work_Order_Production.Status == Status[Index_field == 3].ID].Work_Order_Production.getAll();
+		//WOList.addAll(Work_Order_Production[ID in SFBomRecs && Work_Order_Original != null].Work_Order_Original.getAll());
+		//WOList.addAll(Work_Order_Production[ID in SFBomRecs && Work_Order_Original == null].ID.getAll());
+		//WOList.addAll(Work_Order_Production[BOM.Final_Product == productID && Warehouse == branchID && Status == Status[Index_field == 3].ID && Work_Order_Original != null].Work_Order_Original.getAll());
+		//WOList.addAll(Work_Order_Production[BOM.Final_Product == productID && Warehouse == branchID && Status == Status[Index_field == 3].ID && Work_Order_Original == null].ID.getAll());
+		//stockRec.Work_Order_Production=WOList;
+		//
+		//stockRec.In_Draft=SF_Products_SO[!Products.RESERVED_DONE && Products.STATUS_INDEX == 18 || Products.STATUS_INDEX == 15 || Products.STATUS_INDEX == 17 || Products.STATUS_INDEX == 14 && Product == productID].sum(Qty);
+		//stockRec.Qty_Awaiting=SF_Products_SO[(Products.STATUS_INDEX == 17 && Products.RESERVED_DONE && Status.Index_field == 16) || Products.STATUS_INDEX == 16 || Products.STATUS_INDEX == 21 || Products.STATUS_INDEX == 19 || Products.STATUS_INDEX == 16 && Product == productID && QTY_RESERVED < Qty].sum(QTY_AWAITING);
+		//inSalesQty = SF_Products_SO[(Products.STATUS_INDEX == 17 && Products.RESERVED_DONE) || Products.STATUS_INDEX == 21 || Products.STATUS_INDEX == 19 || Products.STATUS_INDEX == 16 && Product == productID].sum(QTY_RESERVED);
+		//lineItemRecs = SF_Products_SO[Product == productID && Products.Warehouse == branchID].ID.getAll();
+		//linesInvoicedIds = SF_Products_SO[Parent in lineItemRecs].ID.getAll();
+		//qtyInvoiced = SF_Products_SO[Parent in lineItemRecs && Qty_credited == 0 || Qty_credited == null].sum(Qty_to_ship);
+		//qtyHWCredited = SF_Products_SO[Parent in linesInvoicedIds && Credit_Note.Status == Status[Index_field == 8].ID].sum(Qty);
+		//qtyHWCreditedInvoiced = SF_Products_SO[Parent in lineItemRecs && Shipping != null && Qty_CD > 0 && Qty_to_ship > 0].sum(Qty_to_ship);
+		//inSalesQty = inSalesQty + qtyHWCredited - qtyHWCreditedInvoiced;
+		///stockRec.In_Sale=inSalesQty;
+		//stockRec.Sales_Orders=SF_Products_SO[Products.STATUS_INDEX == 21 || Products.STATUS_INDEX == 19 || Products.STATUS_INDEX == 16 || Products.STATUS_INDEX == 17 && Product == productID && QTY_RESERVED > 0].Products.getAll();
+		//stockRec.BO_SO=SF_Products_SO[Products.STATUS_INDEX == 21 || Products.STATUS_INDEX == 19 || Products.STATUS_INDEX == 16 || Products.STATUS_INDEX == 17 || Products.STATUS_INDEX == 14 && Product == productID && QTY_RESERVED_SHIPPED < Qty].Products.getAll();
+		//stockRec.Stock_Available=stockRec.In_Stock - stockRec.In_Sale - stockRec.QTY_RESERVED;
+	}
+}

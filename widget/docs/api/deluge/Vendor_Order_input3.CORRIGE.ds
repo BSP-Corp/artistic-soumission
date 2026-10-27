@@ -1,0 +1,33 @@
+subTotal = 0;
+taxes_total = 0;
+for each  itemIndex in input.Products
+{
+	if(itemIndex.Unit_price == null)
+	{
+		itemIndex.Unit_price=0.00;
+	}
+	if(itemIndex.Qty == null)
+	{
+		itemIndex.Qty=1;
+	}
+	ligne = itemIndex.Unit_price * itemIndex.Qty;
+	if(itemIndex.Total_Price != ligne)
+	{
+		itemIndex.Total_Price=ligne;
+	}
+	subTotal = subTotal + ligne;
+	taxes_total = taxes_total + ligne * ifnull(itemIndex.Taxes.Percentage,ifnull(input.Taxes.Percentage,0)) / 100;
+}
+total = taxes_total + subTotal + ifnull(input.Transportation_cost,0);
+if(input.Sub_Total != subTotal)
+{
+	input.Sub_Total=subTotal;
+}
+if(input.Taxes_Total != taxes_total)
+{
+	input.Taxes_Total=taxes_total;
+}
+if(input.Total_Price != total)
+{
+	input.Total_Price=total;
+}

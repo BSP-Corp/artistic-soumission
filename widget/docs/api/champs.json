@@ -1,0 +1,902 @@
+{
+  "schema_version": "1.2",
+  "genere_le": "2026-09-29",
+  "champs": [
+    {
+      "chemin": "schema_version",
+      "type": "string",
+      "origine": "meta",
+      "description": "Version du contrat JSON (semver). Toute rupture de compatibilité incrémente le majeur.",
+      "section": "schema_version"
+    },
+    {
+      "chemin": "soumission.id",
+      "type": "string",
+      "origine": "meta",
+      "description": "Identifiant unique Zoho Creator de la soumission (19 chiffres, à traiter comme une chaîne).",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.no_soumission",
+      "type": "string",
+      "origine": "in",
+      "description": "Numéro de soumission saisi par l'estimateur (code « S »).",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.initiales",
+      "type": "string",
+      "origine": "in",
+      "description": "Initiales de l'estimateur (ex. « RB »).",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.statut",
+      "type": "string",
+      "origine": "meta",
+      "description": "Brouillon | Valide | En_production | Termine.",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.source",
+      "type": "string",
+      "origine": "meta",
+      "description": "widget (saisie manuelle) | api (créée par la plateforme) | import.",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.date_soumission",
+      "type": "date",
+      "origine": "meta",
+      "description": "Date d'enregistrement, format ISO YYYY-MM-DD.",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.date_requise",
+      "type": "string|null",
+      "origine": "in",
+      "description": "Date requise par le client, telle que saisie (texte libre pour l'instant).",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.reference_externe",
+      "type": "string|null",
+      "origine": "meta",
+      "description": "Référence de la plateforme du client (idempotence). null si créée dans Zoho.",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.notes",
+      "type": "string",
+      "origine": "meta",
+      "description": "Notes libres (champ long).",
+      "section": "soumission"
+    },
+    {
+      "chemin": "client.no_client",
+      "type": "string",
+      "origine": "in",
+      "description": "Numéro de client.",
+      "section": "client"
+    },
+    {
+      "chemin": "client.nom",
+      "type": "string",
+      "origine": "in",
+      "description": "Nom du client.",
+      "section": "client"
+    },
+    {
+      "chemin": "piece.no_piece",
+      "type": "string",
+      "origine": "in",
+      "description": "Numéro de pièce (peut être alphanumérique).",
+      "section": "piece"
+    },
+    {
+      "chemin": "piece.modele",
+      "type": "string",
+      "origine": "in",
+      "description": "Modèle.",
+      "section": "piece"
+    },
+    {
+      "chemin": "piece.autre",
+      "type": "string",
+      "origine": "in",
+      "description": "Information complémentaire libre.",
+      "section": "piece"
+    },
+    {
+      "chemin": "piece.dimensions_po.largeur",
+      "type": "number|null",
+      "origine": "in",
+      "description": "Largeur de la pièce finie, en pouces (centièmes admis).",
+      "section": "piece"
+    },
+    {
+      "chemin": "piece.dimensions_po.hauteur",
+      "type": "number|null",
+      "origine": "in",
+      "description": "Hauteur de la pièce finie, en pouces.",
+      "section": "piece"
+    },
+    {
+      "chemin": "piece.codes.M",
+      "type": "string",
+      "origine": "in",
+      "description": "Code M (fiche d'atelier).",
+      "section": "piece"
+    },
+    {
+      "chemin": "piece.codes.R",
+      "type": "string",
+      "origine": "in",
+      "description": "Code R.",
+      "section": "piece"
+    },
+    {
+      "chemin": "piece.codes.E",
+      "type": "string",
+      "origine": "in",
+      "description": "Code E.",
+      "section": "piece"
+    },
+    {
+      "chemin": "production.quantite",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Quantité de pièces demandée — base du calcul.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.perte_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Pourcentage de perte (rebuts) appliqué aux matrices. Défaut 10.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.nb_up",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Nombre de pièces par feuille (« Up »).",
+      "section": "production"
+    },
+    {
+      "chemin": "production.matrice_po.largeur",
+      "type": "number|null",
+      "origine": "in",
+      "description": "Largeur de la matrice (feuille imprimée), en pouces.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.matrice_po.hauteur",
+      "type": "number|null",
+      "origine": "in",
+      "description": "Hauteur de la matrice, en pouces.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.nb_matrices",
+      "type": "integer",
+      "origine": "out",
+      "description": "Nombre de matrices (feuilles) à produire = quantité × (1 + perte) ÷ up, arrondi au plein supérieur (comme affiché dans le widget).",
+      "section": "production"
+    },
+    {
+      "chemin": "production.nb_matrices_exact",
+      "type": "number",
+      "origine": "out",
+      "description": "Même valeur avant arrondi.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.surface_matrice_po2",
+      "type": "number",
+      "origine": "out",
+      "description": "Surface d'une matrice en pouces carrés = largeur × hauteur.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.multiprint",
+      "type": "boolean",
+      "origine": "in",
+      "description": "Mode presse MultiPrint (1 à 6 couleurs en ligne).",
+      "section": "production"
+    },
+    {
+      "chemin": "production.numerique_multiup",
+      "type": "boolean",
+      "origine": "in",
+      "description": "Impression numérique multi-up.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.surplus",
+      "type": "boolean",
+      "origine": "in",
+      "description": "Surplus de 10 % autorisé sur la quantité produite (fiche d'atelier).",
+      "section": "production"
+    },
+    {
+      "chemin": "production.quantites_alternatives[]",
+      "type": "integer",
+      "origine": "in",
+      "description": "Autres quantités pour lesquelles un prix est demandé (table QTÉ), quantité principale exclue. Tableau vide si aucune.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.quantites_alternatives[].quantite",
+      "type": "integer",
+      "origine": "in",
+      "description": "Quantité simulée.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.quantites_alternatives[].cout_unitaire",
+      "type": "money|null",
+      "origine": "out",
+      "description": "Coût de revient unitaire pour cette quantité (null si simulation indisponible).",
+      "section": "production"
+    },
+    {
+      "chemin": "production.quantites_alternatives[].prix_unitaire",
+      "type": "money|null",
+      "origine": "out",
+      "description": "Prix vendant unitaire calculé pour cette quantité.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.quantites_alternatives[].prix_vendu_unitaire",
+      "type": "money|null",
+      "origine": "in",
+      "description": "v1.1 — Prix vendu unitaire décidé par le chargé de projet pour cette quantité. null si non saisi : utilisez prix_unitaire.",
+      "section": "production"
+    },
+    {
+      "chemin": "impression.couleurs_visibles",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Nombre de couleurs visibles.",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.faces.separateur",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Nombre de passes F/S séparateur. Depuis v1.1 le champ n'est plus saisi : toujours 1.",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.faces.recto",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Nombre de passes F/S recto. Depuis v1.1 : toujours 1.",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.faces.verso",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Nombre de passes F/S verso. Depuis v1.1 : toujours 1.",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.separateur.haut",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Séparateur haut (nb).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.separateur.bas",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Séparateur bas (nb).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.passes_additionnelles.a",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Passes additionnelles (colonne A).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.passes_additionnelles.b",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Passes additionnelles (colonne B).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.ajustement_additionnel",
+      "type": "number|null",
+      "origine": "in",
+      "description": "Ajustement additionnel (nb).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.nettoyage.a",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Nettoyages additionnels (A).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.nettoyage.b",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Nettoyages additionnels (B).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.recto_verso.a",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Recto-verso (A).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.recto_verso.b",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "Recto-verso (B).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.encres_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Couverture d'encre (100 = pleine couverture).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.sans_uv",
+      "type": "boolean",
+      "origine": "in",
+      "description": "Sans vernis UV.",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.hppl",
+      "type": "number|null",
+      "origine": "in",
+      "description": "HPPL (nb).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.texture_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Texture (100 = oui).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.ajustement_impression_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Ajustement manuel du temps d'impression.",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.argent_clavier",
+      "type": "number|null",
+      "origine": "in",
+      "description": "Argent clavier (nb).",
+      "section": "impression"
+    },
+    {
+      "chemin": "impression.temps",
+      "type": "number",
+      "origine": "out",
+      "description": "Temps d'impression {heures, minutes, minutes_totales}.",
+      "section": "impression"
+    },
+    {
+      "chemin": "exclusions.sans_adhesif",
+      "type": "boolean",
+      "origine": "in",
+      "description": "Le job ne comporte pas d'adhésif.",
+      "section": "exclusions"
+    },
+    {
+      "chemin": "exclusions.sans_materiau",
+      "type": "boolean",
+      "origine": "in",
+      "description": "Matériau fourni par le client.",
+      "section": "exclusions"
+    },
+    {
+      "chemin": "exclusions.sans_coupe",
+      "type": "boolean",
+      "origine": "in",
+      "description": "Aucune découpe.",
+      "section": "exclusions"
+    },
+    {
+      "chemin": "exclusions.sans_encre",
+      "type": "boolean",
+      "origine": "in",
+      "description": "Aucune impression.",
+      "section": "exclusions"
+    },
+    {
+      "chemin": "materiaux[]",
+      "type": "string",
+      "origine": "in",
+      "description": "Lignes matériaux utilisées (les lignes vides sont omises). Ordre = ordre du formulaire.",
+      "section": "materiaux"
+    },
+    {
+      "chemin": "materiaux[].ligne",
+      "type": "string",
+      "origine": "meta",
+      "description": "lexan | vinyle | polyester | alu_foil | divers | adhesif | overlaminating | xtra1..xtra4.",
+      "section": "materiaux"
+    },
+    {
+      "chemin": "materiaux[].nom",
+      "type": "string",
+      "origine": "in",
+      "description": "Nom exact du matériau dans le catalogue (clé de jointure avec l'inventaire).",
+      "section": "materiaux"
+    },
+    {
+      "chemin": "materiaux[].cout_pi2",
+      "type": "money|null",
+      "origine": "out",
+      "description": "Coût au pied carré retenu (catalogue, ou saisi pour les lignes Xtra).",
+      "section": "materiaux"
+    },
+    {
+      "chemin": "materiaux[].perte_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Perte spécifique à la ligne (lignes Xtra uniquement, sinon null).",
+      "section": "materiaux"
+    },
+    {
+      "chemin": "materiaux[].montant",
+      "type": "money",
+      "origine": "out",
+      "description": "Montant matière de la ligne = surface × coût pi² × (1 + perte) × multiplicateur.",
+      "section": "materiaux"
+    },
+    {
+      "chemin": "materiaux[].temps_debitage_min",
+      "type": "number|null",
+      "origine": "out",
+      "description": "Temps de débitage (guillotine) de la ligne, en minutes.",
+      "section": "materiaux"
+    },
+    {
+      "chemin": "materiaux_options.difference_decoupe_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Différence de découpe (%).",
+      "section": "materiaux_options"
+    },
+    {
+      "chemin": "materiaux_options.perte_materiau_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Perte matière globale additionnelle (%).",
+      "section": "materiaux_options"
+    },
+    {
+      "chemin": "materiaux_options.perte_adhesif_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Perte adhésif globale (%).",
+      "section": "materiaux_options"
+    },
+    {
+      "chemin": "materiaux_options.fini",
+      "type": "string|null",
+      "origine": "in",
+      "description": "brillant | mat | null.",
+      "section": "materiaux_options"
+    },
+    {
+      "chemin": "materiaux_options.montant_premask",
+      "type": "money",
+      "origine": "out",
+      "description": "Montant prémask.",
+      "section": "materiaux_options"
+    },
+    {
+      "chemin": "decoupe.adhesif_lamine",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, temps}. Adhésif laminé.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.position_adhesif_lamine",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, temps}. Positionnement adhésif & laminé (registre).",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.overlaminating",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, quantite_b, temps}. Over-laminating.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.premask",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, temps}. Prémask standard.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.protecteur",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, temps}. Protecteur.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.protecteur_fenetre",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, quantite_b, temps}. Protecteur fenêtre.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.slit",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, temps}. Slit (nb).",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.guillotine",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, taux, temps}. Guillotine.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.assemblage",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, taux, temps}. Assemblage.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.autres",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, taux, temps}. Autres opérations de découpe.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.platine.adhesif",
+      "type": "number",
+      "origine": "in",
+      "description": "{nb_die, up, temps}. Platine adhésif.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.platine.coupe",
+      "type": "number",
+      "origine": "in",
+      "description": "{nb_die, up, temps}. Platine coupe.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.platine.kiss_cut",
+      "type": "number",
+      "origine": "in",
+      "description": "{nb_die, up, temps}. Platine kiss-cut. nb_die vaut 0 ou 1 (interrupteur depuis v1.1).",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.platine.embossage",
+      "type": "number",
+      "origine": "in",
+      "description": "{nb_die, up, temps}. Platine embossage.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.platine.ajustement_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Ajustement manuel du temps platine.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.platine.temps_total",
+      "type": "number",
+      "origine": "out",
+      "description": "{heures, minutes, minutes_totales}.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.zund.adhesif",
+      "type": "number",
+      "origine": "in",
+      "description": "{contour, cut_out, temps}. Zund adhésif. contour vaut 0 ou 1 (interrupteur depuis v1.1) ; cut_out = nombre de découpes intérieures par feuille.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.zund.coupe",
+      "type": "number",
+      "origine": "in",
+      "description": "{contour, cut_out, temps}. Zund coupe. Mêmes règles que adhesif.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.zund.kiss_cut",
+      "type": "number",
+      "origine": "in",
+      "description": "{contour, cut_out, temps}. Zund kiss-cut. Mêmes règles que adhesif.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.zund.ajustement_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Ajustement manuel du temps Zund.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.zund.temps_total",
+      "type": "number",
+      "origine": "out",
+      "description": "{heures, minutes, minutes_totales}.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.finition.decorticage",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, taux, temps}. Décorticage.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.finition.coins_ronds",
+      "type": "number|null",
+      "origine": "in",
+      "description": "{quantite, taux, temps}. Coins ronds — OBSOLÈTE depuis la v1.2 : l'opération a été retirée de l'outil, `quantite` est toujours null. Champ conservé pour compatibilité, retiré à la prochaine version majeure.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.finition.laser",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, ajustement, temps}. Laser.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.finition.autres[]",
+      "type": "number",
+      "origine": "in",
+      "description": "{libelle, quantite, taux_a, taux_b, temps}. Deux lignes « Autres » libres.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.finition.verification",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, taux, temps}. Vérification / comptage.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "decoupe.finition.emballage",
+      "type": "number",
+      "origine": "in",
+      "description": "{quantite, taux, temps}. Emballage.",
+      "section": "decoupe"
+    },
+    {
+      "chemin": "machines.presse",
+      "type": "string|null",
+      "origine": "in",
+      "description": "Presse choisie (nom de la fiche machine). null = gabarit par défaut.",
+      "section": "machines"
+    },
+    {
+      "chemin": "machines.zund",
+      "type": "string|null",
+      "origine": "in",
+      "description": "Table de découpe Zund choisie.",
+      "section": "machines"
+    },
+    {
+      "chemin": "machines.platine",
+      "type": "string|null",
+      "origine": "in",
+      "description": "Platine choisie.",
+      "section": "machines"
+    },
+    {
+      "chemin": "machines.laminoir",
+      "type": "string|null",
+      "origine": "in",
+      "description": "Laminoir choisi.",
+      "section": "machines"
+    },
+    {
+      "chemin": "machines.slitter",
+      "type": "string|null",
+      "origine": "in",
+      "description": "Slitter choisi.",
+      "section": "machines"
+    },
+    {
+      "chemin": "machines.guillotine",
+      "type": "string|null",
+      "origine": "in",
+      "description": "Guillotine choisie.",
+      "section": "machines"
+    },
+    {
+      "chemin": "machines.matrice_job",
+      "type": "number|null",
+      "origine": "in",
+      "description": "Coût de la matrice (die) propre au job, en $.",
+      "section": "machines"
+    },
+    {
+      "chemin": "sous_contrat[]",
+      "type": "string",
+      "origine": "in",
+      "description": "Lignes de sous-traitance renseignées (max 4, lignes vides omises).",
+      "section": "sous_contrat"
+    },
+    {
+      "chemin": "sous_contrat[].fournisseur",
+      "type": "string",
+      "origine": "in",
+      "description": "Nom du fournisseur.",
+      "section": "sous_contrat"
+    },
+    {
+      "chemin": "sous_contrat[].cout",
+      "type": "money|null",
+      "origine": "in",
+      "description": "Coût fournisseur.",
+      "section": "sous_contrat"
+    },
+    {
+      "chemin": "sous_contrat[].marge_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Marge appliquée (défaut 35).",
+      "section": "sous_contrat"
+    },
+    {
+      "chemin": "sous_contrat[].montant",
+      "type": "money",
+      "origine": "out",
+      "description": "Montant facturé = coût × (1 + marge).",
+      "section": "sous_contrat"
+    },
+    {
+      "chemin": "frais.transport",
+      "type": "money|null",
+      "origine": "in",
+      "description": "Transport ($).",
+      "section": "frais"
+    },
+    {
+      "chemin": "frais.autres",
+      "type": "money|null",
+      "origine": "in",
+      "description": "Autres frais ($).",
+      "section": "frais"
+    },
+    {
+      "chemin": "prix.devise",
+      "type": "string",
+      "origine": "meta",
+      "description": "Toujours « CAD ».",
+      "section": "prix"
+    },
+    {
+      "chemin": "prix.facteur_marge_pct",
+      "type": "percent",
+      "origine": "in",
+      "description": "Facteur de marge appliqué au coût de revient (défaut 25).",
+      "section": "prix"
+    },
+    {
+      "chemin": "prix.cout_revient",
+      "type": "money",
+      "origine": "out",
+      "description": "Coût de revient = somme des 6 catégories internes (matériaux, soies/encres, set-up découpe, sérigraphie, découpe/numérique, divers). Le sous-contrat n'en fait PAS partie.",
+      "section": "prix"
+    },
+    {
+      "chemin": "prix.prix_vendant",
+      "type": "money",
+      "origine": "out",
+      "description": "Prix vendant = coût de revient × (1 + facteur de marge) + sous-contrat (le sous-contrat porte sa propre marge, voir sous_contrat[].marge_pct).",
+      "section": "prix"
+    },
+    {
+      "chemin": "prix.prix_unitaire",
+      "type": "money",
+      "origine": "out",
+      "description": "Prix vendant ÷ quantité (4 décimales). C'est la suggestion du moteur ; le prix engagé est prix_vendu_unitaire quand il est renseigné.",
+      "section": "prix"
+    },
+    {
+      "chemin": "prix.prix_vendu_unitaire",
+      "type": "money|null",
+      "origine": "in",
+      "description": "v1.1 — Prix vendu unitaire décidé par le chargé de projet (peut être =, > ou < prix_unitaire ; jamais recalculé). null si non saisi : utilisez prix_unitaire.",
+      "section": "prix"
+    },
+    {
+      "chemin": "prix.prix_vendu_total",
+      "type": "money|null",
+      "origine": "out",
+      "description": "v1.1 — prix_vendu_unitaire × quantité (2 décimales). null si prix_vendu_unitaire est null.",
+      "section": "prix"
+    },
+    {
+      "chemin": "prix.taux_us",
+      "type": "number|null",
+      "origine": "in",
+      "description": "Taux de change USD saisi (null si non renseigné).",
+      "section": "prix"
+    },
+    {
+      "chemin": "prix.prix_unitaire_us",
+      "type": "money|null",
+      "origine": "out",
+      "description": "Prix unitaire en USD (null si pas de taux).",
+      "section": "prix"
+    },
+    {
+      "chemin": "prix.temps_total",
+      "type": "number",
+      "origine": "out",
+      "description": "Temps total de main-d'œuvre {heures, minutes, minutes_totales}.",
+      "section": "prix"
+    },
+    {
+      "chemin": "ventilation_couts[]",
+      "type": "money",
+      "origine": "out",
+      "description": "Les 6 catégories qui composent le coût de revient + le sous-contrat (ajouté après la marge). Toujours 7 lignes, dans cet ordre.",
+      "section": "ventilation_couts"
+    },
+    {
+      "chemin": "ventilation_couts[].code",
+      "type": "string",
+      "origine": "out",
+      "description": "materiaux | soies_encres | setup_decoupe | serigraphie | decoupe_numerique | divers | sous_contrat.",
+      "section": "ventilation_couts"
+    },
+    {
+      "chemin": "ventilation_couts[].libelle",
+      "type": "string",
+      "origine": "out",
+      "description": "Libellé lisible.",
+      "section": "ventilation_couts"
+    },
+    {
+      "chemin": "ventilation_couts[].montant",
+      "type": "money",
+      "origine": "out",
+      "description": "Montant de la catégorie.",
+      "section": "ventilation_couts"
+    },
+    {
+      "chemin": "ventilation_couts[].temps",
+      "type": "number|null",
+      "origine": "out",
+      "description": "{heures, minutes, minutes_totales} — null pour matériaux et sous-contrat.",
+      "section": "ventilation_couts"
+    }
+  ]
+}

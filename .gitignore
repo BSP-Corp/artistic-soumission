@@ -1,0 +1,26 @@
+# Liste blanche : le dépôt ne contient que l'application et sa documentation.
+# Le dossier de travail local porte aussi des captures d'écran, des scripts d'automatisation
+# jetables, des classeurs Artistic et des relevés d'API — rien de tout ça n'est partagé.
+/*
+!/.gitignore
+!/README.md
+!/widget/
+
+# dans widget/ : la source, pas les dépendances ni les sorties de build
+widget/node_modules/
+widget/dist/
+widget/canevas/app/
+widget/canevas/dist/
+widget/bontravail/app/
+widget/bontravail/dist/
+widget/pointage/app/
+widget/pointage/dist/
+
+# .gen contient des relevés d'envois réels, jeton d'API compris : jamais partagé
+widget/.gen/
+
+# artéfacts locaux
+*.tsbuildinfo
+*.log
+.DS_Store
+Thumbs.db

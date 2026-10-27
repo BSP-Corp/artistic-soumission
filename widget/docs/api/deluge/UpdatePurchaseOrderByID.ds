@@ -1,0 +1,113 @@
+map ZohoBooks.UpdatePurchaseOrderByID(int orderID)
+{
+	json = Map();
+	devParams = Dev_params[ID != 0];
+	line_items = List();
+	order = Purchase_Order[ID == orderID];
+	// 	for each  itemLine in order.Produits
+	// 	{
+	if(order.Vendor == null)
+	{
+		return {"code":-1,"message":"Merci d'entrer le fournisseur."};
+	}
+	// 	}
+	if(isnull(order.Taxes))
+	{
+		// 		vendorCRM = zoho.crm.getRecordById("Vendors",order.Vendor.getJSON("ID").toLong());
+		vendorCRM = order.Vendor;
+		order.Region=vendorCRM.Region;
+		if(order.Region == null)
+		{
+			order.Taxes=devParams.Tax.ID;
+		}
+		else
+		{
+			order.Taxes=Tax[R_gions == order.Region].ID.getAll();
+		}
+	}
+	if(isnull(order.Taxes))
+	{
+		return {"code":-1,"message":"Veuillez verifier les taxes."};
+	}
+	for each  productIndex in order.Products
+	{
+		// Create the product map
+		currentProduct = Product[ID == productIndex.P_N_SKU];
+		sellingPrice = ifnull(productIndex.Unit_price,0);
+		code = SF_Vendors[Product == currentProduct && Vendor == order.Vendor].Product_Vendor;
+		if(isEmpty(code))
+		{
+			code = currentProduct.SKU;
+		}
+		descNote = currentProduct.Description;
+		// 		itemID = thisapp.ZohoBooks.GetItemID(currentProduct.ID);
+		obj = Map();
+		obj.put("item_id",currentProduct.ZBOOKS_ID);
+		//obj.put("item_id",2350746000001960017);
+		obj.put("name",code);
+		obj.put("description",descNote);
+		obj.put("rate",sellingPrice);
+		obj.put("quantity",productIndex.Qty);
+		obj.put("tax_id",order.Taxes.ZBOOKS_ID);
+		// Correction 1er oct. 2026 — « entrepot » n'existe pas dans cette organisation.
+		//
+		// Hierarchie Zoho : Organisation > Emplacement > Entrepot. Les ENTREPOTS vivent dans
+		// Zoho Inventory, auquel le compte de Groupe Canva n'a pas acces ; Books, lui, expose
+		// des EMPLACEMENTS (page Parametres > Emplacements ; /settings/warehouses renvoie
+		// « page non trouvee »). Envoyer warehouse_id faisait donc echouer toute commande :
+		//   « ZohoBooks - Article warehouse_id non valide »
+		// et bloquait en cascade la reception, l'approbation et le mouvement de stock.
+		//
+		// Warehouse.ZBOOKS_ID porte desormais l'identifiant d'EMPLACEMENT Books, transmis au
+		// niveau de la commande (location_id), pas au niveau de la ligne. Le champ n'est ajoute
+		// que s'il existe, pour rester compatible avec une organisation sans emplacements.
+		if(productIndex.ZBOOKS_ID != null && productIndex.ZBOOKS_ID != "")
+		{
+			obj.put("line_item_id",productIndex.ZBOOKS_ID);
+		}
+		line_items.add(obj);
+	}
+	// }
+	data = Map();
+	// vendors = order.Produits.FournisseurData.getall();
+	// vendors = vendors.toJSONList();
+	data.put("vendor_id",order.Vendor.ZBOOKS_ID);
+	data.put("date",order.Order_Date.toString("yyyy-MM-dd"));
+	data.put("line_items",line_items);
+	data.put("tax_id",order.Taxes.ZBOOKS_ID);
+	if(order.Notes != "" && order.Notes != null)
+	{
+		data.put("notes",order.Notes);
+	}
+	// 	if(order.Order_Number == null || order.Order_Number == "" || isEmpty(order.Order_Number) || isBlank(order.Order_Number))
+	// 	{
+	// 		order.Order_Number=thisapp.Tools.GenerateIDs("PURCHASE_ORDER",toLong(devParams.Purchase_Order_Index));
+	// 	}
+	data.put("reference_number",order.Reference_Number);
+	if(order.Warehouse != null && order.Warehouse.ZBOOKS_ID != null && order.Warehouse.ZBOOKS_ID != "")
+	{
+		data.put("location_id",order.Warehouse.ZBOOKS_ID);
+	}
+	// 	data.put("purchaseorder_number",order.Order_Number);
+	if(order.ZBOOKS_ID == "" || order.ZBOOKS_ID == null)
+	{
+		response = thisapp.ZohoBooks.CreatePurchaseOrder(data,order.Organization.Books_org_ID);
+	}
+	else
+	{
+		//update purchase
+		response = thisapp.ZohoBooks.UpdatePurchaseOrder(order.ZBOOKS_ID,data,order.Organization.Books_org_ID);
+	}
+	if(response.getJSON("code") == 0)
+	{
+		order.ZBOOKS_ID=response.getJSON("purchaseorder").getJSON("purchaseorder_id");
+		poLineItems = response.getJSON("purchaseorder").getJSON("line_items");
+		for each  lineItemIndex in poLineItems.toJSONList()
+		{
+			productRec = SF_Products_PO[P_N_SKU == lineItemIndex.getJSON("item_id") && Qty == lineItemIndex.getJSON("quantity") && ZBOOKS_ID == null];
+			productRec.ZBOOKS_ID=lineItemIndex.getJSON("line_item_id");
+		}
+	}
+	return response;
+	//return Map();
+}

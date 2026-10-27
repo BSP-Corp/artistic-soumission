@@ -1,0 +1,2684 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://groupecanva.example/schemas/soumission-1.2.json",
+  "title": "Soumission Matériaux Souples",
+  "description": "Charge utile envoyée par Zoho Creator à la plateforme partenaire à chaque soumission validée. Conventions : pourcentages en 0-100, montants CAD (2 décimales, prix unitaire 4), durées sous forme { heures, minutes, minutes_totales }, null si non saisi.",
+  "type": "object",
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Version du contrat JSON (semver). Toute rupture de compatibilité incrémente le majeur."
+    },
+    "soumission": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Identifiant unique Zoho Creator de la soumission (19 chiffres, à traiter comme une chaîne)."
+        },
+        "no_soumission": {
+          "type": "string",
+          "description": "Numéro de soumission saisi par l'estimateur (code « S »)."
+        },
+        "initiales": {
+          "type": "string",
+          "description": "Initiales de l'estimateur (ex. « RB »)."
+        },
+        "statut": {
+          "type": "string",
+          "description": "Brouillon | Valide | En_production | Termine."
+        },
+        "source": {
+          "type": "string",
+          "description": "widget (saisie manuelle) | api (créée par la plateforme) | import."
+        },
+        "date_soumission": {
+          "type": "string",
+          "description": "Date d'enregistrement, format ISO YYYY-MM-DD."
+        },
+        "date_requise": {
+          "type": "string",
+          "description": "Date requise par le client, telle que saisie (texte libre pour l'instant)."
+        },
+        "reference_externe": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Référence de la plateforme du client (idempotence). null si créée dans Zoho."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Notes libres (champ long)."
+        }
+      },
+      "required": [
+        "id",
+        "no_soumission",
+        "initiales",
+        "statut",
+        "source",
+        "date_soumission",
+        "date_requise",
+        "reference_externe",
+        "notes"
+      ],
+      "additionalProperties": false
+    },
+    "client": {
+      "type": "object",
+      "properties": {
+        "no_client": {
+          "type": "string",
+          "description": "Numéro de client."
+        },
+        "nom": {
+          "type": "string",
+          "description": "Nom du client."
+        }
+      },
+      "required": [
+        "no_client",
+        "nom"
+      ],
+      "additionalProperties": false
+    },
+    "piece": {
+      "type": "object",
+      "properties": {
+        "no_piece": {
+          "type": "string",
+          "description": "Numéro de pièce (peut être alphanumérique)."
+        },
+        "modele": {
+          "type": "string",
+          "description": "Modèle."
+        },
+        "autre": {
+          "type": "string",
+          "description": "Information complémentaire libre."
+        },
+        "dimensions_po": {
+          "type": "object",
+          "properties": {
+            "largeur": {
+              "type": "number",
+              "description": "Largeur de la pièce finie, en pouces (centièmes admis)."
+            },
+            "hauteur": {
+              "type": "number",
+              "description": "Hauteur de la pièce finie, en pouces."
+            }
+          },
+          "required": [
+            "largeur",
+            "hauteur"
+          ],
+          "additionalProperties": false
+        },
+        "codes": {
+          "type": "object",
+          "properties": {
+            "M": {
+              "type": "string",
+              "description": "Code M (fiche d'atelier)."
+            },
+            "R": {
+              "type": "string",
+              "description": "Code R."
+            },
+            "E": {
+              "type": "string",
+              "description": "Code E."
+            }
+          },
+          "required": [
+            "M",
+            "R",
+            "E"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "no_piece",
+        "modele",
+        "autre",
+        "dimensions_po",
+        "codes"
+      ],
+      "additionalProperties": false
+    },
+    "production": {
+      "type": "object",
+      "properties": {
+        "quantite": {
+          "type": "integer",
+          "description": "Quantité de pièces demandée — base du calcul."
+        },
+        "perte_pct": {
+          "type": "number",
+          "description": "Pourcentage de perte (rebuts) appliqué aux matrices. Défaut 10."
+        },
+        "nb_up": {
+          "type": "integer",
+          "description": "Nombre de pièces par feuille (« Up »)."
+        },
+        "matrice_po": {
+          "type": "object",
+          "properties": {
+            "largeur": {
+              "type": "number",
+              "description": "Largeur de la matrice (feuille imprimée), en pouces."
+            },
+            "hauteur": {
+              "type": "number",
+              "description": "Hauteur de la matrice, en pouces."
+            }
+          },
+          "required": [
+            "largeur",
+            "hauteur"
+          ],
+          "additionalProperties": false
+        },
+        "nb_matrices": {
+          "type": "integer",
+          "description": "Nombre de matrices (feuilles) à produire = quantité × (1 + perte) ÷ up, arrondi au plein supérieur (comme affiché dans le widget)."
+        },
+        "nb_matrices_exact": {
+          "type": "number",
+          "description": "Même valeur avant arrondi."
+        },
+        "surface_matrice_po2": {
+          "type": "number",
+          "description": "Surface d'une matrice en pouces carrés = largeur × hauteur."
+        },
+        "multiprint": {
+          "type": "boolean",
+          "description": "Mode presse MultiPrint (1 à 6 couleurs en ligne)."
+        },
+        "numerique_multiup": {
+          "type": "boolean",
+          "description": "Impression numérique multi-up."
+        },
+        "surplus": {
+          "type": "boolean",
+          "description": "Surplus de 10 % autorisé sur la quantité produite (fiche d'atelier)."
+        },
+        "quantites_alternatives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "quantite": {
+                "type": "integer",
+                "description": "Quantité simulée."
+              },
+              "cout_unitaire": {
+                "type": "number",
+                "description": "Coût de revient unitaire pour cette quantité (null si simulation indisponible)."
+              },
+              "prix_unitaire": {
+                "type": "number",
+                "description": "Prix vendant unitaire calculé pour cette quantité."
+              },
+              "prix_vendu_unitaire": {
+                "type": [
+                  "null",
+                  "number"
+                ],
+                "description": "v1.1 — Prix vendu unitaire décidé par le chargé de projet pour cette quantité. null si non saisi : utilisez prix_unitaire."
+              }
+            },
+            "required": [
+              "quantite",
+              "cout_unitaire",
+              "prix_unitaire",
+              "prix_vendu_unitaire"
+            ],
+            "additionalProperties": false,
+            "description": "Autres quantités pour lesquelles un prix est demandé (table QTÉ), quantité principale exclue. Tableau vide si aucune."
+          },
+          "description": "Autres quantités pour lesquelles un prix est demandé (table QTÉ), quantité principale exclue. Tableau vide si aucune."
+        }
+      },
+      "required": [
+        "quantite",
+        "perte_pct",
+        "nb_up",
+        "matrice_po",
+        "nb_matrices",
+        "nb_matrices_exact",
+        "surface_matrice_po2",
+        "multiprint",
+        "numerique_multiup",
+        "surplus",
+        "quantites_alternatives"
+      ],
+      "additionalProperties": false
+    },
+    "impression": {
+      "type": "object",
+      "properties": {
+        "couleurs_visibles": {
+          "type": "integer",
+          "description": "Nombre de couleurs visibles."
+        },
+        "faces": {
+          "type": "object",
+          "properties": {
+            "separateur": {
+              "type": "integer",
+              "description": "Nombre de passes F/S séparateur. Depuis v1.1 le champ n'est plus saisi : toujours 1."
+            },
+            "recto": {
+              "type": "integer",
+              "description": "Nombre de passes F/S recto. Depuis v1.1 : toujours 1."
+            },
+            "verso": {
+              "type": "integer",
+              "description": "Nombre de passes F/S verso. Depuis v1.1 : toujours 1."
+            }
+          },
+          "required": [
+            "separateur",
+            "recto",
+            "verso"
+          ],
+          "additionalProperties": false
+        },
+        "separateur": {
+          "type": "object",
+          "properties": {
+            "haut": {
+              "type": "integer",
+              "description": "Séparateur haut (nb)."
+            },
+            "bas": {
+              "type": "integer",
+              "description": "Séparateur bas (nb)."
+            }
+          },
+          "required": [
+            "haut",
+            "bas"
+          ],
+          "additionalProperties": false
+        },
+        "passes_additionnelles": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Passes additionnelles (colonne A)."
+            },
+            "b": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Passes additionnelles (colonne B)."
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false
+        },
+        "ajustement_additionnel": {
+          "type": "number",
+          "description": "Ajustement additionnel (nb)."
+        },
+        "nettoyage": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Nettoyages additionnels (A)."
+            },
+            "b": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Nettoyages additionnels (B)."
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false
+        },
+        "recto_verso": {
+          "type": "object",
+          "properties": {
+            "a": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Recto-verso (A)."
+            },
+            "b": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "Recto-verso (B)."
+            }
+          },
+          "required": [
+            "a",
+            "b"
+          ],
+          "additionalProperties": false
+        },
+        "encres_pct": {
+          "type": "number",
+          "description": "Couverture d'encre (100 = pleine couverture)."
+        },
+        "sans_uv": {
+          "type": "boolean",
+          "description": "Sans vernis UV."
+        },
+        "hppl": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "HPPL (nb)."
+        },
+        "texture_pct": {
+          "type": "number",
+          "description": "Texture (100 = oui)."
+        },
+        "ajustement_impression_pct": {
+          "type": "number",
+          "description": "Ajustement manuel du temps d'impression."
+        },
+        "argent_clavier": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Argent clavier (nb)."
+        },
+        "temps": {
+          "type": "object",
+          "properties": {
+            "heures": {
+              "type": [
+                "integer",
+                "number"
+              ]
+            },
+            "minutes": {
+              "type": [
+                "integer",
+                "number"
+              ]
+            },
+            "minutes_totales": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "heures",
+            "minutes",
+            "minutes_totales"
+          ],
+          "additionalProperties": false,
+          "description": "Temps d'impression {heures, minutes, minutes_totales}."
+        }
+      },
+      "required": [
+        "couleurs_visibles",
+        "faces",
+        "separateur",
+        "passes_additionnelles",
+        "ajustement_additionnel",
+        "nettoyage",
+        "recto_verso",
+        "encres_pct",
+        "sans_uv",
+        "hppl",
+        "texture_pct",
+        "ajustement_impression_pct",
+        "argent_clavier",
+        "temps"
+      ],
+      "additionalProperties": false
+    },
+    "exclusions": {
+      "type": "object",
+      "properties": {
+        "sans_adhesif": {
+          "type": "boolean",
+          "description": "Le job ne comporte pas d'adhésif."
+        },
+        "sans_materiau": {
+          "type": "boolean",
+          "description": "Matériau fourni par le client."
+        },
+        "sans_coupe": {
+          "type": "boolean",
+          "description": "Aucune découpe."
+        },
+        "sans_encre": {
+          "type": "boolean",
+          "description": "Aucune impression."
+        }
+      },
+      "required": [
+        "sans_adhesif",
+        "sans_materiau",
+        "sans_coupe",
+        "sans_encre"
+      ],
+      "additionalProperties": false
+    },
+    "materiaux": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ligne": {
+            "type": "string",
+            "description": "lexan | vinyle | polyester | alu_foil | divers | adhesif | overlaminating | xtra1..xtra4."
+          },
+          "nom": {
+            "type": "string",
+            "description": "Nom exact du matériau dans le catalogue (clé de jointure avec l'inventaire)."
+          },
+          "cout_pi2": {
+            "type": "number",
+            "description": "Coût au pied carré retenu (catalogue, ou saisi pour les lignes Xtra)."
+          },
+          "perte_pct": {
+            "type": [
+              "null",
+              "number"
+            ],
+            "description": "Perte spécifique à la ligne (lignes Xtra uniquement, sinon null)."
+          },
+          "montant": {
+            "type": "number",
+            "description": "Montant matière de la ligne = surface × coût pi² × (1 + perte) × multiplicateur."
+          },
+          "temps_debitage_min": {
+            "type": "number",
+            "description": "Temps de débitage (guillotine) de la ligne, en minutes."
+          }
+        },
+        "required": [
+          "ligne",
+          "nom",
+          "cout_pi2",
+          "perte_pct",
+          "montant",
+          "temps_debitage_min"
+        ],
+        "additionalProperties": false,
+        "description": "Lignes matériaux utilisées (les lignes vides sont omises). Ordre = ordre du formulaire."
+      },
+      "description": "Lignes matériaux utilisées (les lignes vides sont omises). Ordre = ordre du formulaire."
+    },
+    "materiaux_options": {
+      "type": "object",
+      "properties": {
+        "difference_decoupe_pct": {
+          "type": "number",
+          "description": "Différence de découpe (%)."
+        },
+        "perte_materiau_pct": {
+          "type": "number",
+          "description": "Perte matière globale additionnelle (%)."
+        },
+        "perte_adhesif_pct": {
+          "type": "number",
+          "description": "Perte adhésif globale (%)."
+        },
+        "fini": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "brillant | mat | null."
+        },
+        "montant_premask": {
+          "type": "number",
+          "description": "Montant prémask."
+        }
+      },
+      "required": [
+        "difference_decoupe_pct",
+        "perte_materiau_pct",
+        "perte_adhesif_pct",
+        "fini",
+        "montant_premask"
+      ],
+      "additionalProperties": false
+    },
+    "decoupe": {
+      "type": "object",
+      "properties": {
+        "adhesif_lamine": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "integer",
+                "number"
+              ]
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, temps}. Adhésif laminé."
+        },
+        "position_adhesif_lamine": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "integer",
+                "number"
+              ]
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, temps}. Positionnement adhésif & laminé (registre)."
+        },
+        "overlaminating": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "quantite_b": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "quantite_b",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, quantite_b, temps}. Over-laminating."
+        },
+        "premask": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, temps}. Prémask standard."
+        },
+        "protecteur": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, temps}. Protecteur."
+        },
+        "protecteur_fenetre": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "quantite_b": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "quantite_b",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, quantite_b, temps}. Protecteur fenêtre."
+        },
+        "slit": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, temps}. Slit (nb)."
+        },
+        "guillotine": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "taux": {
+              "type": "number"
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "taux",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, taux, temps}. Guillotine."
+        },
+        "assemblage": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "taux": {
+              "type": "number"
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "taux",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, taux, temps}. Assemblage."
+        },
+        "autres": {
+          "type": "object",
+          "properties": {
+            "quantite": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "taux": {
+              "type": "number"
+            },
+            "temps": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "required": [
+            "quantite",
+            "taux",
+            "temps"
+          ],
+          "additionalProperties": false,
+          "description": "{quantite, taux, temps}. Autres opérations de découpe."
+        },
+        "platine": {
+          "type": "object",
+          "properties": {
+            "adhesif": {
+              "type": "object",
+              "properties": {
+                "nb_die": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "up": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "nb_die",
+                "up",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{nb_die, up, temps}. Platine adhésif."
+            },
+            "coupe": {
+              "type": "object",
+              "properties": {
+                "nb_die": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "up": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "nb_die",
+                "up",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{nb_die, up, temps}. Platine coupe."
+            },
+            "kiss_cut": {
+              "type": "object",
+              "properties": {
+                "nb_die": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "up": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "nb_die",
+                "up",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{nb_die, up, temps}. Platine kiss-cut. nb_die vaut 0 ou 1 (interrupteur depuis v1.1)."
+            },
+            "embossage": {
+              "type": "object",
+              "properties": {
+                "nb_die": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "up": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "nb_die",
+                "up",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{nb_die, up, temps}. Platine embossage."
+            },
+            "ajustement_pct": {
+              "type": "number",
+              "description": "Ajustement manuel du temps platine."
+            },
+            "temps_total": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false,
+              "description": "{heures, minutes, minutes_totales}."
+            }
+          },
+          "required": [
+            "adhesif",
+            "coupe",
+            "kiss_cut",
+            "embossage",
+            "ajustement_pct",
+            "temps_total"
+          ],
+          "additionalProperties": false
+        },
+        "zund": {
+          "type": "object",
+          "properties": {
+            "adhesif": {
+              "type": "object",
+              "properties": {
+                "contour": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "cut_out": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "contour",
+                "cut_out",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{contour, cut_out, temps}. Zund adhésif. contour vaut 0 ou 1 (interrupteur depuis v1.1) ; cut_out = nombre de découpes intérieures par feuille."
+            },
+            "coupe": {
+              "type": "object",
+              "properties": {
+                "contour": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "cut_out": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "contour",
+                "cut_out",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{contour, cut_out, temps}. Zund coupe. Mêmes règles que adhesif."
+            },
+            "kiss_cut": {
+              "type": "object",
+              "properties": {
+                "contour": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "cut_out": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "contour",
+                "cut_out",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{contour, cut_out, temps}. Zund kiss-cut. Mêmes règles que adhesif."
+            },
+            "ajustement_pct": {
+              "type": "number",
+              "description": "Ajustement manuel du temps Zund."
+            },
+            "temps_total": {
+              "type": "object",
+              "properties": {
+                "heures": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "minutes_totales": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                }
+              },
+              "required": [
+                "heures",
+                "minutes",
+                "minutes_totales"
+              ],
+              "additionalProperties": false,
+              "description": "{heures, minutes, minutes_totales}."
+            }
+          },
+          "required": [
+            "adhesif",
+            "coupe",
+            "kiss_cut",
+            "ajustement_pct",
+            "temps_total"
+          ],
+          "additionalProperties": false
+        },
+        "finition": {
+          "type": "object",
+          "properties": {
+            "decorticage": {
+              "type": "object",
+              "properties": {
+                "quantite": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "taux": {
+                  "type": "number"
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "quantite",
+                "taux",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{quantite, taux, temps}. Décorticage."
+            },
+            "coins_ronds": {
+              "type": "object",
+              "properties": {
+                "quantite": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "taux": {
+                  "type": "number"
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "quantite",
+                "taux",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{quantite, taux, temps}. Coins ronds — OBSOLÈTE depuis la v1.2 : l'opération a été retirée de l'outil, `quantite` est toujours null. Champ conservé pour compatibilité, retiré à la prochaine version majeure."
+            },
+            "laser": {
+              "type": "object",
+              "properties": {
+                "quantite": {
+                  "type": [
+                    "string",
+                    "number",
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "ajustement": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "quantite",
+                "ajustement",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{quantite, ajustement, temps}. Laser."
+            },
+            "autres": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "libelle": {
+                    "type": "string"
+                  },
+                  "quantite": {
+                    "type": [
+                      "boolean",
+                      "null",
+                      "number",
+                      "string"
+                    ]
+                  },
+                  "taux_a": {
+                    "type": [
+                      "integer",
+                      "number"
+                    ]
+                  },
+                  "taux_b": {
+                    "type": [
+                      "integer",
+                      "number"
+                    ]
+                  },
+                  "temps": {
+                    "type": "object",
+                    "properties": {
+                      "heures": {
+                        "type": [
+                          "integer",
+                          "number"
+                        ]
+                      },
+                      "minutes": {
+                        "type": [
+                          "integer",
+                          "number"
+                        ]
+                      },
+                      "minutes_totales": {
+                        "type": [
+                          "integer",
+                          "number"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "heures",
+                      "minutes",
+                      "minutes_totales"
+                    ],
+                    "additionalProperties": false
+                  }
+                },
+                "required": [
+                  "libelle",
+                  "quantite",
+                  "taux_a",
+                  "taux_b",
+                  "temps"
+                ],
+                "additionalProperties": false,
+                "description": "{libelle, quantite, taux_a, taux_b, temps}. Deux lignes « Autres » libres."
+              },
+              "description": "{libelle, quantite, taux_a, taux_b, temps}. Deux lignes « Autres » libres."
+            },
+            "verification": {
+              "type": "object",
+              "properties": {
+                "quantite": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "taux": {
+                  "type": "number"
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "quantite",
+                "taux",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{quantite, taux, temps}. Vérification / comptage."
+            },
+            "emballage": {
+              "type": "object",
+              "properties": {
+                "quantite": {
+                  "type": [
+                    "integer",
+                    "number"
+                  ]
+                },
+                "taux": {
+                  "type": "number"
+                },
+                "temps": {
+                  "type": "object",
+                  "properties": {
+                    "heures": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes": {
+                      "type": [
+                        "integer",
+                        "number"
+                      ]
+                    },
+                    "minutes_totales": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "heures",
+                    "minutes",
+                    "minutes_totales"
+                  ],
+                  "additionalProperties": false
+                }
+              },
+              "required": [
+                "quantite",
+                "taux",
+                "temps"
+              ],
+              "additionalProperties": false,
+              "description": "{quantite, taux, temps}. Emballage."
+            }
+          },
+          "required": [
+            "decorticage",
+            "coins_ronds",
+            "laser",
+            "autres",
+            "verification",
+            "emballage"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "adhesif_lamine",
+        "position_adhesif_lamine",
+        "overlaminating",
+        "premask",
+        "protecteur",
+        "protecteur_fenetre",
+        "slit",
+        "guillotine",
+        "assemblage",
+        "autres",
+        "platine",
+        "zund",
+        "finition"
+      ],
+      "additionalProperties": false
+    },
+    "machines": {
+      "type": "object",
+      "properties": {
+        "presse": {
+          "type": "string",
+          "description": "Presse choisie (nom de la fiche machine). null = gabarit par défaut."
+        },
+        "zund": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Table de découpe Zund choisie."
+        },
+        "platine": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Platine choisie."
+        },
+        "laminoir": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Laminoir choisi."
+        },
+        "slitter": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Slitter choisi."
+        },
+        "guillotine": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Guillotine choisie."
+        },
+        "matrice_job": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Coût de la matrice (die) propre au job, en $."
+        }
+      },
+      "required": [
+        "presse",
+        "zund",
+        "platine",
+        "laminoir",
+        "slitter",
+        "guillotine",
+        "matrice_job"
+      ],
+      "additionalProperties": false
+    },
+    "sous_contrat": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "fournisseur": {
+            "type": "string",
+            "description": "Nom du fournisseur."
+          },
+          "cout": {
+            "type": "number",
+            "description": "Coût fournisseur."
+          },
+          "marge_pct": {
+            "type": "number",
+            "description": "Marge appliquée (défaut 35)."
+          },
+          "montant": {
+            "type": "number",
+            "description": "Montant facturé = coût × (1 + marge)."
+          }
+        },
+        "required": [
+          "fournisseur",
+          "cout",
+          "marge_pct",
+          "montant"
+        ],
+        "additionalProperties": false,
+        "description": "Lignes de sous-traitance renseignées (max 4, lignes vides omises)."
+      },
+      "description": "Lignes de sous-traitance renseignées (max 4, lignes vides omises)."
+    },
+    "frais": {
+      "type": "object",
+      "properties": {
+        "transport": {
+          "type": "number",
+          "description": "Transport ($)."
+        },
+        "autres": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Autres frais ($)."
+        }
+      },
+      "required": [
+        "transport",
+        "autres"
+      ],
+      "additionalProperties": false
+    },
+    "prix": {
+      "type": "object",
+      "properties": {
+        "devise": {
+          "type": "string",
+          "description": "Toujours « CAD »."
+        },
+        "facteur_marge_pct": {
+          "type": "number",
+          "description": "Facteur de marge appliqué au coût de revient (défaut 25)."
+        },
+        "cout_revient": {
+          "type": "number",
+          "description": "Coût de revient = somme des 6 catégories internes (matériaux, soies/encres, set-up découpe, sérigraphie, découpe/numérique, divers). Le sous-contrat n'en fait PAS partie."
+        },
+        "prix_vendant": {
+          "type": "number",
+          "description": "Prix vendant = coût de revient × (1 + facteur de marge) + sous-contrat (le sous-contrat porte sa propre marge, voir sous_contrat[].marge_pct)."
+        },
+        "prix_unitaire": {
+          "type": "number",
+          "description": "Prix vendant ÷ quantité (4 décimales). C'est la suggestion du moteur ; le prix engagé est prix_vendu_unitaire quand il est renseigné."
+        },
+        "prix_vendu_unitaire": {
+          "type": "number",
+          "description": "v1.1 — Prix vendu unitaire décidé par le chargé de projet (peut être =, > ou < prix_unitaire ; jamais recalculé). null si non saisi : utilisez prix_unitaire."
+        },
+        "prix_vendu_total": {
+          "type": "number",
+          "description": "v1.1 — prix_vendu_unitaire × quantité (2 décimales). null si prix_vendu_unitaire est null."
+        },
+        "taux_us": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Taux de change USD saisi (null si non renseigné)."
+        },
+        "prix_unitaire_us": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "description": "Prix unitaire en USD (null si pas de taux)."
+        },
+        "temps_total": {
+          "type": "object",
+          "properties": {
+            "heures": {
+              "type": [
+                "integer",
+                "number"
+              ]
+            },
+            "minutes": {
+              "type": [
+                "integer",
+                "number"
+              ]
+            },
+            "minutes_totales": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "heures",
+            "minutes",
+            "minutes_totales"
+          ],
+          "additionalProperties": false,
+          "description": "Temps total de main-d'œuvre {heures, minutes, minutes_totales}."
+        }
+      },
+      "required": [
+        "devise",
+        "facteur_marge_pct",
+        "cout_revient",
+        "prix_vendant",
+        "prix_unitaire",
+        "prix_vendu_unitaire",
+        "prix_vendu_total",
+        "taux_us",
+        "prix_unitaire_us",
+        "temps_total"
+      ],
+      "additionalProperties": false
+    },
+    "ventilation_couts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "string",
+            "description": "materiaux | soies_encres | setup_decoupe | serigraphie | decoupe_numerique | divers | sous_contrat."
+          },
+          "libelle": {
+            "type": "string",
+            "description": "Libellé lisible."
+          },
+          "montant": {
+            "type": "number",
+            "description": "Montant de la catégorie."
+          },
+          "temps": {
+            "type": [
+              "null",
+              "number",
+              "object"
+            ],
+            "properties": {
+              "heures": {
+                "type": [
+                  "integer",
+                  "number"
+                ]
+              },
+              "minutes": {
+                "type": [
+                  "integer",
+                  "number"
+                ]
+              },
+              "minutes_totales": {
+                "type": [
+                  "integer",
+                  "number"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "description": "{heures, minutes, minutes_totales} — null pour matériaux et sous-contrat."
+          }
+        },
+        "required": [
+          "code",
+          "libelle",
+          "montant",
+          "temps"
+        ],
+        "additionalProperties": false,
+        "description": "Les 6 catégories qui composent le coût de revient + le sous-contrat (ajouté après la marge). Toujours 7 lignes, dans cet ordre."
+      },
+      "minItems": 7,
+      "maxItems": 7,
+      "description": "Les 6 catégories qui composent le coût de revient + le sous-contrat (ajouté après la marge). Toujours 7 lignes, dans cet ordre."
+    }
+  },
+  "required": [
+    "schema_version",
+    "soumission",
+    "client",
+    "piece",
+    "production",
+    "impression",
+    "exclusions",
+    "materiaux",
+    "materiaux_options",
+    "decoupe",
+    "machines",
+    "sous_contrat",
+    "frais",
+    "prix",
+    "ventilation_couts"
+  ],
+  "additionalProperties": false,
+  "examples": [
+    {
+      "schema_version": "1.2",
+      "soumission": {
+        "id": "4153107000022542146",
+        "no_soumission": "S-2026-0142",
+        "initiales": "RB",
+        "statut": "Valide",
+        "source": "widget",
+        "date_soumission": "2026-09-10",
+        "date_requise": "2026-09-26",
+        "reference_externe": null,
+        "notes": "Client demande une épreuve PDF avant production."
+      },
+      "client": {
+        "no_client": "C-0084",
+        "nom": "BSP"
+      },
+      "piece": {
+        "no_piece": "4152464",
+        "modele": "Panneau de contrôle",
+        "autre": "",
+        "dimensions_po": {
+          "largeur": 7,
+          "hauteur": 1.4
+        },
+        "codes": {
+          "M": "M-118",
+          "R": "",
+          "E": ""
+        }
+      },
+      "production": {
+        "quantite": 50,
+        "perte_pct": 10,
+        "nb_up": 4,
+        "matrice_po": {
+          "largeur": 8,
+          "hauteur": 9.5
+        },
+        "nb_matrices": 14,
+        "nb_matrices_exact": 13.75,
+        "surface_matrice_po2": 76,
+        "multiprint": false,
+        "numerique_multiup": false,
+        "surplus": true,
+        "quantites_alternatives": [
+          {
+            "quantite": 100,
+            "cout_unitaire": 5.8064,
+            "prix_unitaire": 8.4056,
+            "prix_vendu_unitaire": 11.75
+          },
+          {
+            "quantite": 200,
+            "cout_unitaire": 3.6141,
+            "prix_unitaire": 5.0914,
+            "prix_vendu_unitaire": null
+          }
+        ]
+      },
+      "impression": {
+        "couleurs_visibles": 2,
+        "faces": {
+          "separateur": 1,
+          "recto": 1,
+          "verso": 1
+        },
+        "separateur": {
+          "haut": 1,
+          "bas": 1
+        },
+        "passes_additionnelles": {
+          "a": null,
+          "b": null
+        },
+        "ajustement_additionnel": 5,
+        "nettoyage": {
+          "a": null,
+          "b": null
+        },
+        "recto_verso": {
+          "a": null,
+          "b": null
+        },
+        "encres_pct": 100,
+        "sans_uv": false,
+        "hppl": null,
+        "texture_pct": 100,
+        "ajustement_impression_pct": 0,
+        "argent_clavier": null,
+        "temps": {
+          "heures": 2,
+          "minutes": 38,
+          "minutes_totales": 157.94
+        }
+      },
+      "exclusions": {
+        "sans_adhesif": false,
+        "sans_materiau": false,
+        "sans_coupe": false,
+        "sans_encre": false
+      },
+      "materiaux": [
+        {
+          "ligne": "lexan",
+          "nom": "Lexan Clair ,005x24x48",
+          "cout_pi2": 0.36,
+          "perte_pct": null,
+          "montant": 3.57,
+          "temps_debitage_min": 2.06
+        },
+        {
+          "ligne": "vinyle",
+          "nom": "Vinyle Blanc Opaque V-23 ,002x30x38",
+          "cout_pi2": 0.89,
+          "perte_pct": null,
+          "montant": 8.7,
+          "temps_debitage_min": 2.06
+        },
+        {
+          "ligne": "alu_foil",
+          "nom": "Foil 7942 Argent Brillant ,0037x20x27",
+          "cout_pi2": 1.62,
+          "perte_pct": null,
+          "montant": 15.89,
+          "temps_debitage_min": 2.06
+        },
+        {
+          "ligne": "adhesif",
+          "nom": "Adhésif 467 ,002x24x6480",
+          "cout_pi2": 0.68,
+          "perte_pct": null,
+          "montant": 6.69,
+          "temps_debitage_min": 0
+        }
+      ],
+      "materiaux_options": {
+        "difference_decoupe_pct": 0,
+        "perte_materiau_pct": 0,
+        "perte_adhesif_pct": 0,
+        "fini": null,
+        "montant_premask": 0
+      },
+      "decoupe": {
+        "adhesif_lamine": {
+          "quantite": 0,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "position_adhesif_lamine": {
+          "quantite": 0,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "overlaminating": {
+          "quantite": null,
+          "quantite_b": null,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "premask": {
+          "quantite": null,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "protecteur": {
+          "quantite": null,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "protecteur_fenetre": {
+          "quantite": null,
+          "quantite_b": null,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "slit": {
+          "quantite": null,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "guillotine": {
+          "quantite": null,
+          "taux": 0.05,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "assemblage": {
+          "quantite": null,
+          "taux": 0.5,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "autres": {
+          "quantite": null,
+          "taux": 0.25,
+          "temps": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "platine": {
+          "adhesif": {
+            "nb_die": null,
+            "up": null,
+            "temps": {
+              "heures": 0,
+              "minutes": 0,
+              "minutes_totales": 0
+            }
+          },
+          "coupe": {
+            "nb_die": 1,
+            "up": 4,
+            "temps": {
+              "heures": 0,
+              "minutes": 35,
+              "minutes_totales": 34.66
+            }
+          },
+          "kiss_cut": {
+            "nb_die": null,
+            "up": null,
+            "temps": {
+              "heures": 0,
+              "minutes": 0,
+              "minutes_totales": 0
+            }
+          },
+          "embossage": {
+            "nb_die": null,
+            "up": null,
+            "temps": {
+              "heures": 0,
+              "minutes": 0,
+              "minutes_totales": 0
+            }
+          },
+          "ajustement_pct": 0,
+          "temps_total": {
+            "heures": 0,
+            "minutes": 35,
+            "minutes_totales": 34.66
+          }
+        },
+        "zund": {
+          "adhesif": {
+            "contour": null,
+            "cut_out": null,
+            "temps": {
+              "heures": 0,
+              "minutes": 0,
+              "minutes_totales": 0
+            }
+          },
+          "coupe": {
+            "contour": null,
+            "cut_out": null,
+            "temps": {
+              "heures": 0,
+              "minutes": 0,
+              "minutes_totales": 0
+            }
+          },
+          "kiss_cut": {
+            "contour": null,
+            "cut_out": null,
+            "temps": {
+              "heures": 0,
+              "minutes": 0,
+              "minutes_totales": 0
+            }
+          },
+          "ajustement_pct": 0,
+          "temps_total": {
+            "heures": 0,
+            "minutes": 0,
+            "minutes_totales": 0
+          }
+        },
+        "finition": {
+          "decorticage": {
+            "quantite": null,
+            "taux": 0.2,
+            "temps": {
+              "heures": 0,
+              "minutes": 0,
+              "minutes_totales": 0
+            }
+          },
+          "coins_ronds": {
+            "quantite": null,
+            "taux": 0.015,
+            "temps": {
+              "heures": 0,
+              "minutes": 0,
+              "minutes_totales": 0
+            }
+          },
+          "laser": {
+            "quantite": null,
+            "ajustement": 0,
+            "temps": {
+              "heures": 0,
+              "minutes": 0,
+              "minutes_totales": 0
+            }
+          },
+          "autres": [
+            {
+              "libelle": "Autres",
+              "quantite": null,
+              "taux_a": 0,
+              "taux_b": 0,
+              "temps": {
+                "heures": 0,
+                "minutes": 0,
+                "minutes_totales": 0
+              }
+            },
+            {
+              "libelle": "Autres",
+              "quantite": null,
+              "taux_a": 0,
+              "taux_b": 0,
+              "temps": {
+                "heures": 0,
+                "minutes": 0,
+                "minutes_totales": 0
+              }
+            }
+          ],
+          "verification": {
+            "quantite": 1,
+            "taux": 0.02,
+            "temps": {
+              "heures": 0,
+              "minutes": 1,
+              "minutes_totales": 0.89
+            }
+          },
+          "emballage": {
+            "quantite": 1,
+            "taux": 0.01,
+            "temps": {
+              "heures": 0,
+              "minutes": 4,
+              "minutes_totales": 4.05
+            }
+          }
+        }
+      },
+      "machines": {
+        "presse": "Cameo 18",
+        "zund": null,
+        "platine": null,
+        "laminoir": null,
+        "slitter": null,
+        "guillotine": null,
+        "matrice_job": null
+      },
+      "sous_contrat": [
+        {
+          "fournisseur": "Gravure Laser Québec",
+          "cout": 85,
+          "marge_pct": 35,
+          "montant": 114.75
+        }
+      ],
+      "frais": {
+        "transport": 20,
+        "autres": null
+      },
+      "prix": {
+        "devise": "CAD",
+        "facteur_marge_pct": 25,
+        "cout_revient": 509.93,
+        "prix_vendant": 752.16,
+        "prix_unitaire": 15.0433,
+        "prix_vendu_unitaire": 15.5,
+        "prix_vendu_total": 775,
+        "taux_us": null,
+        "prix_unitaire_us": null,
+        "temps_total": {
+          "heures": 5,
+          "minutes": 28,
+          "minutes_totales": 328.14
+        }
+      },
+      "ventilation_couts": [
+        {
+          "code": "materiaux",
+          "libelle": "Matières premières",
+          "montant": 34.86,
+          "temps": null
+        },
+        {
+          "code": "soies_encres",
+          "libelle": "Soies / encres / développement",
+          "montant": 374,
+          "temps": {
+            "heures": 4,
+            "minutes": 30,
+            "minutes_totales": 270
+          }
+        },
+        {
+          "code": "setup_decoupe",
+          "libelle": "Set-up découpe",
+          "montant": 40.2,
+          "temps": {
+            "heures": 0,
+            "minutes": 25,
+            "minutes_totales": 25
+          }
+        },
+        {
+          "code": "serigraphie",
+          "libelle": "Sérigraphie",
+          "montant": 24.6,
+          "temps": {
+            "heures": 0,
+            "minutes": 20,
+            "minutes_totales": 19.94
+          }
+        },
+        {
+          "code": "decoupe_numerique",
+          "libelle": "Découpe / numérique",
+          "montant": 10.18,
+          "temps": {
+            "heures": 0,
+            "minutes": 8,
+            "minutes_totales": 8.25
+          }
+        },
+        {
+          "code": "divers",
+          "libelle": "Divers",
+          "montant": 26.1,
+          "temps": {
+            "heures": 0,
+            "minutes": 5,
+            "minutes_totales": 4.95
+          }
+        },
+        {
+          "code": "sous_contrat",
+          "libelle": "Sous-contrat",
+          "montant": 114.75,
+          "temps": null
+        }
+      ]
+    }
+  ]
+}

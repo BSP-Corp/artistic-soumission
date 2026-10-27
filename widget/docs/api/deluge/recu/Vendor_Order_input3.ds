@@ -1,0 +1,26 @@
+subTotal = 0;
+taxes_total = 0;
+for each  itemIndex in input.Products
+{
+    if(itemIndex.Unit_price == null)
+    {
+        itemIndex.Unit_price=0.00;
+    }
+    if(itemIndex.Qty == null)
+    {
+        itemIndex.Qty=1;
+    }
+    itemIndex.Total_Price=itemIndex.Unit_price * itemIndex.Qty;
+    subTotal = subTotal + itemIndex.Total_Price;
+    taxes_total = taxes_total + itemIndex.Total_Price * ifnull(itemIndex.Taxes.Percentage,ifnull(input.Taxes.Percentage,0)) / 100;
+    //  if(!itemIndex.Alerted && input.Sales_Order == null && itemIndex.Qty < ifnull(SF_Vendors[Vendor == input.Vendor && Product == itemIndex.P_N_SKU].Qty_Min,0))
+    //  {
+    //      alert "Veuillez entrer une quantité supérieure à la quantité minimale du fournisseur (" + SF_Vendors[Vendor == input.Vendor && Product == itemIndex.P_N_SKU].Qty_Min + ") pour le produit " + itemIndex.P_N_SKU.SKU;
+    //      itemIndex.Alerted=true;
+    //  }
+}
+input.Sub_Total = subTotal;
+// input.Taxes_Total = input.Sub_Total * ifnull(input.Taxes.Percent,0) / 100;
+input.Taxes_Total = taxes_total;
+input.Total_Price = input.Taxes_Total + input.Sub_Total + input.Transportation_cost;
+​

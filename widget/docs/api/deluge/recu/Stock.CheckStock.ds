@@ -1,0 +1,30 @@
+int Stock.CheckStock(int warehouseId, int productId)
+{
+	stockRec = Stock[Warehouse == warehouseId && Product == productId];
+	if(stockRec.count() > 0)
+	{
+		return stockRec.ID;
+	}
+	warehouseRec = Warehouse[ID == warehouseId];
+	stockId = insert into Stock
+	[
+		Added_User=zoho.loginuser
+		Added=0
+		In_Draft=0
+		In_Purchase=0
+		In_Sale=0
+		In_stock=0
+		Max=0
+		Min=0
+		Product=productId
+		QTY_RESERVED=0
+		Qty_Awaiting=0
+		Removed=0
+		Stock_Available=0
+		To_Send=0
+		Value=0
+		WO_Open=0
+		Warehouse=warehouseId
+	];
+	return stockId;
+}

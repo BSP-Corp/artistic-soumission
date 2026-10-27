@@ -1,0 +1,1969 @@
+/* Canevas — habillage Groupe Canva (charbon + orange), disposition inspirée du classeur Excel
+   FT_Soumission mais reskinnée en cartes modernes : mêmes cellules/liaisons de données, mêmes
+   colSpan/rowSpan (zéro risque de calcul), seul l'habillage visuel change. */
+:root {
+  --ink: #1b1b1b;
+  --ink-2: #2a2a2a;
+  --orange: #e8730a;
+  --orange-dk: #c75b00;
+  --orange-tint: #fff4e8;
+  --orange-bd: #ebcba6;
+  --calc: #f6f1ea;
+  --calc-ink: #8a5a2c;
+  --flag: #fbe2c8;
+  --hdr2: #f3ede4;
+  --line: #e6e0d6;
+  --line-2: #ede8df;
+  --page: #f4f2ee;
+  --surface: #ffffff;
+  --surface-2: #faf8f5;
+  --text-2: #6b6660;
+  --text-3: #938d84;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --shadow: 0 1px 2px rgba(30, 24, 16, 0.04), 0 4px 14px rgba(30, 24, 16, 0.05);
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--page);
+  font: 13px "Segoe UI", Arial, Helvetica, sans-serif;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.w100 {
+  width: 100%;
+}
+
+/* ── barre de marque ── */
+.topbar {
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 24px;
+  flex-wrap: wrap;
+}
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  line-height: 1;
+}
+.logo .mark {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--orange);
+  border-radius: 4px;
+  transform: rotate(45deg) scale(0.82);
+}
+.logo .wm {
+  font-size: 14px;
+}
+.logo .wm small {
+  display: block;
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.75;
+  letter-spacing: 0.4px;
+}
+.logo .wm b {
+  font-weight: 800;
+}
+.topbar .doc {
+  font-size: 13px;
+  color: #cfcfcf;
+  border-left: 1px solid #3a3a3a;
+  padding-left: 16px;
+}
+.topbar .doc b {
+  color: #fff;
+}
+.topbar .sp {
+  flex: 1;
+}
+.topbar .msg {
+  font-size: 12px;
+  color: #ffd9b3;
+}
+.btn {
+  font: 600 12.5px "Segoe UI", Arial, sans-serif;
+  padding: 8px 15px;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.2px;
+  transition: background-color 0.12s ease, border-color 0.12s ease, opacity 0.12s ease;
+}
+.btn.ghost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid #4a4a4a;
+}
+.btn.ghost:hover {
+  border-color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+.btn.solid {
+  background: var(--orange);
+  color: #fff;
+  border: 1px solid var(--orange);
+}
+.btn.solid:hover {
+  background: var(--orange-dk);
+  border-color: var(--orange-dk);
+}
+.btn.solid::after {
+  content: " ›";
+  font-weight: 800;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+
+/* ── feuille ── */
+.sheet {
+  max-width: 1560px;
+  margin: 20px auto 0;
+  background: transparent;
+  padding: 0 22px 22px;
+  overflow-x: auto;
+}
+.titlebar {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding-top: 4px;
+}
+.titlebar h1 {
+  font-size: 17px;
+  font-weight: 800;
+  margin: 0 auto 0 0;
+  letter-spacing: 0.2px;
+  color: var(--ink);
+}
+.titlebar h1 span {
+  color: var(--orange);
+  font-weight: 700;
+}
+.titlebar .rev {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+table {
+  border-collapse: collapse;
+}
+td {
+  border: 1px solid var(--line-2);
+  padding: 6px 10px;
+  height: 30px;
+  text-align: left;
+  white-space: nowrap;
+  background: var(--surface);
+  font-size: 13px;
+}
+table.blk {
+  border: none;
+}
+/* carte moderne enveloppant chaque bloc (mêmes tables/tr/td à l'intérieur — voir App.tsx) */
+.carte {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  /* auto et non hidden : si un bloc dépasse un jour la largeur de sa carte, il devient
+     défilable au lieu d'être rogné SANS AUCUN SIGNE (bug du 22/07 : 177 px du bloc
+     Sérigraphie disparaissaient purement et simplement). */
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.carte table.blk td {
+  border-color: var(--line-2);
+}
+.carte-prix {
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  overflow: visible;
+}
+.carte-resume {
+  border-top: 3px solid var(--orange);
+  margin-top: 6px;
+}
+td.n {
+  border: 0;
+  background: transparent;
+}
+td.noborder {
+  border: 0;
+}
+td.g {
+  background: var(--hdr2);
+  font-weight: 600;
+}
+td.o {
+  background: var(--flag);
+}
+td.bl {
+  background: var(--hdr2);
+  font-weight: 700;
+  text-align: center;
+  width: 30px;
+}
+td.hd {
+  background: var(--surface-2);
+  color: var(--ink);
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  border-color: var(--line-2);
+  border-bottom: 2px solid var(--orange-bd);
+}
+td.lb {
+  color: var(--text-2);
+}
+td.rt {
+  text-align: right;
+}
+td.ct {
+  text-align: center;
+}
+td.bold {
+  font-weight: 700;
+}
+td.ctv {
+  text-align: center;
+  vertical-align: middle;
+  width: 20px;
+}
+td.orangeband {
+  background: var(--orange);
+  color: #fff;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border-color: var(--orange);
+}
+.redtx {
+  color: var(--orange-dk);
+  font-size: 11.5px;
+  line-height: 1.3;
+  margin-bottom: 6px;
+}
+.vert {
+  display: inline-block;
+  text-align: center;
+  line-height: 1.05;
+  font-weight: 800;
+  font-size: 10px;
+  color: var(--orange-dk);
+}
+
+/* saisies : neutre par défaut, la couleur signale l'interaction (survol/focus) plutôt que
+   d'être partout — corrige l'effet « rien ne se distingue quand on interagit ». */
+input.in,
+select.in {
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 4px 7px;
+  width: 100%;
+  min-width: 0;
+  color: var(--ink);
+  transition: border-color 0.12s ease, background-color 0.12s ease, box-shadow 0.12s ease;
+}
+input.in:hover,
+select.in:hover {
+  border-color: var(--orange-bd);
+  background: var(--orange-tint);
+}
+/* alignement : une saisie seule dans sa cellule remplit la cellule →
+   les champs d'une même colonne s'alignent parfaitement */
+td > input.in:only-child {
+  width: 100% !important;
+  display: block;
+}
+td > .pctwrap:only-child {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 3px;
+}
+td > .pctwrap:only-child input.in {
+  width: 100% !important;
+  flex: 1;
+}
+/* une saisie ne doit JAMAIS se réduire au point de rogner sa valeur : dans les colonnes
+   étroites du gabarit Excel, « flex: 1 » écrasait le champ à 18 px (« 0 » illisible). */
+input.in,
+select.in {
+  min-width: 38px;
+}
+/* libellé + champ sur la même ligne, champ qui remplit le reste */
+.inline-champ {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+}
+.inline-champ > input.in {
+  flex: 1;
+  width: auto !important;
+  min-width: 36px;
+}
+.inline-champ > .pctwrap {
+  flex: 1;
+}
+.inline-champ > .pctwrap input.in {
+  width: 100% !important;
+}
+/* un % en fin de groupe reste compact (ex. Perte des lignes Xtra) */
+.inline-champ > .pctwrap:last-child {
+  flex: 0 0 64px;
+}
+.dimtx {
+  color: #8a8a8a;
+  font-size: 11.5px;
+}
+input.in:focus,
+select.in:focus {
+  background: #fff;
+  border-color: var(--orange);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--orange-tint);
+}
+input.in.num {
+  text-align: right;
+}
+input.in.mat {
+  width: 100% !important;
+}
+.pctwrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.pcts {
+  color: #888;
+  font-size: 11px;
+}
+
+/* drapeaux */
+.flag {
+  width: 26px;
+  height: 19px;
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  color: var(--orange-dk);
+  vertical-align: middle;
+  transition: background-color 0.12s ease, border-color 0.12s ease;
+}
+.flag:hover {
+  border-color: var(--orange-bd);
+  background: var(--orange-tint);
+}
+.flag.on {
+  background: var(--orange);
+  color: #fff;
+  border-color: var(--orange);
+  font-weight: 700;
+}
+.flag:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 1px;
+}
+.flagmini {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  background: var(--flag);
+  border: 1px solid var(--orange-bd);
+  border-radius: 2px;
+}
+.pill {
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+
+/* calculé : traité comme une donnée tranquille (pas une case grise) — se distingue au survol */
+td.calccell {
+  background: transparent;
+  color: var(--calc-ink);
+  font-weight: 700;
+}
+.calc {
+  background: var(--calc);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+}
+
+/* disposition */
+.cols {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.leftcol {
+  width: 460px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.rightarea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.toprow {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.midcol {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.clientcol {
+  width: 400px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* bloc prix vedette — la carte héro : le chiffre qui répond « combien ça coûte » d'un coup d'œil */
+.pricewrap {
+  display: flex;
+  gap: 10px;
+}
+/* colonne latérale (Valeur / $Cda / vs / taux US) : même table que le prix, séparée visuellement */
+.pricecard td.sidecol {
+  border-left: 2px solid #4a4a4a;
+}
+table.pricecard {
+  border: 1px solid #3a3a3a;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+table.pricecard td {
+  border-color: #363636;
+  background: var(--ink);
+  color: #ededed;
+  padding: 8px 12px;
+}
+table.pricecard td.lb {
+  color: #a8a8a8;
+}
+table.pricecard td.big {
+  color: var(--orange);
+  font-weight: 800;
+  font-size: 20px;
+}
+table.pricecard td.or {
+  color: var(--orange);
+}
+table.pricecard td.dark input.in {
+  background: #2e2e2e;
+  color: #fff;
+  border-color: #4a4a4a;
+}
+table.pricecard td.dark input.in:hover {
+  border-color: #5a5a5a;
+  background: #333;
+}
+table.pricecard .pcts {
+  color: #999;
+}
+
+/* résumé bas */
+table.resume {
+  margin-top: 0;
+}
+table.resume .soushd td {
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+/* légende */
+.legend {
+  max-width: 1080px;
+  margin: 8px auto 30px;
+  padding: 0 4px;
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.legend .sw {
+  display: inline-block;
+  width: 18px;
+  height: 12px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  margin-right: 5px;
+  vertical-align: -1px;
+}
+.legend .in-sw {
+  background: var(--orange-tint);
+  border-color: var(--orange-bd);
+}
+.legend .calc-sw {
+  background: var(--calc);
+}
+.legend .hd-sw {
+  background: var(--surface-2);
+  border-color: var(--orange-bd);
+}
+.legend .flag-sw {
+  background: var(--flag);
+}
+
+/* ── infobulle « comment ce chiffre est calculé » ── */
+.infobulle {
+  position: fixed;
+  z-index: 1000;
+  max-width: 380px;
+  background: var(--ink);
+  color: #ededed;
+  border: 1px solid #3a3a3a;
+  border-top: 3px solid var(--orange);
+  border-radius: 3px;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.3);
+  padding: 10px 12px;
+  font-size: 12px;
+  pointer-events: none;
+  animation: ib-in 0.12s ease-out;
+}
+@keyframes ib-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.ib-titre {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: baseline;
+}
+.ib-label {
+  font-weight: 700;
+  color: #fff;
+}
+.ib-cell {
+  font-family: Consolas, monospace;
+  font-size: 10.5px;
+  color: #9a9a9a;
+}
+.ib-valeur {
+  color: var(--orange);
+  font-weight: 800;
+  font-size: 14px;
+  margin: 3px 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+.ib-saisie {
+  color: #bdbdbd;
+  font-style: italic;
+}
+.ib-formule {
+  display: block;
+  font-family: Consolas, monospace;
+  font-size: 10.5px;
+  color: #ffd9b3;
+  background: #2a2a2a;
+  border-radius: 2px;
+  padding: 5px 7px;
+  margin-bottom: 6px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 76px;
+  overflow: hidden;
+}
+.ib-deps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ib-deps li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 1.5px 0;
+  border-top: 1px solid #2e2e2e;
+}
+.ib-dep-label {
+  color: #cfcfcf;
+}
+.ib-dep-val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* valeur calculée : halo bref quand elle change */
+.va {
+  border-radius: var(--radius-sm);
+  outline: none;
+  padding: 1px 3px;
+}
+.va:hover,
+.va:focus-visible {
+  box-shadow: inset 0 0 0 1px var(--orange);
+  background: var(--orange-tint);
+  cursor: help;
+}
+.va.flash {
+  animation: va-flash 0.7s ease-out;
+}
+@keyframes va-flash {
+  0% {
+    background: #ffd9b3;
+  }
+  100% {
+    background: transparent;
+  }
+}
+td.calccell:hover {
+  background: var(--surface-2);
+}
+
+/* champ matériau : recherche + rejet visuel d'un nom hors catalogue */
+input.in.mat::placeholder {
+  color: #b08d64;
+  font-style: italic;
+}
+input.in.invalide {
+  animation: secousse 0.3s;
+  border-color: #c22;
+  background: #ffecec;
+}
+@keyframes secousse {
+  25% {
+    transform: translateX(-2px);
+  }
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+/* table QTÉ dynamique */
+td.qtecell {
+  white-space: nowrap;
+}
+td.qtecell > input.in {
+  width: calc(100% - 26px) !important;
+  display: inline-block;
+  vertical-align: middle;
+}
+.suppr-ligne {
+  width: 20px;
+  height: 20px;
+  margin-left: 4px;
+  border: 1px solid var(--line);
+  background: #fff;
+  color: #a33;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 11px;
+  line-height: 1;
+  vertical-align: middle;
+}
+.suppr-ligne:hover {
+  background: #ffecec;
+  border-color: #c66;
+}
+td.ajout-qte-cell {
+  text-align: left;
+  background: var(--surface-2);
+}
+.ajout-qte {
+  border: 0;
+  background: none;
+  color: var(--orange-dk);
+  font: 600 12.5px "Segoe UI", Arial, sans-serif;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.ajout-qte:hover {
+  text-decoration: underline;
+}
+.ajout-qte:disabled {
+  color: #aaa;
+  cursor: default;
+  text-decoration: none;
+}
+
+/* barre de totaux épinglée — l'essentiel visible en tout temps ; le Vendu est le héros */
+.totalsbar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 900;
+  background: var(--ink);
+  color: #ededed;
+  display: flex;
+  gap: 34px;
+  justify-content: center;
+  align-items: baseline;
+  padding: 10px 20px;
+  border-top: 3px solid var(--orange);
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
+}
+.tb-item {
+  display: inline-flex;
+  gap: 8px;
+  align-items: baseline;
+  font-weight: 700;
+}
+.tb-l {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9a9a9a;
+  font-weight: 700;
+}
+.tb-total .va {
+  color: var(--orange);
+  font-size: 19px;
+  font-weight: 800;
+}
+.legend {
+  margin-bottom: 64px; /* laisse la place à la barre de totaux */
+}
+.titlebar .hint {
+  font-size: 11px;
+  color: #9a9a9a;
+  margin-right: auto;
+  padding-left: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .va.flash,
+  .infobulle,
+  input.in.invalide {
+    animation: none;
+  }
+}
+
+@media print {
+  .topbar,
+  .legend,
+  .totalsbar,
+  .infobulle {
+    display: none;
+  }
+  .sheet {
+    box-shadow: none;
+    border: 0;
+    margin: 0;
+    max-width: none;
+  }
+  body {
+    background: #fff;
+  }
+}
+
+/* ── popups (Guide des paramètres / Taux & paramètres) ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 18, 16, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 24px;
+}
+.modal {
+  background: #fff;
+  border-radius: 5px;
+  border-top: 4px solid var(--orange);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+  width: min(880px, 100%);
+  max-height: min(720px, 92vh);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 22px;
+  background: var(--ink);
+  color: #fff;
+}
+.modal-head h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+.modal-close {
+  background: transparent;
+  border: 1px solid #fff;
+  color: #fff;
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+.modal-close:hover {
+  background: var(--orange);
+  border-color: var(--orange);
+}
+.modal-body {
+  padding: 18px 24px 26px;
+  overflow-y: auto;
+}
+.modal-intro {
+  color: #444;
+  max-width: 70ch;
+}
+.modal-body h3 {
+  font-size: 13.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-left: 4px solid var(--orange);
+  padding-left: 10px;
+  margin: 24px 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-body h3:first-of-type {
+  margin-top: 4px;
+}
+.guide-carte {
+  background: #fafafa;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.guide-carte b {
+  color: var(--ink);
+  font-size: 13.5px;
+}
+.guide-carte ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+.guide-explication {
+  color: #444;
+  margin: 6px 0 0;
+  line-height: 1.5;
+}
+.guide-exemple {
+  color: var(--orange-dk);
+  font-weight: 600;
+  margin-top: 4px;
+}
+.guide-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+.guide-table td {
+  border: 1px solid var(--line);
+  padding: 6px 10px;
+  vertical-align: top;
+}
+.guide-recherche {
+  font: 12.5px "Segoe UI", Arial, sans-serif;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  width: 220px;
+}
+
+/* Taux & paramètres */
+.modal-body-split {
+  display: flex;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  flex: 1;
+}
+.taux-liste {
+  width: 320px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  padding: 14px 16px;
+  background: #fafafa;
+}
+.taux-recherche {
+  width: 100%;
+  margin-bottom: 10px;
+}
+.taux-note {
+  font-size: 12px;
+  color: var(--orange-dk);
+  background: var(--orange-tint);
+  border: 1px solid var(--orange-bd);
+  border-radius: 3px;
+  padding: 6px 9px;
+}
+.taux-section-titre {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #888;
+  margin: 14px 0 4px;
+  font-weight: 700;
+}
+.taux-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 6px 10px;
+  margin-bottom: 4px;
+  cursor: pointer;
+  font: 12.5px "Segoe UI", Arial, sans-serif;
+}
+.taux-item:hover {
+  border-color: var(--orange);
+}
+.taux-item.actif {
+  background: var(--orange-tint);
+  border-color: var(--orange);
+}
+.taux-item-code {
+  font-weight: 700;
+  color: var(--orange-dk);
+  font-family: Consolas, monospace;
+  font-size: 11.5px;
+}
+.taux-item-libelle {
+  color: #444;
+}
+.taux-detail {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+}
+.taux-detail h3 {
+  margin: 0 0 2px;
+  font-family: Consolas, monospace;
+  font-size: 17px;
+  color: var(--orange-dk);
+  border: none;
+  padding: 0;
+}
+.taux-detail-libelle {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 4px 0 2px;
+}
+.taux-champs {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 16px 0;
+}
+.taux-champ {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.taux-champ span {
+  width: 110px;
+  font-size: 12.5px;
+  color: #555;
+}
+.taux-champ input {
+  font: 13px "Segoe UI", Arial, sans-serif;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  width: 120px;
+}
+.taux-cell {
+  font-family: Consolas, monospace;
+  font-size: 11px;
+  color: #888;
+  background: var(--calc);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.taux-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+.btn.ghost-fonce {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+}
+.taux-msg {
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--orange-dk);
+  font-weight: 600;
+}
+
+/* ── Onglet Administration — tableau de bord ─────────────────────────────── */
+.modal-admin {
+  width: min(1180px, 100%);
+  max-height: min(800px, 92vh);
+}
+.admin-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+.admin-icone {
+  flex-shrink: 0;
+}
+
+/* barre latérale */
+.admin-sidebar {
+  width: 250px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--line);
+  background: #faf9f7;
+  overflow-y: auto;
+  padding: 16px 12px;
+}
+.admin-note-sidebar {
+  margin-bottom: 12px;
+}
+.admin-sidebar-groupe {
+  margin-bottom: 20px;
+}
+.admin-sidebar-titre {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #969696;
+  font-weight: 700;
+  margin: 4px 8px 8px;
+}
+.admin-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 2px;
+  cursor: pointer;
+  font: 12.5px "Segoe UI", Arial, sans-serif;
+  color: var(--ink-2);
+  color-scheme: light;
+}
+.admin-nav-item:hover {
+  background: #f0ede9;
+}
+.admin-nav-item.actif {
+  background: var(--orange-tint);
+  color: var(--orange-dk);
+  font-weight: 700;
+}
+.admin-nav-item.actif .admin-icone {
+  color: var(--orange-dk);
+}
+.admin-nav-compte {
+  margin-left: auto;
+  font-size: 10.5px;
+  color: #9a9a9a;
+  background: #ece9e5;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-weight: 700;
+}
+.admin-nav-item.actif .admin-nav-compte {
+  background: var(--orange-bd);
+  color: var(--orange-dk);
+}
+
+/* contenu principal */
+.admin-main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 28px 30px;
+}
+.admin-main-header {
+  margin-bottom: 18px;
+}
+.admin-main-header h3 {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+}
+.admin-main-soustitre {
+  margin: 0;
+  font-size: 12.5px;
+  color: #777;
+}
+.admin-main-header-retour {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 14px;
+}
+.admin-main-header-retour h3 {
+  order: 1;
+}
+.admin-retour {
+  order: 0;
+  width: 100%;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--orange-dk);
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  padding: 0 0 6px;
+  text-align: left;
+}
+.admin-retour:hover {
+  text-decoration: underline;
+}
+.admin-main-header-retour .admin-main-soustitre {
+  order: 2;
+  flex-basis: 100%;
+}
+.admin-msg-fixe {
+  margin: 0 0 14px;
+}
+
+/* cartes de paramètres */
+.admin-cartes {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.admin-carte {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px 20px 20px;
+  box-shadow: 0 1px 2px rgba(20, 18, 16, 0.04);
+}
+.admin-carte-titre {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+.admin-carte-titre .admin-icone {
+  color: var(--orange);
+}
+.admin-grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px 22px;
+}
+.admin-champ {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-height: 40px;
+  justify-content: center;
+}
+.admin-champ-label {
+  font-size: 10.5px;
+  color: #8a8a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.admin-champ-valeur {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 1px 0;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;
+  width: fit-content;
+}
+.admin-champ-valeur:not(:disabled):hover {
+  color: var(--orange-dk);
+  border-bottom-color: var(--orange-bd);
+}
+.admin-champ-valeur:disabled {
+  cursor: default;
+}
+.admin-champ-input {
+  font: 700 14px "Segoe UI", Arial, sans-serif;
+  padding: 4px 7px;
+  border: 1px solid var(--orange);
+  border-radius: 4px;
+  width: 100%;
+  max-width: 140px;
+  color: var(--ink);
+}
+
+/* machines */
+.admin-ajouter {
+  margin: 0 0 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-machine-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+.admin-machine-carte {
+  position: relative;
+  text-align: left;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 14px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.admin-machine-carte:hover {
+  border-color: var(--orange);
+  box-shadow: 0 1px 3px rgba(20, 18, 16, 0.08);
+}
+.admin-machine-carte.inactif {
+  opacity: 0.5;
+}
+.admin-machine-nom {
+  font-weight: 800;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.admin-machine-meta {
+  font-size: 11.5px;
+  color: #888;
+}
+.admin-machine-taux {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--orange-dk);
+  margin-top: 4px;
+}
+.admin-machine-badge {
+  align-self: flex-start;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #a33;
+  background: #fbe4e4;
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-top: 2px;
+}
+.admin-champs-machine {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  margin-bottom: 16px;
+}
+.admin-champs-machine .taux-champ {
+  display: flex;
+}
+
+/* ── sélection machines (presse / zund / platine) ── */
+.sel-machine {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--orange-bd);
+  border-radius: var(--radius-sm);
+  background: var(--orange-tint);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.sel-machine:focus {
+  outline: 2px solid var(--orange);
+  outline-offset: 0;
+}
+/* ligne d'info sous un sélecteur machine : pleine largeur du bloc, texte qui se replie
+   au lieu de forcer la table à s'élargir */
+.machine-info {
+  color: var(--text-3);
+  font-size: 11px;
+  font-style: italic;
+  line-height: 1.45;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.machine-warn {
+  color: #b3341f;
+  background: #fdeeea;
+  font-size: 11.5px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── comparatif Zund vs Platine ── */
+.comparatif {
+  padding: 10px 12px;
+}
+.cmp-titre {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 11.5px;
+  margin-bottom: 8px;
+}
+.cmp-titre span {
+  display: block;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-3);
+  font-size: 11px;
+}
+.cmp-lignes {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cmp-box {
+  flex: 1 1 160px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  background: var(--surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.cmp-box b {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-2);
+}
+.cmp-box.gagnant {
+  border-color: var(--orange);
+  box-shadow: inset 0 0 0 1px var(--orange);
+  background: var(--orange-tint);
+}
+.cmp-pied {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.cmp-matrice {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.cmp-matrice input {
+  width: 72px;
+  padding: 3px 6px;
+  border: 1px solid var(--orange-bd);
+  border-radius: var(--radius-sm);
+  background: var(--orange-tint);
+  font: inherit;
+  text-align: right;
+}
+.cmp-verdict {
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.cmp-vide {
+  color: var(--text-3);
+  font-size: 11.5px;
+  font-style: italic;
+}
+
+/* ── popup Soumissions enregistrées ── */
+.soum-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
+.soum-item {
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+}
+.soum-ouvrir {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s, background 0.12s;
+}
+.soum-ouvrir:hover:not(:disabled) {
+  border-color: var(--orange);
+  background: var(--orange-tint);
+}
+.soum-ouvrir:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.soum-client {
+  font-weight: 700;
+  min-width: 120px;
+}
+.soum-detail {
+  flex: 1;
+  color: var(--text-2);
+  font-size: 12px;
+}
+.soum-total {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--orange-dk);
+}
+.soum-suppr {
+  width: 34px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--text-3);
+  cursor: pointer;
+  font: inherit;
+}
+.soum-suppr:hover,
+.soum-suppr.confirme {
+  border-color: #b3341f;
+  color: #b3341f;
+  background: #fdeeea;
+}
+
+/* ── v1.1 (handoff du 15 sept.) ─────────────────────────────────────────── */
+
+/* champ alimenté par le bon de travail : visible, grisé, non modifiable */
+input.in.ro {
+  background: var(--hdr2);
+  color: var(--text-2);
+  border-style: dashed;
+  cursor: not-allowed;
+}
+input.in.ro:hover,
+input.in.ro:focus {
+  border-color: var(--line);
+  box-shadow: none;
+}
+
+/* prix vendu manuel : la suggestion du moteur en grisé tant que rien n'est décidé */
+td.venducell input.in {
+  text-align: right;
+  font-weight: 700;
+}
+td.venducell input.in::placeholder {
+  color: #b08d64;
+  font-weight: 500;
+  font-style: italic;
+}
+td.venducell.big input.in {
+  font-size: 15px;
+  width: 100% !important;
+}
+.totalsbar .va.suggere {
+  color: #c9a27a;
+  font-style: italic;
+}
+
+/* drapeaux « SANS » : posés par la vérification, jamais tapés à la main */
+.sans-ok {
+  font: 600 10.5px "Segoe UI", Arial, sans-serif;
+  color: var(--orange-dk);
+  background: var(--orange-tint);
+  border: 1px solid var(--orange-bd);
+  border-radius: 20px;
+  padding: 1px 7px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.sans-ok span {
+  color: #b3341f;
+  margin-left: 3px;
+}
+.sans-ok:hover {
+  border-color: #b3341f;
+}
+.sans-vide {
+  color: var(--text-3);
+}
+
+/* bouton Vérifier : signale qu'il reste des alertes */
+.btn.ghost.alerte {
+  border-color: var(--orange);
+  color: #ffd2a8;
+}
+.btn.petit {
+  padding: 4px 11px;
+  font-size: 12px;
+}
+.btn.solid.petit::after {
+  content: "";
+}
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* popup de vérification */
+.modal-verif {
+  width: min(720px, 100%);
+}
+.verif-ok {
+  color: #12805a;
+  font-weight: 700;
+  font-size: 14px;
+}
+.verif-liste {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.verif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+.verif-item.bloquant {
+  border-color: #efc4bb;
+  background: #fdf3f0;
+}
+.verif-item.confirmation {
+  border-color: var(--orange-bd);
+  background: var(--orange-tint);
+}
+.verif-item.regle {
+  opacity: 0.6;
+}
+.verif-puce {
+  flex: 0 0 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 12px;
+  color: #fff;
+  background: var(--text-3);
+}
+.verif-item.bloquant .verif-puce {
+  background: #b3341f;
+}
+.verif-item.confirmation .verif-puce {
+  background: var(--orange);
+}
+.verif-item.regle .verif-puce {
+  background: #12805a;
+}
+.verif-texte {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.verif-msg {
+  font-weight: 600;
+}
+.verif-conseil {
+  font-size: 12px;
+  color: var(--text-2);
+}
+.verif-boutons {
+  display: inline-flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.verif-boutons .btn.ghost {
+  color: var(--ink);
+  border-color: var(--line);
+}
+.verif-boutons .btn.ghost:hover {
+  border-color: var(--ink);
+  background: transparent;
+}
+.verif-etiquette {
+  flex: 0 0 auto;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #b3341f;
+  align-self: center;
+}
+.verif-pied {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+.verif-pied .btn.ghost {
+  color: var(--ink);
+  border-color: var(--line-2);
+}
+.verif-pied .btn.ghost:hover {
+  border-color: var(--ink);
+  background: transparent;
+}
+
+/* ── corr. 5 : scénarios de la table Qté ── */
+tr.scenario td.qtecell {
+  white-space: nowrap;
+}
+.qte-sel {
+  width: 22px;
+  height: 20px;
+  margin-right: 4px;
+  border: 0;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 13px;
+  cursor: pointer;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.qte-sel:hover:not(:disabled) {
+  color: var(--orange);
+  background: var(--orange-tint);
+}
+.qte-sel[aria-pressed="true"] {
+  color: var(--orange);
+}
+.qte-sel:disabled {
+  color: var(--line-2);
+  cursor: default;
+}
+tr.scenario.actif td {
+  background: var(--orange-tint);
+}
+tr.scenario.actif td.qtecell input.in {
+  border-color: var(--orange-bd);
+  font-weight: 700;
+}
+.suppr-ligne:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* ── 28 sept. : prix caché tant que la validation prix n'est pas faite (§2) ── */
+.prix-cache {
+  display: inline-block;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 600;
+  color: var(--orange-dk);
+  background: var(--orange-tint);
+  border: 1px dashed var(--orange-bd);
+  border-radius: var(--radius-sm);
+  padding: 1px 7px;
+  cursor: help;
+  white-space: nowrap;
+}
+.totalsbar .prix-cache {
+  background: transparent;
+  border-color: #6a5540;
+  color: #e8a765;
+}
+/* rappel non bloquant (§4) */
+.verif-item.info {
+  border-color: #bcd4ea;
+  background: #f2f7fc;
+}
+.verif-item.info .verif-puce {
+  background: #2f6fa8;
+  font-style: italic;
+}
+.verif-etiquette.rappel {
+  color: #2f6fa8;
+}
+
+/* champ date : calendrier natif, et repli texte quand la valeur héritée n'est pas une date */
+input.in[type="date"] {
+  width: 100%;
+  font: inherit;
+}
+input.in.date-libre {
+  border-style: dashed;
+  border-color: var(--orange-bd);
+}
+
+/* Dernier coût d'achat du matériau, affiché sous le coût pi². Volontairement discret :
+   il est indicatif et ne doit pas concurrencer visuellement le coût qui sert au calcul. */
+.achat-dernier {
+  font-size: 10px;
+  line-height: 1.2;
+  color: #8a8f98;
+  white-space: nowrap;
+}
+
+/* ── proposition client (popup + impression PDF) ──────────────────────────────
+   Calquée sur le gabarit Artistic (soumission S-26635) : le document est dessiné à la
+   largeur d'une lettre, ce qu'on voit à l'écran est ce qui sort de l'imprimante virtuelle
+   du navigateur. À l'impression, `body.mode-proposition` (posé par le popup) ne laisse que
+   ce document sur le papier. */
+.modal-proposition {
+  width: min(900px, 100%);
+  max-height: 94vh;
+}
+.prop-doc {
+  background: #fff;
+  color: var(--ink);
+  padding: 6px 22px 18px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+/* En-tête du gabarit : logo centré, coordonnées centrées, puis le bandeau. */
+.prop-entete {
+  padding: 10px 0 10px;
+  text-align: center;
+}
+.prop-logo {
+  display: block;
+  width: 190px;
+  max-width: 60%;
+  height: auto;
+  margin: 0 auto 8px;
+}
+.prop-emetteur {
+  color: var(--text-2);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.prop-banniere {
+  /* gris foncé du gabarit Artistic, pas une couleur du thème : ce bandeau doit sortir
+     identique sur le papier quel que soit le thème de l'écran */
+  background: #595959;
+  color: #fff;
+  padding: 5px 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+/* À / To + Client à gauche, Date + N° de soumission à droite, comme sur le gabarit. */
+.prop-ident {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 10px 36px;
+  padding: 14px 0 12px;
+  border-bottom: 2px solid var(--ink);
+}
+.prop-mot {
+  margin: 12px 0 14px;
+  color: var(--ink-2);
+}
+.prop-mot i {
+  color: var(--text-2);
+}
+/* Ligne de spécification : libellé aligné à droite, valeur à gauche. */
+.prop-spec {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 12px;
+  align-items: baseline;
+  padding: 3px 0;
+}
+.prop-spec > span {
+  text-align: right;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.prop-spec > b {
+  font-weight: 400;
+  font-size: 13px;
+}
+.prop-specs {
+  margin-bottom: 16px;
+}
+/* Champ que le gabarit demande mais que la fiche n'a pas : il se tape dans l'aperçu.
+   Discret à l'écran, invisible au papier (voir @media print). */
+.prop-libre.in {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface-2);
+  border: 1px dashed var(--line);
+  font-size: 13px;
+}
+.prop-libre.in:focus {
+  background: #fff;
+}
+.prop-validite {
+  background: var(--hdr2);
+  color: var(--ink-2);
+  padding: 5px 10px;
+  margin: 16px 0 14px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  font-size: 11.5px;
+}
+/* Une seule ligne de prix (la quantité retenue), en deux colonnes. */
+.prop-table {
+  width: 100%;
+  max-width: 320px;
+  border-collapse: collapse;
+}
+.prop-table th {
+  border-bottom: 1px solid var(--line);
+  padding: 6px 10px;
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.prop-table td {
+  padding: 8px 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+.prop-vide {
+  color: var(--text-3);
+  font-style: italic;
+  font-weight: 400;
+}
+.prop-note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--text-2);
+}
+.prop-signature {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  margin-top: 52px;
+  font-size: 10.5px;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  color: var(--text-2);
+}
+.prop-ligne {
+  display: block;
+  border-bottom: 1px solid var(--ink);
+  margin-bottom: 5px;
+  height: 26px;
+}
+.prop-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 24px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.prop-actions a.btn {
+  text-decoration: none;
+  display: inline-block;
+}
+
+@media print {
+  /* la proposition est seule sur le papier : ni barre d'outils, ni soumission, ni boutons */
+  body.mode-proposition .sheet,
+  body.mode-proposition .legend,
+  body.mode-proposition .modal-head,
+  body.mode-proposition .prop-actions {
+    display: none;
+  }
+  body.mode-proposition .modal-backdrop {
+    position: static;
+    inset: auto;
+    display: block;
+    background: #fff;
+    padding: 0;
+  }
+  body.mode-proposition .modal-proposition {
+    width: 100%;
+    max-height: none;
+    border-top: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+  }
+  body.mode-proposition .modal-body {
+    overflow: visible;
+    padding: 0;
+  }
+  /* les champs saisis dans l'aperçu s'impriment comme du texte : ni cadre, ni fond */
+  body.mode-proposition .prop-libre.in {
+    background: transparent;
+    border: 0;
+    padding-left: 0;
+  }
+  .prop-signature {
+    break-inside: avoid;
+  }
+}

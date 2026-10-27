@@ -1,0 +1,21 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// À COLLER dans le workflow de champ du sous-formulaire « Products » du
+// formulaire Purchase Order, sur le champ « P/N / SKU » (événement « à la
+// saisie de l'utilisateur » — ce workflow existe déjà : P_N_SKU porte
+// has_on_user_input = true).
+//
+// POURQUOI : « Qty Available » existe dans SF_Products_PO depuis l'origine et
+// n'était jamais alimenté. L'acheteur ne voyait donc pas ce qu'il avait déjà en
+// stock au moment de commander.
+//
+// Volontairement EN LIGNE et non via un appel de fonction : voir le défaut n° 20
+// du rapport — un appel de fonction imbriqué ne s'exécute pas dans tous les
+// contextes de cette application.
+//
+// Stock_Available est un champ FORMULE qui n'est jamais calculé dans cette app
+// (la ligne qui le faisait est commentée dans Stock.UpdateStockQties, ligne 32) :
+// il renvoie null. D'où le repli sur In_stock.
+// ─────────────────────────────────────────────────────────────────────────────
+
+ligneStock = Stock[Product == input.P_N_SKU && Warehouse == input.Warehouse];
+input.Qty_Available = ifnull(ligneStock.Stock_Available,ifnull(ligneStock.In_stock,0));

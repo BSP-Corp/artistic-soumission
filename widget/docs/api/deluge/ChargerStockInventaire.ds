@@ -1,0 +1,31 @@
+// Reporte les quantites de l'inventaire du 9 octobre 2026 sur les fiches Stock.
+//
+// Pourquoi par Deluge : le rapport « Stocks » est filtre et ne renvoie aucun enregistrement,
+// meme fraichement ecrit — updateRecordById y repond « No Data Available » (code 3100).
+// Seul Deluge voit ces lignes.
+//
+// La source de verite est la ligne d'ajustement : chaque produit inventorie a recu un
+// Stock_Adjustment portant ce libelle exact, avec une ligne SF_Adjustment (quantite, cout,
+// valeur). On recopie donc depuis ces lignes, sans rien recalculer.
+//
+// Les identifiants de lookup sont resolus explicitement (Product[ID == x].ID) : une
+// comparaison directe sur la valeur de lookup echoue silencieusement sur cette application.
+void ChargerStockInventaire()
+{
+	nb = 0;
+	lignes = SF_Adjustment[Stock_Adjustment.Details == "Inventaire du 9 octobre 2026"];
+	for each  ligne in lignes
+	{
+		produitID = Product[ID == ligne.Part_number].ID;
+		entrepotID = Warehouse[ID == ligne.Warehouse].ID;
+		fiche = Stock[Product == produitID && Warehouse == entrepotID];
+		if(fiche.ID != null)
+		{
+			fiche.In_stock=ligne.Quantity;
+			fiche.Added=ligne.Quantity;
+			fiche.Value=ligne.Value;
+			nb = nb + 1;
+		}
+	}
+	info "fiches Stock mises a jour : " + nb;
+}

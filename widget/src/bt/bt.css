@@ -1,0 +1,492 @@
+/* Bon de travail — rendu fidèle de la feuille FT (fiche d'atelier papier). */
+
+/* Palette neutre (BSP, 1er oct. 2026) : les fonds satures bleu/rose/jaune sont remplaces
+   par une distinction de STYLE. Un seul principe : seuls les champs A REMPLIR ressemblent
+   a des champs (fond blanc + contour) ; les champs REPRIS ressemblent a du texte verrouille.
+   Contrainte absolue : aucun changement de DISPOSITION. Toutes les marques visuelles
+   ajoutees ici passent par box-shadow interne ou couleur, jamais par une bordure ou un
+   contenu supplementaire qui modifierait la largeur ou la hauteur d'une cellule. */
+:root {
+  --bt-fond: #ffffff;
+  --bt-texte: #1f2937;
+  --bt-trait: #aab4bf; /* grille de la fiche, adoucie */
+
+  /* repris de la soumission : lecture seule */
+  --bt-lecture: #f4f6f9;
+  --bt-lecture-liz: #94a3b8;
+  --bt-lecture-txt: #1f2937;
+
+  /* a remplir en atelier */
+  --bt-saisie-fond: #ffffff;
+  --bt-saisie-bord: #cbd5e1;
+  --bt-accent: #2563eb;
+
+  /* libelles et en-tetes de section */
+  --bt-label-txt: #475569;
+  --bt-entete: #334155;
+  --bt-entete-txt: #ffffff;
+
+  /* chrome de la page : barre d'outils, fond, boutons */
+  --bt-page-fond: #e9eef2;
+  --bt-barre-fond: #ffffff;
+  --bt-barre-bord: #c8d2da;
+  --bt-btn-fond: #f4f8fa;
+  --bt-btn-bord: #9db3c2;
+  --bt-btn-survol: #e6eff4;
+  --bt-discret: #5a6b78;
+
+  /* anciens noms conserves : du CSS plus bas y fait encore reference */
+  --bt-bleu: var(--bt-lecture);
+  --bt-bleu-bord: var(--bt-saisie-bord);
+  --bt-jaune: var(--bt-saisie-fond);
+  --bt-jaune-bord: var(--bt-saisie-bord);
+  --bt-rose: transparent;
+  --bt-titre: var(--bt-entete);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bt-page-fond);
+  color: var(--bt-texte);
+  font: 12px/1.35 "Segoe UI", Tahoma, Arial, sans-serif;
+}
+
+.bt-page {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 12px;
+}
+
+/* ── barre d'outils ─────────────────────────────────────────────── */
+.bt-topbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  background: var(--bt-barre-fond);
+  border: 1px solid var(--bt-barre-bord);
+  border-radius: 6px;
+}
+.bt-topbar h1 {
+  font-size: 15px;
+  margin: 0 auto 0 0;
+  font-weight: 700;
+}
+.bt-topbar .bt-src {
+  font-size: 11px;
+  color: var(--bt-discret);
+}
+.bt-btn {
+  font: inherit;
+  padding: 5px 11px;
+  border: 1px solid var(--bt-btn-bord);
+  background: var(--bt-btn-fond);
+  color: inherit;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.bt-btn:hover {
+  background: var(--bt-btn-survol);
+}
+.bt-btn.solid {
+  background: var(--bt-accent);
+  border-color: var(--bt-accent);
+  color: #fff;
+}
+.bt-btn.solid:hover {
+  background: #175678;
+}
+.bt-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.bt-msg {
+  font-size: 11px;
+  color: var(--bt-accent);
+}
+
+/* ── la fiche ───────────────────────────────────────────────────── */
+.bt-fiche {
+  background: var(--bt-fond);
+  border: 1px solid var(--bt-trait);
+  padding: 6px;
+}
+
+.bt-grille {
+  display: grid;
+  gap: 6px;
+}
+.bt-grille.c2 {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+.bt-grille.c3 {
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1.15fr);
+}
+
+.bt-bloc {
+  border: 1px solid var(--bt-trait);
+  min-width: 0;
+}
+.bt-bloc > h2 {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.04em;
+  background: var(--bt-entete);
+  color: var(--bt-entete-txt);
+  border-bottom: 1px solid var(--bt-entete);
+  padding: 2px 4px;
+}
+
+table.bt-t {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+table.bt-t td,
+table.bt-t th {
+  border: 1px solid #b9c2c8;
+  padding: 1px 3px;
+  height: 19px;
+  font-size: 11px;
+  font-weight: 400;
+  text-align: left;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+td.lab,
+th.lab {
+  background: transparent;
+  color: var(--bt-label-txt);
+  font-weight: 600;
+  white-space: nowrap;
+}
+td.lab.plain {
+  background: transparent;
+  font-weight: 400;
+}
+td.ct {
+  text-align: center;
+}
+td.rt {
+  text-align: right;
+}
+td.vide {
+  border: none;
+  background: transparent;
+}
+
+/* repris de la soumission : lecture seule, jamais saisissable */
+td.calc {
+  background: var(--bt-lecture);
+  border-color: var(--bt-trait);
+  color: var(--bt-lecture-txt);
+  font-weight: 600;
+  cursor: help;
+  /* lisere gauche : marque le verrouillage sans consommer un pixel de largeur,
+     contrairement a une icone ou une bordure, qui tronqueraient les valeurs longues */
+  box-shadow: inset 2px 0 0 var(--bt-lecture-liz);
+}
+td.calc.on {
+  font-weight: 700;
+}
+
+/* a remplir en atelier : les seules cellules qui ressemblent a un champ */
+td.saisie {
+  background: var(--bt-saisie-fond);
+  border-color: var(--bt-trait);
+  padding: 0;
+}
+td.saisie input {
+  width: 100%;
+  border: 0; /* le contour passe par box-shadow : il ne prend aucune place */
+  background: var(--bt-saisie-fond);
+  font: inherit;
+  padding: 1px 3px;
+  outline: none;
+  color: inherit;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 1px var(--bt-saisie-bord);
+}
+td.saisie input:focus {
+  box-shadow: inset 0 0 0 2px var(--bt-accent);
+}
+td.saisie input.num {
+  text-align: right;
+}
+
+.bt-zone {
+  padding: 3px;
+}
+.bt-zone textarea {
+  width: 100%;
+  min-height: 74px;
+  resize: vertical;
+  border: 1px solid var(--bt-saisie-bord);
+  border-radius: 3px;
+  background: var(--bt-saisie-fond);
+  font: inherit;
+  padding: 3px 4px;
+}
+.bt-zone textarea:focus {
+  outline: 2px solid var(--bt-accent);
+  outline-offset: -2px;
+}
+
+/* liste des cases de production qui s'allument seules */
+ul.bt-flags {
+  list-style: none;
+  margin: 0;
+  padding: 3px 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+ul.bt-flags li {
+  background: var(--bt-lecture);
+  color: var(--bt-entete);
+  border: 1px solid var(--bt-saisie-bord);
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 11px;
+}
+ul.bt-flags li.off {
+  background: #f2f4f6;
+  border-color: #dde2e6;
+  color: #9aa7b0;
+}
+
+.bt-note {
+  font-size: 10px;
+  color: #6a7883;
+  padding: 2px 4px;
+}
+
+/* ── impression ─────────────────────────────────────────────────── */
+@media print {
+  body {
+    background: #fff;
+  }
+  .bt-topbar,
+  .bt-noprint {
+    display: none !important;
+  }
+  .bt-page {
+    max-width: none;
+    padding: 0;
+  }
+  .bt-fiche {
+    border: none;
+    padding: 0;
+  }
+  table.bt-t td,
+  table.bt-t th {
+    height: 17px;
+    font-size: 9.5px;
+  }
+  td.saisie input,
+  .bt-zone textarea {
+    background: transparent;
+  }
+  td.calc {
+    background: #f4f6f9;
+    box-shadow: inset 2px 0 0 #94a3b8;
+  }
+  td.saisie {
+    background: #fff;
+  }
+  td.saisie input {
+    box-shadow: inset 0 0 0 1px #cbd5e1;
+  }
+  .bt-legende {
+    display: none !important;
+  }
+  @page {
+    size: letter landscape;
+    margin: 8mm;
+  }
+}
+
+/* ── §10 : contrôles avant envoi en production ── */
+.bt-alertes {
+  margin: 10px 14px 0;
+  padding: 10px 14px 10px 30px;
+  list-style: "⚠ ";
+  border: 1px solid #efc4bb;
+  background: #fdf3f0;
+  border-radius: 5px;
+  color: #8d2a19;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+.bt-alertes b {
+  font-weight: 700;
+}
+.bt-btn.bloque {
+  border-color: #b3341f;
+  color: #b3341f;
+}
+.bt-btn.solid:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── §11b : grille couleurs dynamique + base Couleurs ── */
+td.saisie.coul,
+td.saisie.film {
+  position: relative;
+  white-space: nowrap;
+}
+td.saisie.coul input {
+  width: calc(100% - 62px);
+}
+td.saisie.film input {
+  width: calc(100% - 20px);
+}
+.pms {
+  display: inline-block;
+  margin-left: 5px;
+  padding: 0 5px;
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 15px;
+  color: #2f6fa8;
+  background: #eef4fa;
+  border: 1px solid #cfe0ef;
+  border-radius: 9px;
+  vertical-align: middle;
+  cursor: help;
+}
+.pms.hors {
+  color: #8d2a19;
+  background: #fdf3f0;
+  border-color: #efc4bb;
+}
+input.hors-catalogue {
+  border-color: #efc4bb;
+  background: #fdf7f5;
+}
+.coul-suppr {
+  border: 0;
+  background: transparent;
+  color: #b99;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 0 3px;
+}
+.coul-suppr:hover {
+  color: #b3341f;
+}
+.coul-ajout-cell {
+  padding: 3px 6px;
+}
+.coul-ajout {
+  border: 0;
+  background: transparent;
+  color: #2f6fa8;
+  cursor: pointer;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 0;
+}
+.coul-ajout:hover {
+  text-decoration: underline;
+}
+.coul-ajout:disabled {
+  color: #aaa;
+  cursor: default;
+  text-decoration: none;
+}
+.coul-src {
+  float: right;
+  font-size: 10.5px;
+  color: #999;
+  font-style: italic;
+}
+.pms.match {
+  color: #7a4a12;
+  background: #fdf4e8;
+  border-color: #eed9bd;
+  max-width: 130px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.bt-btn.prod {
+  border-color: #2f6fa8;
+  color: #2f6fa8;
+  font-weight: 600;
+}
+.bt-btn.prod:hover:not(:disabled) {
+  background: #eef4fa;
+}
+.bt-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Legende de la barre d'outils : rappelle la regle de lecture de la fiche.
+   Placee dans .bt-topbar, qui existe deja et ne s'imprime pas — la disposition
+   de la fiche elle-meme n'est pas touchee. */
+.bt-legende {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--bt-label-txt);
+  white-space: nowrap;
+}
+.bt-legende i {
+  font-style: normal;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  vertical-align: -1px;
+  margin-right: 4px;
+}
+.bt-legende i.lu {
+  /* sur une barre d'outils claire, le gris de lecture est presque blanc : sans contour
+     la pastille se lisait comme un simple crochet. On ajoute le meme contour que la
+     pastille de saisie, en plus du lisere qui porte le sens. */
+  background: var(--bt-lecture);
+  box-shadow: inset 2px 0 0 var(--bt-lecture-liz), inset 0 0 0 1px var(--bt-saisie-bord);
+}
+.bt-legende i.sa {
+  background: var(--bt-saisie-fond);
+  box-shadow: inset 0 0 0 1px var(--bt-saisie-bord);
+}
+
+/* Mode sombre : memes regles, meme hierarchie — seules les valeurs changent. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bt-fond: #0f172a;
+    --bt-texte: #e2e8f0;
+    --bt-trait: #475569;
+    --bt-lecture: #1e293b;
+    --bt-lecture-liz: #64748b;
+    --bt-lecture-txt: #e2e8f0;
+    --bt-saisie-fond: #0b1220;
+    --bt-saisie-bord: #475569;
+    --bt-accent: #60a5fa;
+    --bt-label-txt: #94a3b8;
+    --bt-entete: #1e293b;
+    --bt-entete-txt: #e2e8f0;
+    --bt-page-fond: #020617;
+    --bt-barre-fond: #0f172a;
+    --bt-barre-bord: #334155;
+    --bt-btn-fond: #1e293b;
+    --bt-btn-bord: #475569;
+    --bt-btn-survol: #334155;
+    --bt-discret: #94a3b8;
+  }
+}

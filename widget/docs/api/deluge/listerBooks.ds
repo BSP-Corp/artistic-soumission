@@ -1,0 +1,26 @@
+// Outil de diagnostic EN LECTURE SEULE, 2 octobre 2026.
+//
+// Cette fonction a servi de sonde pendant la mise au point du circuit d'achat. Elle a
+// temporairement contenu des appels qui MODIFIAIENT des donnees (Receipt.Receive, pose de
+// « Parent »). Elle est ici remise en lecture seule : l'executer ne change plus rien.
+//
+// Elle sert a repondre a une question que les rapports ne savent pas montrer : l'etat reel
+// du stock. Le rapport « Stocks » filtre ses lignes et n'affiche pas une ligne a zero.
+void listerBooks()
+{
+	txt = "";
+	n = 0;
+	for each  s in Stock[ID != null]
+	{
+		n = n + 1;
+		txt = txt + "STOCK " + s.ID + " produit=" + s.Product + " entrepot=" + s.Warehouse + " enStock=" + s.In_stock + " ajoute=" + s.Added + " retire=" + s.Removed + "\n";
+	}
+	m = 0;
+	for each  a in Stock_Adjustment[ID != null]
+	{
+		m = m + 1;
+	}
+	txt = txt + "lignes Stock=" + n + " ajustements=" + m + "\n";
+	thisapp.Debug.LogThis("diagStock",zoho.loginuser,"etat du stock (lecture seule)",txt);
+	info txt;
+}

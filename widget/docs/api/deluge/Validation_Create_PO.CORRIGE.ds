@@ -1,0 +1,163 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Purchase Order — « Validation Create -PO »   VERSION CORRIGÉE, 1er oct. 2026
+//
+// UNE SEULE MODIFICATION par rapport à l'original, en deux endroits :
+//
+//   1. SUPPRIMÉ, sur chaque ligne :   obj.put("warehouse_id", productIndex.Warehouse.ZBOOKS_ID);
+//   2. AJOUTÉ, au niveau de la commande :   data.put("location_id", ...)
+//
+// Pourquoi : hiérarchie Zoho = Organisation > Emplacement > Entrepôt. Les ENTREPÔTS vivent
+// dans Zoho Inventory, auquel Groupe Canva n'a pas accès ; Books expose des EMPLACEMENTS
+// (Paramètres > Emplacements ; /settings/warehouses renvoie « page non trouvée »).
+// Envoyer warehouse_id faisait refuser toute commande par Books :
+//     « ZohoBooks — Article warehouse_id non valide »
+// et bloquait en cascade la réception, l'approbation et le mouvement de stock.
+//
+// Warehouse.ZBOOKS_ID porte désormais l'identifiant d'EMPLACEMENT Books
+// (Siège social, Boucherville = 2915591000019626008). Le champ n'est ajouté que s'il existe,
+// pour rester compatible avec une organisation qui n'utilise pas les emplacements.
+//
+// Le reste du code est inchangé.
+// ─────────────────────────────────────────────────────────────────────────────
+devParams = Dev_params[ID != 0];
+if(!input.Transport_Fees)
+{
+	orgID = devParams.BOOKS_ORG_ID;
+	response = "";
+	line_items = List();
+	globalnote = input.Notes + "\n";
+	note = "";
+	for each  productIndex in input.Products
+	{
+		if(!productIndex.P_N_SKU.Product_Category.Landed_cost)
+		{
+			if(productIndex.Qty < ifnull(SF_Vendors[Vendor == input.Vendor && Product == productIndex.P_N_SKU].Qty_Min,0) && !productIndex.Alerted)
+			{
+				alert "Please enter a quantity greater than the supplier's minimum quantity (" + SF_Vendors[Vendor == input.Vendor && Product == productIndex.P_N_SKU].Qty_Min + ") for the product " + productIndex.P_N_SKU.SKU;
+				cancel submit;
+			}
+			currentProduct = Product[ID == productIndex.P_N_SKU];
+			ItemBooksRec = Zoho_Books_Items_Sync[Product == productIndex.P_N_SKU && Organization == input.Organization];
+			obj = Map();
+			obj.put("item_id",ItemBooksRec.ZBOOKS_ID);
+			productName = SF_Vendors[Vendor == input.Vendor && Product == productIndex.P_N_SKU].Product_Vendor;
+			if(isEmpty(productName))
+			{
+				productName = productIndex.P_N_SKU.Name;
+			}
+			obj.put("name",productName);
+			obj.put("rate",productIndex.Unit_price);
+			obj.put("quantity",productIndex.Qty);
+			obj.put("tax_id",ifnull(productIndex.Taxes.ZBOOKS_ID,input.Taxes.ZBOOKS_ID));
+			// RETIRÉ : obj.put("warehouse_id",productIndex.Warehouse.ZBOOKS_ID);
+			// L'entrepôt est désormais transmis UNE SEULE FOIS, au niveau de la commande,
+			// sous la forme d'un location_id — voir plus bas.
+			if(productIndex.ZBOOKS_ID != null && productIndex.ZBOOKS_ID != "")
+			{
+				obj.put("line_item_id",productIndex.ZBOOKS_ID);
+			}
+			line_items.add(obj);
+		}
+		else
+		{
+			note = note + productIndex.P_N_SKU.SKU + ": " + productIndex.Qty + " x " + productIndex.Unit_price + " = " + productIndex.Total_Price + "\n";
+		}
+	}
+	if(note != "")
+	{
+		globalnote = globalnote + "Additional items in the Purchase Order:\n" + note + "Total PO: " + input.Total_Price;
+	}
+	data = Map();
+	data.put("date",input.Order_Date.toString("yyyy-MM-dd"));
+	data.put("notes",globalnote);
+	data.put("line_items",line_items);
+	vendorBooksRec = Zoho_Books_Vendors_Sync[Vendor == input.Vendor && Organization == input.Organization];
+	data.put("vendor_id",vendorBooksRec.ZBOOKS_ID);
+	data.put("reference_number",input.Reference_Number);
+	// AJOUTÉ — l'emplacement Books, au niveau de la commande et non des lignes.
+	if(input.Warehouse != null && input.Warehouse.ZBOOKS_ID != null && input.Warehouse.ZBOOKS_ID != "")
+	{
+		data.put("location_id",input.Warehouse.ZBOOKS_ID);
+	}
+	vendorRec = Vendor[ID == input.Vendor];
+	if(input.Payment_Term != null)
+	{
+		dueDate = ifnull(input.Order_Date,today).addDay(input.Payment_Term.Payment_Term.toLong());
+		terms = input.Payment_Term.Payment_Term;
+	}
+	else
+	{
+		if(vendorRec.Payment_Term != null)
+		{
+			dueDate = ifnull(input.Order_Date,today).addDay(vendorRec.Payment_Term.Payment_Term.toLong());
+			terms = vendorRec.Payment_Term.Payment_Term;
+		}
+	}
+	if(input.Payment_Term != null)
+	{
+		label = input.Payment_Term.Label;
+	}
+	else
+	{
+		label = vendorRec.Payment_Term.Label;
+	}
+	dueDate = dueDate.toString("YYYY-MM-d");
+	data.putAll({"payment_terms_label":label,"due_date":dueDate,"payment_terms":terms});
+	response = {"code":-1};
+	if(input.ZBOOKS_ID == "" || input.ZBOOKS_ID == null)
+	{
+		response = thisapp.ZohoBooks.CreatePurchaseOrder(data,input.Organization.Books_org_ID);
+		if(response.getJSON("code") == 0)
+		{
+			input.ZBOOKS_ID = response.getJSON("purchaseorder").getJSON("purchaseorder_id");
+			input.Order_Number = response.getJSON("purchaseorder").getJSON("purchaseorder_number");
+			devParams.Purchase_Order_Index=devParams.Purchase_Order_Index.tolong() + 1;
+		}
+		else
+		{
+			alert "ZohoBooks\n" + response.getJSON("message");
+			cancel submit;
+		}
+	}
+	else
+	{
+		response = thisapp.ZohoBooks.UpdatePurchaseOrder(input.ZBOOKS_ID,data,input.Organization.Books_org_ID);
+		if(response.getJSON("code") == 1002)
+		{
+			response = thisapp.ZohoBooks.CreatePurchaseOrder(data,input.Organization.Books_org_ID);
+			if(response.getJSON("code") == 0)
+			{
+				input.ZBOOKS_ID = response.getJSON("purchaseorder").getJSON("purchaseorder_id");
+				input.Order_Number = response.getJSON("purchaseorder").getJSON("purchaseorder_number");
+			}
+			else
+			{
+				alert "ZohoBooks\n" + response.getJSON("message");
+				cancel submit;
+			}
+		}
+	}
+	if(response.getJSON("code") == 0)
+	{
+		poLineItems = response.getJSON("purchaseorder").getJSON("line_items");
+		for each  lineItemIndex in poLineItems.toJSONList()
+		{
+			ItemBooksRec = Zoho_Books_Items_Sync[ZBOOKS_ID == lineItemIndex.getJSON("item_id")];
+			product = Product[ID == ItemBooksRec.Product];
+			for each  item1Index in input.Products
+			{
+				if(item1Index.P_N_SKU == product.ID && item1Index.ZBOOKS_ID == null && item1Index.Qty == lineItemIndex.getJSON("quantity") && SF_Products_PO[ZBOOKS_ID == lineItemIndex.getJSON("line_item_id")].count() == 0)
+				{
+					item1Index.ZBOOKS_ID=lineItemIndex.getJSON("line_item_id");
+					break;
+				}
+			}
+		}
+		input.ZBOOKS_ID = response.getJSON("purchaseorder").getJSON("purchaseorder_id");
+	}
+	else
+	{
+		alert "ZohoBooks\n" + response.getJSON("message");
+		cancel submit;
+	}
+}

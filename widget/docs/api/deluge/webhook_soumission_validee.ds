@@ -1,0 +1,204 @@
+// ============================================================================
+//  ⚠ VERSION D'ORIGINE, REMPLACÉE — gardée pour référence seulement.
+//    Ce qui tourne dans Creator est la fonction `envoyerSoumission` du fichier
+//    `envoyer_soumission.ds` ; le workflow de Form1 ne fait que l'appeler.
+//    Ce fichier-ci envoie encore un `Authorization: Bearer` : la plateforme du client
+//    authentifie par `X-Api-Key` (leur doc UAT du 30 sept. 2026). Ne pas le redéployer.
+// ============================================================================
+//
+//  WORKFLOW  « Soumission validée → plateforme client »
+//
+//  Où : Form1 → Workflows → « On Create or Edit » → Successful form submission
+//  ⚠ Dans Creator, seule la CRÉATION d'enregistrement par API déclenche les workflows
+//    de formulaire. Le widget envoie donc tout (JSON compris) dans un seul addRecords —
+//    surtout ne pas revenir à un addRecords suivi d'un update.
+//  Condition du workflow (à mettre dans le builder, PAS dans le code) :
+//        Statut == "Valide"  &&  Webhook_Statut == "En_attente"
+//  → garantit qu'on n'envoie qu'une fois, et jamais sur un brouillon.
+//
+//  Ce script ne calcule RIEN : le JSON a déjà été construit par le widget et
+//  stocké dans Soumission_JSON. Ici on signe, on poste, on journalise.
+//
+//  Champs requis sur Form1 : Soumission_JSON, Statut, Webhook_Statut, Reponse_IA
+//  Formulaires requis      : Parametres_Integration, integration_log  (minuscules !)
+//
+//  Contraintes Deluge respectées ici :
+//    · pas de `while`      → uniquement `for each ... in <liste>`
+//    · pas de `thread.sleep` → les 3 tentatives s'enchaînent sans pause
+//    · pas de `.first()`   → on lit la config avec un `for each`
+//    · invokeUrl : `body` EXCLUT `content-type` → le Content-Type va dans `headers`
+//    · `left(s, n)` LÈVE une erreur si n > longueur → troncature avec garde-fou
+// ============================================================================
+
+// ─────────────────────────────────────────────────────── configuration
+// Tout vient du formulaire Parametres_Integration — AUCUN secret en dur ici.
+// Changer l'URL ou faire tourner le jeton = éditer un enregistrement, jamais ce code.
+URL_CLIENT = "";
+JETON = "";
+SIGNER = true;
+
+// On ne retient qu'une config COMPLETE : un enregistrement actif mais sans URL
+// (brouillon, doublon d'import) ne doit jamais effacer une config valide.
+for each  cfg in Parametres_Integration[Actif == "Oui"]
+{
+	u = ifnull(cfg.URL_Webhook, "").trim();
+	j = ifnull(cfg.Jeton_Actif, "").trim();
+	if (u != "" && j != "")
+	{
+		URL_CLIENT = u;
+		JETON = j;
+		SIGNER = ifnull(cfg.Signer_HMAC, "Oui") == "Oui";
+	}
+}
+
+if (URL_CLIENT == "" || JETON == "")
+{
+	info "webhook : Parametres_Integration absent/incomplet (Actif = Oui ?) — envoi annulé.";
+	return;
+}
+
+corps = ifnull(input.Soumission_JSON, "").toString();
+if (corps.trim() == "")
+{
+	info "webhook : Soumission_JSON vide sur " + input.ID + " — rien à envoyer.";
+	return;
+}
+
+// Le widget ne connait pas l'ID Creator au moment de creer l'enregistrement : il a mis
+// un jeton de substitution. On le remplace ici par le vrai ID, et on reecrira le JSON
+// corrige a la fin - pour que ce qui est STOCKE soit exactement ce qui a ete ENVOYE.
+corps = corps.replaceAll("__ID_SOUMISSION__", input.ID.toString());
+
+// ─────────────────────────────────────────────────────── en-têtes
+entetes = Map();
+entetes.put("Content-Type", "application/json");
+entetes.put("Authorization", "Bearer " + JETON);
+entetes.put("X-Zoho-Event", "soumission.validee");
+entetes.put("X-Zoho-Delivery", zoho.currenttime.toString("yyyyMMddHHmmssSSS") + "-" + input.ID);
+entetes.put("X-API-Version", "1.0");
+
+if (SIGNER)
+{
+	// Signature HMAC-SHA256 du corps brut, clé = le jeton partagé.
+	// ⚠ Vérifier la signature exacte de la fonction dans l'autocomplétion de l'éditeur :
+	//   selon l'édition c'est  zoho.encryption.hmacsha256(cle, contenu, "hex")
+	//   ou                     zoho.encryption.hmacSHA256(cle, contenu, false)
+	// Si elle n'existe pas chez toi : mettre Signer_HMAC = "Non" dans le formulaire.
+	// Le jeton Bearer + HTTPS restent en place — suffisant pour tester.
+	sig = zoho.encryption.hmacsha256(JETON, corps, "hex");
+	entetes.put("X-Zoho-Signature", "sha256=" + sig);
+}
+
+// ─────────────────────────────────────────────────────── envoi + rejeu
+// 3 tentatives enchaînées (Deluge n'a pas de pause utilisable ici).
+// Rejeu sur 5xx / timeout uniquement — JAMAIS sur 4xx : un 4xx est une erreur de
+// contrat, réessayer ne ferait que répéter la même erreur.
+// Si les 3 échouent, la soumission passe en « Erreur » et le bouton « Renvoyer »
+// (plus bas) permet de rejouer plus tard, quand le problème est corrigé.
+code = 0;
+texte = "";
+tentative = 0;
+envoye = false;
+definitif = false;
+
+for each  i in {1, 2, 3}
+{
+	if (!envoye && !definitif)
+	{
+		tentative = i;
+		try
+		{
+			rep = invokeurl
+			[
+				url :URL_CLIENT
+				type :POST
+				headers :entetes
+				body :corps
+				detailed :true
+			];
+			code = ifnull(rep.get("responseCode"), 0);
+			texte = ifnull(rep.get("responseText"), "").toString();
+		}
+		catch (e)
+		{
+			code = 0;
+			texte = "exception : " + e;
+		}
+
+		// Deluge : left(s, n) LEVE une erreur si n depasse la longueur de s.
+		// On tronque donc avec un garde-fou explicite.
+		reponseCourte = texte;
+		if (reponseCourte.length() > 60000)
+		{
+			reponseCourte = reponseCourte.subString(0, 60000);
+		}
+
+		// journal : une ligne PAR tentative — c'est ça qui permet de répondre
+		// « on n'a rien reçu » en 30 secondes, preuve à l'appui.
+		ligne = insert into integration_log
+		[
+			Soumission_ID = input.ID.toString()
+			Direction = "sortant"
+			Evenement = "soumission.validee"
+			Tentative = i
+			Statut_HTTP = code
+			Duree_ms = 0
+			Reponse = reponseCourte
+			Erreur = ""
+			Horodatage = zoho.currenttime
+		];
+
+		if (code >= 200 && code < 300)
+		{
+			envoye = true;
+		}
+		else if (code >= 400 && code < 500)
+		{
+			definitif = true;
+		}
+	}
+}
+
+// ─────────────────────────────────────────────────────── résultat sur la soumission
+extrait = texte;
+if (extrait.length() > 2000)
+{
+	extrait = extrait.subString(0, 2000);
+}
+complet = texte;
+if (complet.length() > 60000)
+{
+	complet = complet.subString(0, 60000);
+}
+
+statutWebhook = "Erreur";
+reponse = "Echec apres " + tentative + " tentative(s) - HTTP " + code + " : " + extrait;
+if (envoye)
+{
+	statutWebhook = "Envoye";
+	reponse = complet;   // le verdict de leur IA, reaffiche dans le widget
+}
+
+varFrom = Form1[ID == input.ID];
+varFrom.Webhook_Statut = statutWebhook;
+varFrom.Reponse_IA = reponse;
+varFrom.Soumission_JSON = corps;   // version avec le vrai ID = celle reellement envoyee
+// Pas de boucle possible : Webhook_Statut n'est plus "En_attente", la condition du
+// workflow est donc fausse au prochain declenchement.
+
+info "webhook soumission " + input.ID + " → HTTP " + code + " après " + tentative + " tentative(s).";
+
+// ============================================================================
+//  RENVOI MANUEL
+//  Fonction séparée, à brancher sur un bouton « Renvoyer à la plateforme »
+//  (Form1_Report → Custom action). Elle remet le drapeau à « En_attente » :
+//  le workflow ci-dessus se redéclenche tout seul au prochain enregistrement.
+// ============================================================================
+// void renvoyerSoumission(int idSoumission)
+// {
+// 	for each  s in Form1[ID == idSoumission]
+// 	{
+// 		s.Webhook_Statut = "En_attente";
+// 	}
+// 	info "Soumission " + idSoumission + " remise en file d'envoi.";
+// }

@@ -1,0 +1,99 @@
+// ============================================================================
+//  Bouton « Générer un nouveau jeton »
+//
+//  Où : Parametres_Integration_Report → Custom action (ou bouton sur le formulaire)
+//  Effet : l'ancien jeton passe dans Jeton_Precedent (rollback instantané possible),
+//          un nouveau est écrit dans Jeton_Actif, la date de rotation est mise à jour.
+//
+//  ⚠ Le jeton est le SEUL secret entre Zoho et la plateforme du client.
+//     Après génération : le transmettre hors courriel (téléphone ou gestionnaire de
+//     mots de passe partagé), et ne jamais le laisser dans un rapport visible de tous.
+//
+//  Deluge n'a PAS de boucle `while` — tout se fait avec `for each ... in <liste>`.
+// ============================================================================
+
+void genererJetonIntegration(int idParametre)
+{
+	// ── génération : 64 caractères hexadécimaux, sans boucle while ───────────
+	// 8 tours × 8 caractères. La liste littérale {1,…,8} remplace le compteur.
+	alphabet = "0123456789abcdef";
+	jeton = "";
+
+	for each  tour in {1, 2, 3, 4, 5, 6, 7, 8}
+	{
+		for each  pos in {1, 2, 3, 4, 5, 6, 7, 8}
+		{
+			p = randomNumber(0, 15);
+			jeton = jeton + alphabet.subString(p, p + 1);
+		}
+	}
+
+	// ── rotation : on garde l'ancien pour pouvoir revenir en arrière ─────────
+	for each  cfg in Parametres_Integration[ID == idParametre]
+	{
+		ancien = ifnull(cfg.Jeton_Actif, "");
+		cfg.Jeton_Precedent = ancien;
+		cfg.Jeton_Actif = jeton;
+		cfg.Date_Rotation = zoho.currentdate;
+	}
+
+	info "Nouveau jeton généré (" + jeton.length() + " caractères). "
+	   + "L'ancien est conservé dans Jeton_Precedent — le supprimer une fois "
+	   + "que le client confirme avoir basculé.";
+}
+
+// ============================================================================
+//  ROLLBACK — bouton « Revenir au jeton précédent »
+//  Utile si le client n'a pas encore déployé le nouveau et que les envois échouent.
+// ============================================================================
+
+void revenirJetonPrecedent(int idParametre)
+{
+	for each  cfg in Parametres_Integration[ID == idParametre]
+	{
+		precedent = ifnull(cfg.Jeton_Precedent, "");
+		if (precedent == "")
+		{
+			info "Aucun jeton précédent enregistré — rien à restaurer.";
+		}
+		else
+		{
+			courant = ifnull(cfg.Jeton_Actif, "");
+			cfg.Jeton_Actif = precedent;
+			cfg.Jeton_Precedent = courant;
+			cfg.Date_Rotation = zoho.currentdate;
+			info "Jeton précédent restauré.";
+		}
+	}
+}
+
+// ============================================================================
+//  VARIANTE SANS BOUCLE DU TOUT
+//
+//  Si `randomNumber` ou `subString` posent problème dans ton édition, et que
+//  `zoho.encryption.hmacsha256` fonctionne (on en a besoin pour le webhook de
+//  toute façon), cette version donne aussi 64 caractères hexadécimaux :
+//
+//      graine = zoho.currenttime.toString("yyyyMMddHHmmssSSS")
+//             + randomNumber(100000000, 999999999)
+//             + idParametre;
+//      jeton  = zoho.encryption.hmacsha256(graine, graine, "hex");
+//
+//  Un seul appel, aucune boucle. À tester dans l'éditeur avant de l'adopter.
+// ============================================================================
+
+// ============================================================================
+//  NOTE SUR LA QUALITÉ DE L'ALÉA
+//
+//  `randomNumber()` de Deluge n'est pas documenté comme générateur
+//  cryptographique. Pour un jeton de développement / de test, c'est sans
+//  conséquence : ce bouton fait très bien l'affaire.
+//
+//  Pour le jeton de PRODUCTION, préférer un générateur cryptographique et
+//  le coller dans le champ (10 secondes) :
+//
+//      node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+//      openssl rand -hex 32
+//
+//  Le stockage et la rotation restent identiques — seule l'origine du hasard change.
+// ============================================================================

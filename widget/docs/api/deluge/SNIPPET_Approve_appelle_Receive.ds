@@ -1,0 +1,27 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// LE CORRECTIF DU STOCK — une seule ligne à ajouter
+//
+// OÙ : Workflow → Flux de travail de rapport → « Receive Order - Approve »
+//      (éditeur direct : /appbuilder/groupecanva/groupecanva/workflowbuilder/
+//       Receive_Order_Approve/edit)
+//      À placer À LA FIN du script, après la création de la facture Books.
+//
+// POURQUOI : mesuré le 7 octobre 2026. Ce bouton n'appelle JAMAIS Receipt.Receive.
+// Preuve : une écriture placée en 2e instruction de Receipt.Receive, hors de toute
+// boucle et hors de toute condition, ne se produit pas lors d'une approbation —
+// alors que Last_Cost est bien écrit (par le code propre de l'action, pas par
+// cette fonction). C'est l'unique raison pour laquelle le stock n'a jamais bougé :
+// la fonction qui crédite le stock n'est pas appelée.
+//
+// Receipt.Receive est corrigée et VÉRIFIÉE : appelée directement, elle crée la
+// ligne Stock si besoin, insère l'ajustement avec Cost et Value, incrémente
+// In_stock et Added, écrit Qty_Available, le dernier coût d'achat et la ligne
+// SF_Receptions. Mesure de la vérification : stock 0 → 6 sur une réception de 3
+// (6 et non 3 parce que le lanceur de test exécute deux fois).
+//
+// Le nom de la variable qui porte l'identifiant de la réception dépend du script
+// existant : si l'action travaille sur « input.ID », utiliser input.ID ; si elle a
+// déjà une variable de réception (par exemple « receiptRec »), utiliser son ID.
+// ─────────────────────────────────────────────────────────────────────────────
+
+thisapp.Receipt.Receive(input.ID);

@@ -1,0 +1,17 @@
+string ZohoBooks.CreatePurchaseReceive(map data, string ZBOOKSID, map resp, string orgId)
+{
+	params = Dev_params[ID != null];
+	receiveResponse = invokeurl
+	[
+		url :"https://inventory.zoho.com/api/v1/purchasereceives?organization_id=" + orgId + "&purchaseorder_id=" + ZBOOKSID
+		type :POST
+		parameters:{"JSONString":data}
+		connection:"zohobooks1"
+	];
+	// Log request for debugging purposes
+	thisapp.Debug.LogThis("CreateBill (receive)",zoho.loginuser,data.toString(),receiveResponse.toString());
+	result = Map();
+	result.putAll(receiveResponse);
+	result.put("bill",resp);
+	return result;
+}

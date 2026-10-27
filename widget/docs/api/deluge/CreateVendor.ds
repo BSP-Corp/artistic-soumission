@@ -1,0 +1,29 @@
+// Correction du 1er octobre 2026 — deux defauts, dont un bloquant.
+//
+// 1. BLOQUANT : la charge utile etait passee en vrac (`parameters:json`), alors que l'API
+//    Books attend un parametre nomme JSONString. Books repondait systematiquement
+//        {"code":4,"message":"Invalid value passed for JSONString"}
+//    Cette fonction n'a donc JAMAIS pu creer un fournisseur, quelle que soit la
+//    configuration. Forme correcte, deja utilisee par CreatePurchaseOrder dans cette meme
+//    application : parameters:{"JSONString":json}
+//
+// 2. Domaine historique books.zoho.com/api/v3 -> www.zohoapis.com/books/v3.
+//
+// RESTE A FAIRE (hors de cette fonction) : l'identifiant retourne n'est toujours pas
+// enregistre. Le bloc qui le ferait est en commentaire ci-dessous et NE PEUT PAS etre
+// simplement decommente : la variable `fournisseur` n'existe pas ici, cette fonction ne
+// recoit qu'une map et un orgId. L'enregistrement doit se faire chez l'APPELANT, qui connait
+// le fournisseur — voir amorcerSyncBooks(), qui le fait correctement.
+// Sans cela, chaque synchronisation recreerait un fournisseur en double dans la comptabilite.
+map ZohoBooks.CreateVendor(map json, string orgId)
+{
+	response = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/contacts?organization_id=" + orgId
+		type :POST
+		parameters:{"JSONString":json}
+		connection:"zohobooks1"
+	];
+	thisapp.Debug.LogThis("CreateVendor",zoho.loginuser,json.toString(),response.toString());
+	return response;
+}

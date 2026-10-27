@@ -1,0 +1,87 @@
+void Receipt.Receive(int receiptID)
+{
+	receipt = Order_Receive[ID == receiptID];
+	devRec = Dev_params[ID != NULL];
+	approved = false;
+	if(!devRec.Reception_Approval)
+	{
+		approved = true;
+	}
+	if(receipt.Approve && devRec.Reception_Approval)
+	{
+		approved = true;
+	}
+	vendorOrder = Purchase_Order[ID == receipt.Purchase_Order];
+	vendorOrder.Status=receipt.Status1;
+	if(approved)
+	{
+		for each  productIndex in receipt.Products
+		{
+			product = Product[ID == productIndex.P_N_SKU];
+			ajustementID = null;
+			produitRecu = Product[ID == productIndex.P_N_SKU];
+			if(productIndex.Qty_Received != 0)
+			{
+				produitRecu.Last_Cost=productIndex.Unit_price;
+				produitRecu.Last_Purchase=if(isnull(receipt.Receiption_Date),vendorOrder.Order_Date,receipt.Receiption_Date);
+			}
+			if(receipt.Warehouse != null && productIndex.Qty_Received != 0)
+			{
+				stock = Stock[Product == productIndex.P_N_SKU && Warehouse == receipt.Warehouse];
+				ajustementID = thisapp.Stock.AddStockRecordWithOrder(stock.ID,productIndex.Qty_Received,"Commande fournisseur " + vendorOrder.Order_Number + " réceptionnée.",receipt.Purchase_Order);
+			}
+			if(Status[ID == receipt.Purchase_Order.Status].Index_field == 4 || Status[ID == receipt.Purchase_Order.Status].Index_field == 5)
+			{
+				productLine = SF_Products_PO[ID == productIndex.Parent];
+				productLine.Qty_To_Receive=productIndex.Qty_To_Receive - productIndex.Qty_Received;
+			}
+			listSerials = List();
+			if(productIndex.P_N_SKU.Serializable)
+			{
+				listSerials = thisapp.SerialNumber.CreateSerialNumbers(productIndex.New_Serial_Number,productIndex.P_N_SKU,receipt.Warehouse);
+				// 		listUniqueNumber = thisapp.UniqueNumber.ExtractNumbers(productIndex.Unique_code);
+				for each  sn in listSerials
+				{
+					mySN = Serial_Number[ID == sn];
+					mySN.Order_Number=vendorOrder.Order_Number;
+					mySN.Order_Date=vendorOrder.Order_Date;
+				}
+				if(ajustementID != null)
+				{
+					// 			ajustementStock = Adjustement_Stock[ID == ajustementID];
+					for each  addedItem in SF_Adjustment[Stock_Adjustment == ajustementID]
+					{
+						if(addedItem.Part_number == productIndex.P_N_SKU)
+						{
+							addedItem.New_Serial_Numbers=productIndex.New_Serial_Number;
+						}
+					}
+				}
+			}
+			//productIndex.Qte_com > productIndex.Qte &&
+			if(productIndex.Qty_Received != 0)
+			{
+				receptionPartielle = insert into SF_Receptions
+				[
+					Added_User=zoho.loginuser
+					Purchase_Order=receipt.Purchase_Order
+					P_N_SKU=productIndex.P_N_SKU
+					Quantity=productIndex.Qty_Received
+					Receipt_Number=receipt.Purchase_Receive
+					Date_Time=if(isnull(productIndex.Receiption_Date),zoho.currenttime,productIndex.Receiption_Date)
+					Serial_Numbers=listSerials
+					Unit_price=productIndex.Unit_price
+				];
+			}
+			for each  product2Index in SF_Products_PO[Purchase_Order == vendorOrder && P_N_SKU == productIndex.P_N_SKU && P_N_SKU.Serializable == true]
+			{
+				oldserials = "";
+				if(!isnull(product2Index.New_Serial_Number))
+				{
+					oldserials = product2Index.New_Serial_Number + ",";
+				}
+				product2Index.New_Serial_Number=oldserials + productIndex.New_Serial_Number;
+			}
+		}
+	}
+}

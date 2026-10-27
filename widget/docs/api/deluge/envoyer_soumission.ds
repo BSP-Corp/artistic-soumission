@@ -1,0 +1,202 @@
+// ============================================================================
+//  FONCTION AUTONOME  ·  envoyerSoumission(idSoumission)
+//
+//  Toute la logique d'envoi vit ICI, appelée depuis deux endroits :
+//
+//   1. Le workflow Form1 (On Create or Edit → On successful form submission,
+//      condition : Statut == "Valide" && Webhook_Statut == "En_attente") :
+//          envoyerSoumission(input.ID);
+//
+//   2. Un bouton du rapport — « Renvoyer à la plateforme ».
+//      C'est LUI qui rend la phase de test confortable pour le partenaire :
+//      il demande un envoi, on clique, il reçoit. Autant de fois qu'il veut,
+//      sans qu'on touche à quoi que ce soit.
+//
+//  Contraintes Deluge respectées : pas de `while`, pas de `thread.sleep`,
+//  pas de `.first()`, pas de `left()`, `body` sans `content-type` dans invokeUrl.
+// ============================================================================
+
+void envoyerSoumission(long idSoumission)
+{
+	// ── configuration ───────────────────────────────────────────────────
+	URL_CLIENT = "";
+	JETON = "";
+	SIGNER = true;
+	// Fixes ici, PAS dans Creator : Parametres_Integration n'a pas ces champs, et lire un
+	// champ inexistant fait echouer la fonction.
+	ENTETE_CLE = "X-Api-Key";
+	VERSION_CONTRAT = "1.2";
+
+	for each  cfg in Parametres_Integration[Actif == "Oui"]
+	{
+		u = ifnull(cfg.URL_Webhook, "").trim();
+		j = ifnull(cfg.Jeton_Actif, "").trim();
+		if (u != "" && j != "")
+		{
+			URL_CLIENT = u;
+			JETON = j;
+			SIGNER = ifnull(cfg.Signer_HMAC, "Oui") == "Oui";
+		}
+	}
+	if (URL_CLIENT == "" || JETON == "")
+	{
+		info "envoi annule : Parametres_Integration absent ou incomplet (Actif = Oui ?).";
+		return;
+	}
+
+	// ── la soumission ───────────────────────────────────────────────────
+	corps = "";
+	for each  s in Form1[ID == idSoumission]
+	{
+		corps = ifnull(s.Soumission_JSON, "").toString();
+	}
+	if (corps.trim() == "")
+	{
+		info "envoi annule : Soumission_JSON vide sur " + idSoumission + ".";
+		return;
+	}
+
+	// Le widget ecrit un jeton de substitution (l'ID Creator n'existe pas encore a
+	// la creation). On met le vrai ID ici, et on reecrit le JSON a la fin : ce qui
+	// est STOCKE est exactement ce qui a ete ENVOYE.
+	corps = corps.replaceAll("__ID_SOUMISSION__", idSoumission.toString());
+
+	// ── en-tetes ────────────────────────────────────────────────────────
+	// La plateforme du client authentifie par X-Api-Key (sa doc UAT du 30 sept. 2026), pas par
+	// le Bearer que nous avions propose. Le nom de l'en-tete vient de Parametres_Integration
+	// (champ Entete_Cle, defaut X-Api-Key) : si leur choix bouge encore, c'est une valeur a
+	// changer dans Creator, pas du code a reprendre.
+	// La signature HMAC reste envoyee quand Signer_HMAC = Oui : elle ne coute rien et prouve
+	// que le corps n'a pas ete altere en chemin. Leur API peut l'ignorer.
+	entetes = Map();
+	entetes.put("Content-Type", "application/json");
+	entetes.put(ENTETE_CLE, JETON);
+	entetes.put("X-Zoho-Event", "soumission.validee");
+	entetes.put("X-Zoho-Delivery", zoho.currenttime.toString("yyyyMMddHHmmssSSS") + "-" + idSoumission);
+	entetes.put("X-API-Version", VERSION_CONTRAT);
+
+	if (SIGNER)
+	{
+		sig = zoho.encryption.hmacsha256(JETON, corps, "hex");
+		entetes.put("X-Zoho-Signature", "sha256=" + sig);
+	}
+
+	// ── envoi : 3 tentatives, jamais de rejeu sur 4xx ───────────────────
+	code = 0;
+	texte = "";
+	tentative = 0;
+	envoye = false;
+	definitif = false;
+
+	for each  i in {1, 2, 3}
+	{
+		if (!envoye && !definitif)
+		{
+			tentative = i;
+			try
+			{
+				rep = invokeurl
+				[
+					url :URL_CLIENT
+					type :POST
+					headers :entetes
+					body :corps
+					detailed :true
+				];
+				code = ifnull(rep.get("responseCode"), 0);
+				texte = ifnull(rep.get("responseText"), "").toString();
+			}
+			catch (e)
+			{
+				code = 0;
+				texte = "exception : " + e;
+			}
+
+			// left(s, n) LEVE une erreur si n depasse la longueur : troncature manuelle.
+			reponseCourte = texte;
+			if (reponseCourte.length() > 60000)
+			{
+				reponseCourte = reponseCourte.subString(0, 60000);
+			}
+
+			ligne = insert into integration_log
+			[
+				Soumission_ID = idSoumission.toString()
+				Direction = "sortant"
+				Evenement = "soumission.validee"
+				Tentative = i
+				Statut_HTTP = code
+				Duree_ms = 0
+				Reponse = reponseCourte
+				Erreur = ""
+				Horodatage = zoho.currenttime
+			];
+
+			if (code >= 200 && code < 300)
+			{
+				envoye = true;
+			}
+			else if (code >= 400 && code < 500)
+			{
+				definitif = true;
+			}
+		}
+	}
+
+	// ── resultat ────────────────────────────────────────────────────────
+	extrait = texte;
+	if (extrait.length() > 2000)
+	{
+		extrait = extrait.subString(0, 2000);
+	}
+	complet = texte;
+	if (complet.length() > 60000)
+	{
+		complet = complet.subString(0, 60000);
+	}
+
+	statutWebhook = "Erreur";
+	reponse = "Echec apres " + tentative + " tentative(s) - HTTP " + code + " : " + extrait;
+	if (envoye)
+	{
+		statutWebhook = "Envoye";
+		reponse = complet;
+	}
+
+	varFrom = Form1[ID == idSoumission];
+	varFrom.Webhook_Statut = statutWebhook;
+	varFrom.Reponse_IA = reponse;
+	varFrom.Soumission_JSON = corps;
+
+	info "soumission " + idSoumission + " -> HTTP " + code + " apres " + tentative + " tentative(s).";
+}
+
+// ============================================================================
+//  1) LE WORKFLOW devient une seule ligne
+//     Form1 → Workflows → On Create or Edit → On successful form submission
+//     Condition (dans le builder) : Statut == "Valide" && Webhook_Statut == "En_attente"
+// ============================================================================
+//
+//     envoyerSoumission(input.ID);
+//
+// ============================================================================
+//  2) LE BOUTON  « Renvoyer a la plateforme »
+//     Form1_Report → Custom action → type « Sur les enregistrements selectionnes »
+//     Argument : la collection des ID selectionnes.
+// ============================================================================
+//
+// void renvoyerSelection(list idsSelection)
+// {
+// 	n = 0;
+// 	for each  idSoum in idsSelection
+// 	{
+// 		envoyerSoumission(idSoum.toLong());
+// 		n = n + 1;
+// 	}
+// 	info n + " soumission(s) renvoyee(s) a la plateforme.";
+// }
+//
+// Note : le bouton appelle directement la fonction, il ne repasse PAS par le
+// workflow. Inutile donc de remettre Webhook_Statut a "En_attente" avant :
+// on peut renvoyer une soumission deja marquee "Envoye" autant de fois que
+// le partenaire le demande pendant sa phase de test.

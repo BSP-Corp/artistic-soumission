@@ -1,0 +1,33 @@
+map ZohoBooks.CreateVendor(map json, string orgId)
+{
+	response = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/contacts?organization_id=" + orgId
+		type :POST
+		parameters:{"JSONString":json}
+		connection:"zohobooks1"
+	];
+	thisapp.Debug.LogThis("CreateVendor",zoho.loginuser,json.toString(),response.toString());
+	contact = response.getJSON("contact");
+	if(contact != null)
+	{
+		idBooks = contact.getJSON("contact_id");
+		nom = json.get("contact_name");
+		if(idBooks != null && nom != null)
+		{
+			fournisseur = Vendor[Vendor_Name == nom];
+			if(fournisseur.ID != null)
+			{
+				fournisseur.ZBOOKS_ID=idBooks;
+				for each  ligne in fournisseur.Zoho_Books_Vendors_Sync
+				{
+					if(isnull(ligne.ZBOOKS_ID) || ligne.ZBOOKS_ID == "")
+					{
+						ligne.ZBOOKS_ID=idBooks;
+					}
+				}
+			}
+		}
+	}
+	return response;
+}

@@ -1,0 +1,416 @@
+openapi: 3.1.0
+info:
+  title: API Soumissions — Groupe Canva (Zoho Creator)
+  version: "1.2"
+  description: |
+    API de lecture exposée par Zoho Creator + webhook sortant « soumission validée ».
+
+    **Hiérarchie logique** (`/v1/materiaux/{id}`) traduite en **URLs plates Creator**
+    (`/creator/custom/groupecanva/v1_materiaux?id=…`) : chaque `path` ci-dessous documente
+    la ressource logique ; l'URL réelle et le paramètre équivalent sont indiqués dans
+    `x-zoho-endpoint`. Le client peut cibler l'un ou l'autre — le schéma des réponses est identique.
+
+    Conventions : noms métier, pourcentages 0-100, booléens, `null` si non saisi,
+    montants CAD (2 déc., prix unitaire 4), dates ISO `YYYY-MM-DD`.
+servers:
+  - url: https://www.zohoapis.com/creator/custom/groupecanva
+    description: Creator Custom API (dev = publickey · prod = OAuth)
+
+security:
+  - publickey: []
+  - oauth2: []
+
+tags:
+  - name: soumissions
+  - name: bons-travail
+  - name: materiaux
+  - name: fournisseurs
+  - name: clients
+  - name: machines
+  - name: webhooks
+
+paths:
+  /v1_soumissions:
+    get:
+      tags: [soumissions]
+      summary: Lister les soumissions, ou en lire une (`id`)
+      x-zoho-endpoint: v1_soumissions
+      parameters:
+        - { name: id, in: query, schema: { type: string }, description: "Si présent : renvoie l'objet seul (format contrat v1.2)." }
+        - { name: statut, in: query, schema: { type: string, enum: [Brouillon, Valide, En_production, Termine] } }
+        - { name: client, in: query, schema: { type: string }, description: "Nom exact du client." }
+        - { name: depuis, in: query, schema: { type: string, format: date } }
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/par_page"
+      responses:
+        "200":
+          description: Liste paginée (résumés) ou objet complet si `id`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ListeSoumissions"
+                  - $ref: "#/components/schemas/ObjetSoumission"
+        "400": { $ref: "#/components/responses/Erreur" }
+        "401": { $ref: "#/components/responses/Erreur" }
+        "404": { $ref: "#/components/responses/Erreur" }
+
+  /v1_bons_travail:
+    get:
+      tags: [bons-travail]
+      summary: Bons de travail — par `id`, ou tous ceux d'une soumission (`soumission_id`)
+      x-zoho-endpoint: v1_bons_travail
+      parameters:
+        - { name: id, in: query, schema: { type: string } }
+        - { name: soumission_id, in: query, schema: { type: string } }
+        - { name: statut, in: query, schema: { type: string } }
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/par_page"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ListeBonsTravail"
+                  - $ref: "#/components/schemas/ObjetBonTravail"
+        "404": { $ref: "#/components/responses/Erreur" }
+
+  /v1_materiaux:
+    get:
+      tags: [materiaux]
+      summary: Catalogue des matières premières
+      description: |
+        Clé de jointure avec le contrat : `nom` = `soumission.materiaux[].nom` (exact).
+        Réponse mise en cache 5 min (`Cache-Control: max-age=300`).
+      x-zoho-endpoint: v1_materiaux
+      parameters:
+        - { name: id, in: query, schema: { type: string } }
+        - { name: nom, in: query, schema: { type: string }, description: "Nom exact." }
+        - { name: recherche, in: query, schema: { type: string }, description: "Contient, insensible à la casse." }
+        - { name: categorie, in: query, schema: { type: string }, description: "POLYCARBONATE | VINYLE | POLYESTER | ADHESIF | FOIL | PREMASK | ABS_STYRENE | DIVERS" }
+        - { name: actif, in: query, schema: { type: boolean, default: true } }
+        - $ref: "#/components/parameters/page"
+        - $ref: "#/components/parameters/par_page"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/ListeMateriaux"
+                  - $ref: "#/components/schemas/ObjetMateriau"
+        "404": { $ref: "#/components/responses/Erreur" }
+
+  /v1_fournisseurs:
+    get:
+      tags: [fournisseurs]
+      summary: Fournisseurs (lecture)
+      x-zoho-endpoint: v1_fournisseurs
+      parameters:
+        - { name: id, in: query, schema: { type: string } }
+        - $ref: "#/components/parameters/page"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListeFournisseurs" }
+
+  /v1_clients:
+    get:
+      tags: [clients]
+      summary: Clients (dérivés des soumissions — provisoire, bascule CRM prévue sans changement d'URL)
+      x-zoho-endpoint: v1_clients
+      parameters:
+        - { name: recherche, in: query, schema: { type: string } }
+        - $ref: "#/components/parameters/page"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListeClients" }
+
+  /v1_machines:
+    get:
+      tags: [machines]
+      summary: Fiches machines (presses, Zund, platines, finition)
+      x-zoho-endpoint: v1_machines
+      parameters:
+        - { name: famille, in: query, schema: { type: string, enum: [presse, zund, platine, laminoir, slitter, guillotine] } }
+        - { name: actif, in: query, schema: { type: boolean, default: true } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListeMachines" }
+
+  /webhooks/soumission-validee:
+    post:
+      tags: [webhooks]
+      summary: "SORTANT — Zoho appelle VOTRE URL à chaque soumission validée"
+      description: |
+        Ce chemin est **le vôtre** (vous nous donnez l'URL). Corps = contrat v1.2.
+        En-têtes : `Authorization: Bearer <jeton>`, `X-Zoho-Signature: sha256=<HMAC>`,
+        `X-Zoho-Event: soumission.validee`, `X-Zoho-Delivery: <uuid>`.
+        Répondez 200/202 (corps JSON libre, stocké et affiché dans le widget) ;
+        4xx = définitif ; 5xx/timeout = rejeu (3 tentatives).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Soumission" }
+      responses:
+        "200":
+          description: Reçu et traité
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReponseIA" }
+        "202": { description: Reçu, traitement asynchrone }
+
+components:
+  securitySchemes:
+    publickey:
+      type: apiKey
+      in: query
+      name: publickey
+      description: DEV seulement — clé générée par Creator, une par endpoint.
+    oauth2:
+      type: oauth2
+      description: "PROD — client credentials, scope ZohoCreator.customapi.EXECUTE. En-tête `Authorization: Zoho-oauthtoken <token>`."
+      flows:
+        clientCredentials:
+          tokenUrl: https://accounts.zoho.com/oauth/v2/token
+          scopes:
+            ZohoCreator.customapi.EXECUTE: exécuter les Custom API
+
+  parameters:
+    page: { name: page, in: query, schema: { type: integer, minimum: 1, default: 1 } }
+    par_page: { name: par_page, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 100 } }
+
+  responses:
+    Erreur:
+      description: Erreur — format unique
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [erreur]
+            properties:
+              erreur:
+                type: object
+                required: [code, message]
+                properties:
+                  code: { type: string, examples: [MATERIAU_INTROUVABLE, PARAMETRE_INVALIDE, NON_AUTORISE] }
+                  message: { type: string }
+                  details: { type: object }
+
+  schemas:
+    Pagination:
+      type: object
+      required: [page, par_page, total]
+      properties:
+        page: { type: integer }
+        par_page: { type: integer }
+        total: { type: integer }
+        page_suivante: { type: [integer, "null"] }
+
+    Temps:
+      type: object
+      properties:
+        heures: { type: integer }
+        minutes: { type: integer }
+        minutes_totales: { type: number }
+
+    Materiau:
+      type: object
+      required: [id, nom, categorie, actif]
+      properties:
+        id: { type: string, description: "ID Creator (19 chiffres, chaîne)" }
+        nom: { type: string, description: "Clé de jointure avec soumission.materiaux[].nom" }
+        categorie: { type: string }
+        format: { type: [string, "null"], description: "M (feuille) | SC (rouleau) | null" }
+        epaisseur_po: { type: [number, "null"] }
+        largeur_po: { type: [number, "null"] }
+        longueur_po: { type: [number, "null"] }
+        cout_pi2: { type: [number, "null"], description: "CAD / pi² — null tant que la réconciliation des prix n'est pas faite" }
+        prix_paye: { type: [number, "null"], description: "dernier prix d'achat (feuille ou rouleau)" }
+        fournisseur: { type: [string, "null"] }
+        date_dernier_prix: { type: [string, "null"], format: date }
+        stock: { type: [number, "null"] }
+        actif: { type: boolean }
+      example:
+        id: "4153107000022549672"
+        nom: "Lexan Clair ,005x24x48"
+        categorie: "POLYCARBONATE"
+        format: "M"
+        epaisseur_po: 0.005
+        largeur_po: 24
+        longueur_po: 48
+        cout_pi2: 0.36
+        prix_paye: 2.88
+        fournisseur: "Laird Plastics"
+        date_dernier_prix: "2025-05-01"
+        stock: 40
+        actif: true
+
+    Fournisseur:
+      type: object
+      properties:
+        id: { type: string }
+        nom: { type: string }
+        contact: { type: [string, "null"] }
+        courriel: { type: [string, "null"] }
+        telephone: { type: [string, "null"] }
+        adresse: { type: [string, "null"] }
+        pays: { type: [string, "null"] }
+
+    Client:
+      type: object
+      properties:
+        no_client: { type: [string, "null"] }
+        nom: { type: string }
+        nb_soumissions: { type: integer }
+        derniere_soumission: { type: [string, "null"], format: date }
+
+    Machine:
+      type: object
+      properties:
+        id: { type: string }
+        nom: { type: string }
+        famille: { type: string }
+        site: { type: [string, "null"] }
+        taux_horaire: { type: [number, "null"] }
+        vitesse: { type: [number, "null"] }
+        unite_vitesse: { type: [string, "null"] }
+        largeur_max_po: { type: [number, "null"] }
+        hauteur_max_po: { type: [number, "null"] }
+        actif: { type: boolean }
+
+    SoumissionResume:
+      type: object
+      properties:
+        id: { type: string }
+        no_soumission: { type: string }
+        statut: { type: string }
+        date_soumission: { type: string, format: date }
+        client: { type: string }
+        no_piece: { type: string }
+        quantite: { type: [integer, "null"] }
+        prix_vendant: { type: number }
+        prix_unitaire: { type: number }
+        prix_vendu_unitaire: { type: [number, "null"], description: "v1.1 — prix décidé par le chargé de projet ; null = utiliser prix_unitaire" }
+
+    Soumission:
+      type: object
+      description: "Objet complet — voir CONTRAT-SOUMISSION.md (95 champs saisis + 24 calculés, v1.1). Le schéma détaillé y est généré depuis le code."
+      required: [schema_version, soumission, client, piece, production, prix, ventilation_couts]
+      properties:
+        schema_version: { type: string, enum: ["1.0", "1.1", "1.2"] }
+        soumission: { type: object }
+        client: { type: object }
+        piece: { type: object }
+        production: { type: object }
+        impression: { type: object }
+        exclusions: { type: object }
+        materiaux: { type: array, items: { type: object } }
+        materiaux_options: { type: object }
+        decoupe: { type: object }
+        machines: { type: object }
+        sous_contrat: { type: array, items: { type: object } }
+        frais: { type: object }
+        prix: { type: object }
+        ventilation_couts: { type: array, minItems: 7, maxItems: 7, items: { type: object } }
+
+    BonTravail:
+      type: object
+      properties:
+        id: { type: string }
+        no_bt: { type: string }
+        soumission_id: { type: string }
+        statut: { type: string }
+        commande_le: { type: [string, "null"], format: date }
+        date_requise: { type: [string, "null"], format: date }
+        client: { type: string }
+        no_piece: { type: string }
+        qte_commandee: { type: integer }
+        qte_produite: { type: integer }
+        nb_up: { type: integer }
+        temps_min:
+          type: object
+          properties:
+            numerique: { type: number }
+            zund: { type: number }
+            soies: { type: number }
+            impression: { type: number }
+            decoupe: { type: number }
+
+    ReponseIA:
+      type: object
+      description: "Format PROPOSÉ pour la réponse de votre plateforme — à confirmer vendredi."
+      properties:
+        verdict: { type: string, enum: [ok, avertissement, alerte] }
+        alertes:
+          type: array
+          items:
+            type: object
+            properties:
+              code: { type: string, examples: [MATERIAU_ALTERNATIVE_MOINS_CHER, MONTANT_ANORMAL, COMBINAISON_INCOHERENTE] }
+              champ: { type: string, description: "chemin dans le contrat, ex. materiaux[0].nom" }
+              severite: { type: string, enum: [info, avertissement, bloquant] }
+              message: { type: string }
+              suggestion: { type: [string, "null"] }
+        analyse_id: { type: string }
+
+    ListeSoumissions:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            donnees: { type: array, items: { $ref: "#/components/schemas/SoumissionResume" } }
+    ObjetSoumission:
+      type: object
+      properties:
+        donnees: { $ref: "#/components/schemas/Soumission" }
+    ListeBonsTravail:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            donnees: { type: array, items: { $ref: "#/components/schemas/BonTravail" } }
+    ObjetBonTravail:
+      type: object
+      properties:
+        donnees: { $ref: "#/components/schemas/BonTravail" }
+    ListeMateriaux:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            donnees: { type: array, items: { $ref: "#/components/schemas/Materiau" } }
+    ObjetMateriau:
+      type: object
+      properties:
+        donnees: { $ref: "#/components/schemas/Materiau" }
+    ListeFournisseurs:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            donnees: { type: array, items: { $ref: "#/components/schemas/Fournisseur" } }
+    ListeClients:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            donnees: { type: array, items: { $ref: "#/components/schemas/Client" } }
+    ListeMachines:
+      allOf:
+        - $ref: "#/components/schemas/Pagination"
+        - type: object
+          properties:
+            donnees: { type: array, items: { $ref: "#/components/schemas/Machine" } }

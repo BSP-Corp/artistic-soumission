@@ -1,0 +1,281 @@
+// ============================================================================
+//  BAC À SABLE PARTENAIRE — deux Custom API en libre-service
+//
+//  Objectif : leur développeur travaille SANS nous. Il récupère un vrai JSON,
+//  branche son parseur, puis se fait envoyer un test sur SA propre URL — autant
+//  de fois qu'il veut, sans qu'on clique sur quoi que ce soit.
+//
+//     GET  v1_exemple                          → un vrai contrat v1.0, à parser
+//     POST v1_test_webhook?url_cible=…         → on POSTe ce contrat chez lui
+//
+//  Ces deux endpoints servent LA PHASE DE TEST. À désactiver à la mise en
+//  production (voir la note de sécurité en bas — v1_test_webhook fait poster
+//  Zoho vers une URL fournie par l'appelant).
+//
+//  Contraintes Deluge respectées : pas de `while`, pas de `left()`,
+//  pas de `.first()`, `body` sans `content-type` dans invokeUrl.
+// ============================================================================
+
+
+// ============================================================================
+//  1)  GET v1_exemple
+//      Custom API · méthode GET · aucun paramètre · auth par clé publique
+//
+//      https://www.zohoapis.com/creator/custom/groupecanva/v1_exemple?publickey=CLE
+//
+//      Renvoie la soumission validée la plus récente qui porte un contrat.
+//      Toujours un payload RÉEL, jamais une maquette figée : quand notre moteur
+//      évolue, leur exemple évolue avec.
+// ============================================================================
+
+map v1_exemple()
+{
+	trouve = false;
+	brut = "";
+
+	// sort by ID desc : la plus récente d'abord. Le drapeau remplace un `break`,
+	// que Deluge n'a pas.
+	for each  s in Form1[Soumission_JSON != ""] sort by ID desc
+	{
+		if (!trouve)
+		{
+			brut = ifnull(s.Soumission_JSON, "").toString();
+			// sécurité : si le jeton de substitution traîne encore, on met l'ID réel
+			brut = brut.replaceAll("__ID_SOUMISSION__", s.ID.toString());
+			trouve = true;
+		}
+	}
+
+	if (!trouve)
+	{
+		return bac_erreur("AUCUN_EXEMPLE", "Aucune soumission ne porte encore de contrat.");
+	}
+
+	sortie = Map();
+	sortie.put("donnees", bac_json_ou_brut(brut));
+	sortie.put("schema_version", "1.0");
+	sortie.put("note", "Payload reel, identique a ce qui vous sera envoye en POST.");
+	return sortie;
+}
+
+
+// ============================================================================
+//  2)  POST v1_test_webhook
+//      Custom API · méthode POST · auth par clé publique
+//      Paramètres :  url_cible (obligatoire, string)
+//                    jeton     (optionnel, string)
+//
+//      curl -X POST "https://www.zohoapis.com/creator/custom/groupecanva/\
+//      v1_test_webhook?publickey=CLE&url_cible=https://votre-api/soumissions"
+//
+//      On envoie le contrat le plus récent à l'URL fournie, avec les mêmes
+//      en-têtes et la même signature qu'en production, puis on renvoie un
+//      diagnostic complet : code HTTP, signature utilisée, corps reçu, et un
+//      conseil ciblé si ça échoue.
+// ============================================================================
+
+map v1_test_webhook(string url_cible, string jeton)
+{
+	// ── validation de la cible ──────────────────────────────────────────
+	cible = ifnull(url_cible, "").trim();
+	if (cible == "")
+	{
+		return bac_erreur("URL_MANQUANTE", "Passez url_cible=https://votre-endpoint.");
+	}
+	if (!cible.startsWith("https://"))
+	{
+		return bac_erreur("HTTPS_REQUIS", "Seules les URL en https sont acceptees. Un jeton ne voyage pas en clair.");
+	}
+
+	// ── jeton : celui fourni, sinon celui configure ─────────────────────
+	cle = ifnull(jeton, "").trim();
+	if (cle == "")
+	{
+		for each  cfg in Parametres_Integration[Actif == "Oui"]
+		{
+			j = ifnull(cfg.Jeton_Actif, "").trim();
+			if (j != "")
+			{
+				cle = j;
+			}
+		}
+	}
+	if (cle == "")
+	{
+		return bac_erreur("JETON_MANQUANT", "Aucun jeton configure. Passez jeton=… ou contactez-nous.");
+	}
+
+	// ── le payload : le meme que v1_exemple ─────────────────────────────
+	trouve = false;
+	corps = "";
+	idSoum = "";
+	for each  s in Form1[Soumission_JSON != ""] sort by ID desc
+	{
+		if (!trouve)
+		{
+			corps = ifnull(s.Soumission_JSON, "").toString();
+			idSoum = s.ID.toString();
+			corps = corps.replaceAll("__ID_SOUMISSION__", idSoum);
+			trouve = true;
+		}
+	}
+	if (!trouve)
+	{
+		return bac_erreur("AUCUN_EXEMPLE", "Aucune soumission ne porte encore de contrat.");
+	}
+
+	// ── en-tetes : STRICTEMENT ceux de la production ────────────────────
+	sig = zoho.encryption.hmacsha256(cle, corps, "hex");
+	entetes = Map();
+	entetes.put("Content-Type", "application/json");
+	entetes.put("Authorization", "Bearer " + cle);
+	entetes.put("X-Zoho-Signature", "sha256=" + sig);
+	entetes.put("X-Zoho-Event", "soumission.validee");
+	entetes.put("X-Zoho-Delivery", zoho.currenttime.toString("yyyyMMddHHmmssSSS") + "-test");
+	entetes.put("X-API-Version", "1.0");
+
+	code = 0;
+	texte = "";
+	try
+	{
+		rep = invokeurl
+		[
+			url :cible
+			type :POST
+			headers :entetes
+			body :corps
+			detailed :true
+		];
+		code = ifnull(rep.get("responseCode"), 0);
+		texte = ifnull(rep.get("responseText"), "").toString();
+	}
+	catch (e)
+	{
+		code = 0;
+		texte = "exception : " + e;
+	}
+
+	// left() leve une erreur si n depasse la longueur : troncature manuelle.
+	extrait = texte;
+	if (extrait.length() > 4000)
+	{
+		extrait = extrait.subString(0, 4000);
+	}
+
+	// ── journal : un test reste tracable comme un envoi reel ────────────
+	ligne = insert into integration_log
+	[
+		Soumission_ID = idSoum
+		Direction = "sortant"
+		Evenement = "test.webhook"
+		Tentative = 1
+		Statut_HTTP = code
+		Duree_ms = 0
+		Reponse = extrait
+		Erreur = ""
+		Horodatage = zoho.currenttime
+	];
+
+	// ── diagnostic ──────────────────────────────────────────────────────
+	sortie = Map();
+	sortie.put("envoye_a", cible);
+	sortie.put("statut_http", code);
+	sortie.put("corps_taille", corps.length());
+	sortie.put("signature_envoyee", "sha256=" + sig);
+	sortie.put("soumission_id", idSoum);
+	sortie.put("reponse_recue", extrait);
+
+	if (code >= 200 && code < 300)
+	{
+		sortie.put("verdict", "ok");
+		sortie.put("conseil", "Recu. Verifiez que votre signature calculee correspond a signature_envoyee.");
+	}
+	else if (code == 401 || code == 403)
+	{
+		sortie.put("verdict", "echec");
+		sortie.put("conseil", "Votre endpoint a refuse le jeton. Comparez avec le Bearer envoye, ou passez jeton=<le votre> pour tester avec le secret de votre choix.");
+	}
+	else if (code >= 400 && code < 500)
+	{
+		sortie.put("verdict", "echec");
+		sortie.put("conseil", "Votre endpoint a rejete le contenu. En production nous NE rejouons PAS un 4xx : renvoyez 4xx uniquement si le contrat est reellement viole.");
+	}
+	else if (code == 0)
+	{
+		sortie.put("verdict", "echec");
+		sortie.put("conseil", "Aucune reponse : URL injoignable depuis Internet, DNS, certificat TLS, ou delai depasse. Un endpoint en localhost n'est pas atteignable.");
+	}
+	else
+	{
+		sortie.put("verdict", "echec");
+		sortie.put("conseil", "Erreur serveur chez vous. En production nous rejouons 3 fois sur 5xx.");
+	}
+	return sortie;
+}
+
+
+// ============================================================================
+//  Utilitaires — partages avec les autres endpoints
+// ============================================================================
+
+/** Le contrat est stocke en texte. On le renvoie en JSON imbrique si Deluge sait
+ *  le parser, sinon en brut : le client parsera lui-meme plutot que rien. */
+map bac_json_ou_brut(string brut)
+{
+	sortie = Map();
+	ok = false;
+	try
+	{
+		// Verifier `toMap()` dans l'autocompletion : selon l'edition, toJSONMap().
+		sortie = brut.toMap();
+		ok = true;
+	}
+	catch (e)
+	{
+		ok = false;
+	}
+	if (!ok)
+	{
+		sortie = Map();
+		sortie.put("json_brut", brut);
+		sortie.put("avertissement", "JSON non parse cote Zoho - a parser cote client.");
+	}
+	// Deluge exige un retour garanti au niveau du corps : un `return` place
+	// uniquement dans un try/catch est refuse ("Missing return statement").
+	return sortie;
+}
+
+/** Format d'erreur unique, identique sur tous les endpoints. */
+map bac_erreur(string code, string message)
+{
+	err = Map();
+	err.put("code", code);
+	err.put("message", message);
+	out = Map();
+	out.put("erreur", err);
+	return out;
+}
+
+
+// ============================================================================
+//  SÉCURITÉ — à lire avant de publier v1_test_webhook
+//
+//  Cet endpoint fait poster Zoho vers une URL fournie par l'appelant. Quiconque
+//  détient la clé publique peut donc faire émettre une requête depuis notre
+//  infrastructure, avec un de nos contrats en charge utile.
+//
+//  Garde-fous déjà en place :
+//    · HTTPS obligatoire — refus explicite sinon
+//    · chaque appel est tracé dans integration_log (Evenement = "test.webhook")
+//    · la charge utile est une soumission existante, jamais un contenu arbitraire
+//
+//  Ce qu'il reste à faire de notre côté :
+//    · une clé publique DÉDIÉE à cet endpoint, distincte des autres — révocable seule
+//    · la régénérer à la fin de la phase de test
+//    · DÉSACTIVER la Custom API une fois l'intégration en production : elle n'a
+//      plus de raison d'être, et c'est la façon la plus simple de fermer la porte
+//
+//  v1_exemple, lui, est en lecture seule et peut rester actif sans risque —
+//  hormis le fait qu'il expose un contrat réel, donc nos chiffres. À garder
+//  derrière une clé.
+// ============================================================================

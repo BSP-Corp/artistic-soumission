@@ -1,0 +1,22 @@
+// Correction du 1er octobre 2026 — meme defaut que ZohoBooks.getTaxes.
+//
+// AVANT : appel a l'API Inventory (www.zohoapis.com/inventory/v1/settings/warehouses) via la
+// connexion « zoho_inventory1 ». Groupe Canva n'a pas acces a Zoho Inventory : la reponse etait
+// { "code": 6018, "message": "votre compte est desactive" } — et comme ce code voyage DANS LE
+// CORPS de la reponse, l'appelant le prenait pour un succes et repartait sans entrepot.
+//
+// Consequence observee : la creation d'un bon de commande echouait cote Books sur
+// « Article warehouse_id non valide », faute d'identifiant d'entrepot valide.
+//
+// APRES : l'API Books expose les memes entrepots quand le multi-entrepot est actif, via la
+// connexion « zohobooks1 » qui, elle, fonctionne. Forme de reponse identique.
+string ZohoBooks.getWarehouses(string orgId)
+{
+	response = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/settings/warehouses?organization_id=" + orgId
+		type :GET
+		connection:"zohobooks1"
+	];
+	return response;
+}

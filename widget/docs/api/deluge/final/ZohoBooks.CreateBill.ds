@@ -1,0 +1,63 @@
+string ZohoBooks.CreateBill(map data, string ZBOOKSID, bool needReceive, string orgId)
+{
+	params = Dev_params[ID != null];
+	lignesEntrantes = data.get("line_items");
+	if(lignesEntrantes != null)
+	{
+		emplacement = "";
+		lignesSaines = List();
+		for each  ligne in lignesEntrantes
+		{
+			propre = Map();
+			propre.putAll(ligne);
+			entrepot = ifnull(propre.get("warehouse_id"),"");
+			if(entrepot != "")
+			{
+				emplacement = entrepot;
+			}
+			propre.remove("warehouse_id");
+			lignesSaines.add(propre);
+		}
+		data.put("line_items",lignesSaines);
+		if(emplacement != "")
+		{
+			data.put("location_id",emplacement);
+		}
+	}
+	billResponse = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/bills?organization_id=" + orgId
+		type :POST
+		parameters:{"JSONString":data}
+		connection:"zohobooks1"
+	];
+	line_items = data.getJSON("line_items");
+	lineItemsMap = Map();
+	for each  line_item in line_items
+	{
+		lineItemsMap.put(line_item.getJSON("item_id"),line_item);
+	}
+	thisapp.Debug.LogThis("CreateBill",zoho.loginuser,data.toString(),billResponse.toString());
+	if(billResponse.getJSON("code") == 0)
+	{
+		billLineItems = billResponse.getJSON("bill").getJSON("line_items");
+		receiveLineItems = List();
+		for each  lineItemIndex in billLineItems.toJSONList()
+		{
+			booksItemSyncRec = Zoho_Books_Items_Sync[ZBOOKS_ID == lineItemIndex.getJSON("item_id")];
+			productRec = Product[ID == booksItemSyncRec.Product];
+			if(ifnull(lineItemIndex.getJSON("is_landedcost"),false) == false && productRec.Product_Category.Type_field == "Produit" || productRec.Serializable)
+			{
+				lineItem = lineItemsMap.get(lineItemIndex.getJSON("item_id"));
+				serial_numbers = lineItem.get("serial_numbers");
+				receiveLineItems.add({"line_item_id":lineItemIndex.getJSON("purchaseorder_item_id"),"bill_line_item_id":lineItemIndex.getJSON("line_item_id"),"quantity":lineItemIndex.getJSON("quantity"),"serial_numbers":serial_numbers});
+			}
+		}
+		json = {"receive_number":data.getJSON("bill_number"),"date":zoho.currentdate.toString("yyyy-MM-dd"),"line_items":receiveLineItems};
+		if(needReceive && receiveLineItems.size() > 0)
+		{
+			return thisapp.ZohoBooks.CreatePurchaseReceive(json,ZBOOKSID,billResponse,orgId);
+		}
+	}
+	return billResponse;
+}

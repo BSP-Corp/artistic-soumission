@@ -1,0 +1,232 @@
+// ============================================================================
+//  ANALYSE IA D'UNE SOUMISSION  —  plateforme « Decalcomanie API » v1 (UAT)
+//
+//  Remplace l'ancien webhook « on envoie et on oublie » : leur API est un service
+//  SYNCHRONE de question-réponse, et il faut DEUX appels par soumission validée.
+//
+//     PUT  /history    application/json        enregistre la soumission (base de comparaison)
+//     POST /analyses   multipart/form-data     lance l'analyse → renvoie les flags (8 à 20 s)
+//
+//  Auth : header X-Api-Key sur CHAQUE appel (leur doc, §2).
+//
+//  ⚠ NE PAS APPELER DEPUIS LE WORKFLOW DE SAUVEGARDE.
+//    L'analyse dure 8 à 20 secondes ; dans un workflow de formulaire elle bloquerait
+//    l'enregistrement de l'utilisateur et se heurterait aux limites d'exécution de Deluge.
+//    Le workflow se contente de marquer `Webhook_Statut = En_attente` ; cette fonction est
+//    lancée à part — par la tâche planifiée, ou par le bouton « Renvoyer à la plateforme ».
+//
+//  UNE SEULE FONCTION à créer dans Creator : `analyserSoumission(int idSoumission)`,
+//  espace de noms Default, type de retour void, un argument `idSoumission` de type **int**.
+//  (Creator ne propose pas `long` : les types offerts sont int, float, string, bool, date,
+//  map, list, collection. `envoyerSoumission` utilise déjà `int` pour le même identifiant.)
+//  Le journal est écrit sur place plutôt que dans une fonction séparée : une fonction
+//  auxiliaire à cinq arguments typés coûtait plus cher à créer et à maintenir que les
+//  quelques lignes qu'elle économisait.
+//
+//  Contraintes Deluge respectées : pas de `while`, pas de `left()`, pas de `.first()`,
+//  `body` sans content-type (il va dans la map d'en-têtes), écriture par variable
+//  intermédiaire (`maj = Form1[...]` puis `maj.Champ = ...`).
+// ============================================================================
+
+void analyserSoumission(int idSoumission)
+{
+	// ── configuration ───────────────────────────────────────────────────
+	// L'en-tete d'authentification est fixe ici, pas dans Creator : le formulaire
+	// Parametres_Integration n'a que Nom_Partenaire / URL_Webhook / Jeton_Actif /
+	// Jeton_Precedent / Date_Rotation / Signer_HMAC / Actif / Timeout_Sec /
+	// Max_Tentatives / Note. Lire un champ qui n'existe pas fait ECHOUER la fonction —
+	// ne pas ajouter de cfg.<champ> sans l'avoir cree dans le formulaire d'abord.
+	ENTETE_CLE = "X-Api-Key";
+
+	BASE = "";
+	CLE = "";
+	for each  cfg in Parametres_Integration[Actif == "Oui"]
+	{
+		u = ifnull(cfg.URL_Webhook, "").trim();
+		j = ifnull(cfg.Jeton_Actif, "").trim();
+		if (u != "" && j != "")
+		{
+			BASE = u;
+			CLE = j;
+		}
+	}
+	if (BASE == "" || CLE == "")
+	{
+		info "analyse annulee : Parametres_Integration absent ou incomplet (Actif = Oui ?).";
+		return;
+	}
+	// URL_Webhook portait jusqu'ici l'URL COMPLETE d'un webhook ; elle doit maintenant
+	// contenir l'URL DE BASE de leur API (ex. http://192.168.250.10/api). On tolere une
+	// barre finale, et on refuse tout de suite une adresse qui pointe encore un endpoint :
+	// mieux vaut un message clair qu'un 404 incomprehensible dans le journal.
+	if (BASE.endsWith("/"))
+	{
+		BASE = BASE.subString(0, BASE.length() - 1);
+	}
+	if (BASE.endsWith("/analyses") || BASE.endsWith("/history"))
+	{
+		info "analyse annulee : URL_Webhook doit contenir l'URL DE BASE (ex. http://192.168.250.10/api), pas un endpoint.";
+		return;
+	}
+
+	// ── le contrat ──────────────────────────────────────────────────────
+	corps = "";
+	for each  s in Form1[ID == idSoumission]
+	{
+		corps = ifnull(s.Soumission_JSON, "").toString();
+	}
+	if (corps.trim() == "")
+	{
+		info "analyse annulee : Soumission_JSON vide sur " + idSoumission + ".";
+		return;
+	}
+	// le widget ecrit un jeton de substitution : l'ID Creator n'existe pas a la creation
+	corps = corps.replaceAll("__ID_SOUMISSION__", idSoumission.toString());
+
+	// Deluge echappe le guillemet par \" (comme Java). On l'isole dans une constante : c'est
+	// le seul caractere delicat de ce fichier, et les editeurs de Creator ont tendance a le
+	// reformater. Si un jour le corps part malforme, c'est ici qu'il faut regarder.
+	Q = "\"";
+
+	entetes = Map();
+	entetes.put(ENTETE_CLE, CLE);
+
+	// ════════════════════════════════════════════════════════════════════
+	//  1) PUT /history — enregistrer la soumission
+	//     Leur cle est contract.soumission.id ; un second appel ECRASE la meme entree,
+	//     donc rejouer est sans danger.
+	// ════════════════════════════════════════════════════════════════════
+	enveloppe = "{" + Q + "contract" + Q + ":" + corps + "}";
+	entetesJson = Map();
+	entetesJson.putAll(entetes);
+	entetesJson.put("Content-Type", "application/json");
+
+	codeHist = 0;
+	texteHist = "";
+	try
+	{
+		repH = invokeurl
+		[
+			url :BASE + "/history"
+			type :PUT
+			headers :entetesJson
+			body :enveloppe
+			detailed :true
+		];
+		codeHist = ifnull(repH.get("responseCode"), 0);
+		texteHist = ifnull(repH.get("responseText"), "").toString();
+	}
+	catch (eh)
+	{
+		codeHist = 0;
+		texteHist = "exception : " + eh;
+	}
+	extraitHist = texteHist;
+	if (extraitHist.length() > 4000)
+	{
+		extraitHist = extraitHist.subString(0, 4000);
+	}
+	ligneHist = insert into integration_log
+	[
+		Soumission_ID = idSoumission.toString()
+		Direction = "sortant"
+		Evenement = "history.upsert"
+		Tentative = 1
+		Statut_HTTP = codeHist
+		Duree_ms = 0
+		Reponse = extraitHist
+		Erreur = ""
+		Horodatage = zoho.currenttime
+	];
+
+	// ════════════════════════════════════════════════════════════════════
+	//  2) POST /analyses — multipart/form-data
+	//     Deluge ne sait pas composer un multipart melant champ texte et fichiers ; on
+	//     fabrique donc le corps a la main et on pose la frontiere dans le Content-Type.
+	//     Leur doc (§5.1, tableau des parts) accepte `contract` comme CHAMP SIMPLE : une
+	//     seule part suffit tant qu'aucun document n'accompagne la soumission.
+	//     Les documents (.pdf/.doc/.docx/.ai/.svg, 5 Mo max) ne sont pas geres ici : la
+	//     soumission Zoho n'en porte aucun aujourd'hui. Les ajouter = une part de plus,
+	//     meme frontiere, avec filename et Content-Type propres.
+	// ════════════════════════════════════════════════════════════════════
+	FR = "----ZohoCreator" + zoho.currenttime.toString("yyyyMMddHHmmssSSS");
+	CRLF = "\r\n";
+	multipart = "--" + FR + CRLF;
+	multipart = multipart + "Content-Disposition: form-data; name=" + Q + "contract" + Q + CRLF;
+	multipart = multipart + "Content-Type: application/json" + CRLF + CRLF;
+	multipart = multipart + corps + CRLF;
+	multipart = multipart + "--" + FR + "--" + CRLF;
+
+	entetesMp = Map();
+	entetesMp.putAll(entetes);
+	entetesMp.put("Content-Type", "multipart/form-data; boundary=" + FR);
+
+	codeAn = 0;
+	texteAn = "";
+	try
+	{
+		repA = invokeurl
+		[
+			url :BASE + "/analyses"
+			type :POST
+			headers :entetesMp
+			body :multipart
+			detailed :true
+		];
+		codeAn = ifnull(repA.get("responseCode"), 0);
+		texteAn = ifnull(repA.get("responseText"), "").toString();
+	}
+	catch (ea)
+	{
+		codeAn = 0;
+		texteAn = "exception : " + ea;
+	}
+	extraitAn = texteAn;
+	if (extraitAn.length() > 4000)
+	{
+		extraitAn = extraitAn.subString(0, 4000);
+	}
+	ligneAn = insert into integration_log
+	[
+		Soumission_ID = idSoumission.toString()
+		Direction = "sortant"
+		Evenement = "analyses.create"
+		Tentative = 1
+		Statut_HTTP = codeAn
+		Duree_ms = 0
+		Reponse = extraitAn
+		Erreur = ""
+		Horodatage = zoho.currenttime
+	];
+
+	// ── resultat : on garde la reponse telle quelle ─────────────────────
+	// `flags` est le seul resultat utile ; le widget l'affiche depuis Reponse_IA.
+	// On ne tente PAS d'interpreter les codes : leur doc demande de traiter un code
+	// inconnu comme un flag affichable, pas comme une erreur.
+	statut = "Echec";
+	if (codeAn >= 200 && codeAn < 300)
+	{
+		statut = "Analyse";
+	}
+	else if (codeAn == 401)
+	{
+		statut = "Cle_refusee";
+	}
+	else if (codeAn == 0)
+	{
+		statut = "Injoignable";
+	}
+
+	extrait = texteAn;
+	if (extrait.length() > 60000)
+	{
+		extrait = extrait.subString(0, 60000);
+	}
+
+	maj = Form1[ID == idSoumission];
+	maj.Webhook_Statut = statut;
+	maj.Reponse_IA = extrait;
+	maj.Soumission_JSON = corps;
+
+	info "Analyse " + idSoumission + " : history=" + codeHist + " analyses=" + codeAn + " (" + statut + ").";
+}

@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="fr-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide utilisateur — Soumission Matériaux Souples</title>
+<style>
+  :root{
+    --ink:#1b1b1b; --ink2:#2a2a2a; --orange:#e8730a; --orange-dk:#c75b00;
+    --tint:#fff4e8; --calc:#f3f4f5; --line:#d4d7da; --page:#f1f1f1;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--page);font:15px/1.55 "Segoe UI",Arial,sans-serif;color:var(--ink)}
+  .top{background:var(--ink);color:#fff;padding:26px 24px;border-bottom:4px solid var(--orange)}
+  .top .wrap{max-width:980px;margin:0 auto}
+  .top h1{margin:0;font-size:24px;font-weight:800;text-transform:uppercase;letter-spacing:.3px}
+  .top h1 span{color:var(--orange)}
+  .top p{margin:8px 0 0;color:#cfcfcf;max-width:65ch}
+  main{max-width:980px;margin:0 auto;padding:26px 24px 80px}
+  h2{font-size:19px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;margin:42px 0 6px;
+     border-left:5px solid var(--orange);padding-left:12px}
+  h2:first-of-type{margin-top:26px}
+  h3{font-size:15.5px;margin:26px 0 6px;color:var(--ink)}
+  p{max-width:75ch}
+  .carte{background:#fff;border:1px solid var(--line);border-radius:4px;padding:16px 18px;margin:14px 0}
+  .carte h3{margin-top:0}
+  code,.code{font-family:Consolas,monospace;font-size:13px;background:var(--calc);padding:1px 6px;border-radius:3px}
+  .formule{display:block;background:var(--ink);color:#ffd9b3;font-family:Consolas,monospace;font-size:13px;
+           padding:10px 14px;border-radius:4px;margin:8px 0;overflow-x:auto;white-space:pre}
+  table{border-collapse:collapse;width:100%;margin:10px 0;background:#fff;font-size:13.5px}
+  th{background:var(--ink);color:#fff;text-align:left;padding:7px 10px;font-size:12px;text-transform:uppercase;letter-spacing:.05em}
+  td{border:1px solid var(--line);padding:7px 10px;vertical-align:top}
+  tr:nth-child(even) td{background:#fafafa}
+  .tblwrap{overflow-x:auto}
+  .pill{display:inline-block;background:var(--tint);border:1px solid #ebcba6;color:var(--orange-dk);
+        border-radius:3px;padding:1px 8px;font-size:12.5px;font-weight:600;white-space:nowrap}
+  .ou{display:inline-block;background:var(--calc);border-radius:3px;padding:1px 8px;font-size:12.5px}
+  .astuce{border-left:4px solid var(--orange);background:var(--tint);padding:10px 14px;border-radius:0 4px 4px 0;margin:14px 0}
+  .astuce b{color:var(--orange-dk)}
+  ol,ul{padding-left:22px}
+  li{margin:4px 0}
+  .muted{color:#666;font-size:13px}
+  .toc{background:#fff;border:1px solid var(--line);border-radius:4px;padding:14px 18px;margin-top:18px;columns:2;column-gap:30px}
+  .toc a{color:var(--orange-dk);text-decoration:none;display:block;padding:2px 0;font-size:14px;break-inside:avoid}
+  .toc a:hover{text-decoration:underline}
+  @media(max-width:700px){.toc{columns:1}}
+</style>
+</head>
+<body>
+<div class="top"><div class="wrap">
+  <h1>Guide utilisateur — <span>Soumission Matériaux Souples</span></h1>
+  <p>Le widget reproduit exactement le calcul du classeur Excel <code>FT_Soumission Rev.06</code>.
+     Tous les prix, taux et valeurs par défaut sont <b>paramétrables dans Zoho Creator</b> — ce guide
+     explique chaque champ calculé, les paramètres qu'il utilise, et où les modifier.</p>
+</div></div>
+<main>
+
+<div class="toc">
+  <a href="#parametrer">1. Où paramétrer (l'essentiel)</a>
+  <a href="#codes">2. Comprendre les codes (lien avec Excel)</a>
+  <a href="#materiaux">3. Gérer les matériaux</a>
+  <a href="#champs">4. Les champs calculés un par un</a>
+  <a href="#prix">5. Le prix final (la cascade)</a>
+  <a href="#depannage">6. Dépannage</a>
+</div>
+
+<h2 id="parametrer">1 · Où paramétrer — l'essentiel</h2>
+<p>Deux formulaires Creator pilotent tout le calcul. Le widget les lit à chaque ouverture
+   (le bandeau du haut affiche <span class="ou">Creator : X matériaux · Y taux</span> quand c'est actif).</p>
+<div class="carte">
+  <h3>📋 Formulaire <code>Taux Calcul</code> — taux horaires, cadences, majorations, défauts</h3>
+  <div class="tblwrap"><table>
+    <tr><th>Champ</th><th>Rôle</th></tr>
+    <tr><td><code>Code</code></td><td>Position dans Excel : <span class="pill">INV_8</span> = ligne 8 d'InventaireA ·
+        <span class="pill">S_F29</span> = cellule F29 de la feuille Soumission</td></tr>
+    <tr><td><code>CF_Valeur</code></td><td>La valeur ($ ou fraction) — colonne CF d'Excel. Ex. INV_8 → 73 $/h</td></tr>
+    <tr><td><code>CH_Cadence</code></td><td>Cadence machine en morceaux/heure — colonne CH</td></tr>
+    <tr><td><code>CI_Temps</code></td><td>Temps en minutes (ou cadence grand volume) — colonne CI</td></tr>
+    <tr><td><code>Actif</code></td><td>0 = la ligne est ignorée par le widget</td></tr>
+  </table></div>
+  <p class="muted">Exemple : pour passer le taux horaire de 73 $ à 78 $ → ouvrir la ligne
+     <span class="pill">INV_8</span>, mettre <code>CF_Valeur</code> = 78. Le widget suit dès sa prochaine ouverture.</p>
+</div>
+<div class="carte">
+  <h3>🧱 Formulaire <code>Materiaux</code> — le catalogue et les prix matières</h3>
+  <div class="tblwrap"><table>
+    <tr><th>Champ</th><th>Rôle</th></tr>
+    <tr><td><code>BO_Nom</code></td><td>Nom complet du matériau (ex. « Lexan Clair ,005x24x48 »)</td></tr>
+    <tr><td><code>BV_Cout_pi2</code></td><td><b>LE prix que le calcul utilise</b> (coûtant au pied carré)</td></tr>
+    <tr><td><code>Categorie</code></td><td>Détermine dans quelle liste du formulaire il apparaît (voir §3)</td></tr>
+    <tr><td><code>BT_Prix_feuille</code>, <code>BQ/BR/BS…</code></td><td>Infos d'inventaire (prix feuille, dimensions) — référence</td></tr>
+    <tr><td><code>Actif</code></td><td>0 = retiré des listes déroulantes</td></tr>
+  </table></div>
+</div>
+<div class="astuce"><b>Défauts « Nouvelle soumission »</b> — les lignes <span class="pill">S_*</span> de Taux Calcul
+  fixent les valeurs pré-remplies : <span class="pill">S_I2</span> perte 10 %, <span class="pill">S_W13</span> facteur marge 25 %,
+  <span class="pill">S_F29</span> guillotine 0,05, <span class="pill">S_F30</span> assemblage 0,50,
+  <span class="pill">S_T38…41</span> majoration sous-contrat 35 %, etc.</div>
+
+<h2 id="codes">2 · Comprendre les codes — le lien avec Excel</h2>
+<p>Chaque nom de lien de champ Creator = la <b>colonne Excel</b> d'origine, et chaque <code>Code</code> = la <b>ligne</b>.
+   Tu retrouves donc n'importe quel paramètre dans le fichier Excel d'origine :</p>
+<div class="tblwrap"><table>
+  <tr><th>Dans Creator</th><th>Dans Excel</th></tr>
+  <tr><td><code>BV_Cout_pi2</code> du matériau X</td><td>InventaireA, colonne <b>BV</b> (« Coûtant pied carré »), ligne du matériau</td></tr>
+  <tr><td>Ligne <span class="pill">INV_8</span>, champ <code>CF_Valeur</code></td><td>InventaireA, cellule <b>CF8</b> (taux horaire 73 $)</td></tr>
+  <tr><td>Ligne <span class="pill">INV_6</span>, champ <code>CF_Valeur</code></td><td>InventaireA, <b>CF6</b> : multiplicateur matières ×1,35</td></tr>
+  <tr><td>Ligne <span class="pill">S_F29</span></td><td>FT_Soumission, feuille S, cellule <b>F29</b> (taux guillotine)</td></tr>
+</table></div>
+
+<h2 id="materiaux">3 · Gérer les matériaux</h2>
+<h3>Modifier un prix</h3>
+<ol>
+  <li>Ouvrir le rapport <b>Materiaux</b> dans l'app Creator ;</li>
+  <li>Trouver le matériau (recherche sur <code>BO_Nom</code>) ;</li>
+  <li>Changer <code>BV_Cout_pi2</code> → enregistré. Le widget applique le nouveau prix à sa prochaine ouverture.</li>
+</ol>
+<h3>Ajouter un matériau</h3>
+<ol>
+  <li>Nouveau dans <b>Materiaux</b> : remplir <code>BO_Nom</code>, <code>BV_Cout_pi2</code> et <code>Categorie</code> ;</li>
+  <li>La <code>Categorie</code> décide de la ligne du formulaire où il apparaîtra :</li>
+</ol>
+<div class="tblwrap"><table>
+  <tr><th>Categorie</th><th>Ligne du formulaire de soumission</th></tr>
+  <tr><td>POLYCARBONATE</td><td>Lexan</td></tr>
+  <tr><td>VINYLE</td><td>Vinyle</td></tr>
+  <tr><td>POLYESTER</td><td>Polyester</td></tr>
+  <tr><td>FOIL</td><td>Alu. Foil</td></tr>
+  <tr><td>ABS-STYRENE-COROPLAST</td><td>Divers</td></tr>
+  <tr><td>ADHESIF-SPACER</td><td>Adhésif F/R</td></tr>
+  <tr><td>PREMASK-PROTECTEUR</td><td>Overlaminating</td></tr>
+  <tr><td class="muted">toutes</td><td class="muted">lignes Xtra (catalogue complet)</td></tr>
+</table></div>
+<div class="astuce"><b>Important :</b> pour les matériaux qui existaient déjà dans le classeur Excel, le
+  <code>BO_Nom</code> doit rester identique — c'est par le nom que le widget associe le prix Creator aux formules.</div>
+
+<h2 id="champs">4 · Les champs calculés, un par un</h2>
+<p class="muted">💡 Dans le widget, survole n'importe quel chiffre gris : une infobulle montre la formule Excel
+   exacte et la valeur de chaque composante en direct.</p>
+
+<div class="carte"><h3>Nb.Mrx — nombre de matrices (feuilles) à produire</h3>
+  <span class="formule">Nb.Mrx = arrondi sup. ( Quantité × (1 + Perte) ÷ Nombre de Up )</span>
+  Paramètres : saisies Quantité / Perte / Up · défaut perte <span class="pill">S_I2</span>.
+  <br>Exemple : 50 pcs × 1,10 ÷ 4 up = 13,75 → <b>14 matrices</b>.</div>
+
+<div class="carte"><h3>Coût pi² et Mont. — les lignes matériaux</h3>
+  <span class="formule">Coût pi²  = BV_Cout_pi2 du matériau choisi (form Materiaux)
+Montant   = (Nb.Mrx × DimMrx X × DimMrx Y ÷ 144) × (1 + Perte ligne) × Coût pi² × 1,35</span>
+  Paramètres : <span class="pill">BV_Cout_pi2</span> (form Materiaux) · multiplicateur matières ×1,35
+  <span class="pill">INV_6</span> · pertes Mat/Adh saisies.
+  <br>La colonne <b>min.</b> = temps de débitage : cadence guillotine <span class="pill">INV_8</span>
+  (CH = 400 mrcx/h ; CI = 1 000 en grand volume ; seuils 22 / 2 200 matrices).</div>
+
+<div class="carte"><h3>Temps Impression &amp; catégorie Sérigraphie</h3>
+  <span class="formule">Temps ($ de travail) ÷ taux horaire (INV_8 · CF = 73 $/h) → hrs / min</span>
+  Cadences d'impression : <span class="pill">INV_9…INV_12</span> (sérigraphie 250-251, séparateur/passes
+  265 et 325 mrcx/h). Le set-up des soies (montage cadres, émulsion, nettoyage, recto/verso) utilise les
+  temps <span class="pill">INV_71…84</span> (60/75/90 min de montage selon la taille, nettoyage 20-25 min…)
+  et les fournitures <span class="pill">INV_20…31</span> (émulsion 12 $, ré-émulsion 6 $…).</div>
+
+<div class="carte"><h3>Découpe — hrs/min par opération</h3>
+  Chaque opération = <b>set-up</b> (temps fixe) + <b>roulage</b> (quantité ÷ cadence machine) :
+  <div class="tblwrap"><table>
+    <tr><th>Opération</th><th>Set-up (min)</th><th>Cadence (mrcx/h)</th></tr>
+    <tr><td>Adhésif laminé / régistre</td><td>15 · <span class="pill">INV_42/43</span></td><td>200 / 132 · <span class="pill">INV_13/14</span></td></tr>
+    <tr><td>Prémask / Protecteur</td><td>15 · <span class="pill">INV_44</span></td><td>200 · <span class="pill">INV_15</span></td></tr>
+    <tr><td>Over laminating</td><td>20 · <span class="pill">INV_45</span></td><td>200 · <span class="pill">INV_16</span></td></tr>
+    <tr><td>Slit / Guillotine</td><td>15 · <span class="pill">INV_46/47</span></td><td>500 / 400 · <span class="pill">INV_17 / INV_8</span></td></tr>
+    <tr><td>Cisaille (par up)</td><td>6 min · <span class="pill">INV_48</span> (min. 15 min facturé)</td><td>142 · <span class="pill">INV_6</span></td></tr>
+  </table></div></div>
+
+<div class="carte"><h3>Platine &amp; Zund (dies / kiss-cut / embossage)</h3>
+  <span class="formule">Temps = (min. par die × nb dies) + (min. par up × nb up) — puis $ = temps ÷ 60 × 73 $</span>
+  <div class="tblwrap"><table>
+    <tr><th>Opération</th><th>Die (min)</th><th>Up (min)</th><th>Code</th></tr>
+    <tr><td>Adhésif</td><td>20</td><td>7,5</td><td><span class="pill">INV_54/55</span></td></tr>
+    <tr><td>Coupe</td><td>25</td><td>7,5</td><td><span class="pill">INV_56/57</span></td></tr>
+    <tr><td>Kiss-cut</td><td>35</td><td>7,5</td><td><span class="pill">INV_58/59</span> · mode combiné 240 min <span class="pill">INV_65</span></td></tr>
+    <tr><td>Embossage</td><td>38,5</td><td>7,5</td><td><span class="pill">INV_60/61</span></td></tr>
+  </table></div>
+  Multiplicateur « Ajust. Platine/Zund » : 0 = facturé 1×, 1 = 2×. Amortissement Zund 10 $/h
+  <span class="pill">INV_16</span>, Mimaki/Ion 20 $/h <span class="pill">INV_15</span>.</div>
+
+<div class="carte"><h3>Vérification / Comptage &amp; Emballage</h3>
+  <span class="formule">Temps = Qté saisie × taux × Quantité de pièces</span>
+  Taux par défaut : vérification 0,02 <span class="pill">S_F48</span> · emballage 0,01 <span class="pill">S_F49</span>.</div>
+
+<div class="carte"><h3>Sous-contrat</h3>
+  <span class="formule">Montant = coût fournisseur × (1 + 35 %)  — base Job / Pièces / Pied²</span>
+  Majorations par défaut <span class="pill">S_T38…S_T41</span>. Le montant s'ajoute APRÈS la marge (voir §5).</div>
+
+<h2 id="prix">5 · Le prix final — la cascade</h2>
+<div class="carte">
+  <span class="formule">Montant (coût)  = MAT.1ère + Soies/Encres/Dév. + Set-up découpe + Sérigraphie
+                + Découpe/Numérique + Divers
+Total (vendant) = Montant × (1 + Facteur) + Sous-contrat
+Prix unitaire   = Total ÷ Quantité
+Prix US         = Prix unitaire ÷ taux US (champ « vs »)</span>
+  Le <b>Facteur</b> (marge, défaut 25 % <span class="pill">S_W13</span>) se change directement dans le bloc
+  prix du widget. La rangée du bas détaille les 7 catégories avec leurs heures (temps = $ ÷ 73 $/h
+  <span class="pill">INV_8</span>). La table QTÉ recalcule toute la soumission pour d'autres quantités —
+  c'est l'effet d'échelle (les set-up fixes s'amortissent).</div>
+
+<h2 id="depannage">6 · Dépannage</h2>
+<div class="tblwrap"><table>
+  <tr><th>Symptôme</th><th>Cause / solution</th></tr>
+  <tr><td>Bandeau « snapshot classeur (hors Zoho) »</td><td>Le widget n'a pas pu lire Creator — il utilise
+      les valeurs figées du classeur. Vérifier que les rapports <code>Materiaux_Report</code> et
+      <code>Taux_Calcul_Report</code> sont accessibles.</td></tr>
+  <tr><td>Un matériau tapé est refusé (secousse rouge)</td><td>Le nom n'existe pas dans le catalogue —
+      choisir dans la liste, ou créer le matériau dans le form Materiaux d'abord.</td></tr>
+  <tr><td>Prix d'un matériau à 0,00 $</td><td><code>BV_Cout_pi2</code> vide ou 0 dans le form Materiaux → renseigner le prix.</td></tr>
+  <tr><td>Un taux modifié ne s'applique pas</td><td>Vérifier <code>Actif</code> = 1 sur la ligne, et rouvrir la page du widget
+      (les paramètres se chargent à l'ouverture).</td></tr>
+  <tr><td>D'où vient ce chiffre ?</td><td>Survoler le chiffre gris dans le widget → l'infobulle montre la formule
+      et ses composantes. Le code (<span class="pill">S!C61</span>…) = la cellule du classeur Excel d'origine.</td></tr>
+</table></div>
+
+<p class="muted" style="margin-top:40px">Guide généré pour le widget Canevas · les liens de champs Creator
+   correspondent aux colonnes des fichiers <code>InventaireA.xlsm</code> et <code>FT_Soumission Rev.06.xlsm</code>.</p>
+</main>
+</body>
+</html>

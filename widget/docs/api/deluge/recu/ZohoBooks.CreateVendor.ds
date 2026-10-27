@@ -1,0 +1,12 @@
+map ZohoBooks.CreateVendor(map json, string orgId)
+{
+	response = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/contacts?organization_id=" + orgId
+		type :POST
+		parameters:{"JSONString":json}
+		connection:"zohobooks1"
+	];
+	thisapp.Debug.LogThis("CreateVendor",zoho.loginuser,json.toString(),response.toString());
+	return response;
+}

@@ -1,0 +1,333 @@
+/* Poste de pointage d'atelier.
+   Contraintes de terrain : écran tactile, parfois gants, lumière variable, opérateur debout
+   à un bras de distance. D'où des cibles d'au moins 48 px, un contraste élevé, et un chrono
+   lisible de loin. Rien de décoratif : chaque élément visible correspond à une décision. */
+
+:root {
+  --pt-fond: #eef2f6;
+  --pt-carte: #ffffff;
+  --pt-trait: #cbd5e1;
+  --pt-texte: #16202b;
+  --pt-discret: #5a6b78;
+  --pt-accent: #1d4ed8;
+  --pt-accent-txt: #ffffff;
+  --pt-fin: #b45309;
+  --pt-pause: #fff7ed;
+  --pt-pause-bord: #fdba74;
+  --pt-ok: #065f46;
+  --pt-ok-fond: #ecfdf5;
+  --pt-err: #991b1b;
+  --pt-err-fond: #fef2f2;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--pt-fond);
+  color: var(--pt-texte);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+}
+
+.pt-page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px 16px 48px;
+}
+
+.pt-vide {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 48px 20px;
+  line-height: 1.55;
+}
+
+.pt-entete {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.pt-entete h1 {
+  font-size: 24px;
+  margin: 0;
+}
+.pt-sous {
+  color: var(--pt-discret);
+  font-size: 14px;
+}
+.pt-entete-droite {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.pt-build {
+  color: var(--pt-discret);
+  font-size: 12px;
+}
+
+.pt-section {
+  margin-top: 20px;
+}
+.pt-section h2 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pt-discret);
+  margin: 0 0 8px;
+}
+.pt-total {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.pt-carte {
+  background: var(--pt-carte);
+  border: 1px solid var(--pt-trait);
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+/* ── pointage actif ─────────────────────────────────────────────────────── */
+.pt-actif {
+  border-left: 5px solid var(--pt-accent);
+}
+.pt-actif.pt-pause {
+  border-left-color: var(--pt-pause-bord);
+  background: var(--pt-pause);
+}
+.pt-actif-tete {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pt-bt {
+  font-weight: 700;
+  font-size: 18px;
+}
+.pt-op {
+  font-size: 16px;
+}
+.pt-machine {
+  font-size: 14px;
+  color: var(--pt-discret);
+}
+.pt-chrono {
+  font-size: 44px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0 2px;
+}
+.pt-detail {
+  color: var(--pt-discret);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+/* ── contrôles ──────────────────────────────────────────────────────────── */
+.pt-ligne {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.pt-btn {
+  min-height: 48px;
+  padding: 0 20px;
+  font-size: 16px;
+  font-family: inherit;
+  background: #f6f8fa;
+  color: var(--pt-texte);
+  border: 1px solid var(--pt-trait);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pt-btn:hover:not(:disabled) {
+  background: #e8eef4;
+}
+.pt-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.pt-btn-grand {
+  min-height: 60px;
+  font-size: 19px;
+  font-weight: 600;
+  flex: 1 1 160px;
+}
+.pt-btn-large {
+  width: 100%;
+}
+.pt-btn-primaire {
+  background: var(--pt-accent);
+  border-color: var(--pt-accent);
+  color: var(--pt-accent-txt);
+}
+.pt-btn-primaire:hover:not(:disabled) {
+  background: #1740b8;
+}
+.pt-btn-fin {
+  background: var(--pt-fin);
+  border-color: var(--pt-fin);
+  color: #ffffff;
+}
+.pt-btn-fin:hover:not(:disabled) {
+  background: #92400e;
+}
+.pt-lien {
+  min-height: 36px;
+  padding: 0 12px;
+  background: transparent;
+  border-color: transparent;
+  color: var(--pt-accent);
+  text-decoration: underline;
+}
+
+.pt-champ {
+  min-height: 48px;
+  padding: 0 12px;
+  font-size: 16px;
+  font-family: inherit;
+  color: var(--pt-texte);
+  background: #ffffff;
+  border: 1px solid var(--pt-trait);
+  border-radius: 8px;
+  flex: 1 1 200px;
+}
+.pt-recherche {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+/* ── choix de l'opérateur ───────────────────────────────────────────────── */
+.pt-grille-operateurs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.pt-operateur {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-height: 76px;
+  padding: 14px 16px;
+  text-align: left;
+  font-family: inherit;
+  background: var(--pt-carte);
+  border: 1px solid var(--pt-trait);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.pt-operateur:hover {
+  border-color: var(--pt-accent);
+}
+.pt-operateur-nom {
+  font-size: 18px;
+  font-weight: 600;
+}
+.pt-operateur-dep {
+  font-size: 13px;
+  color: var(--pt-discret);
+}
+
+/* ── choix du bon de travail ────────────────────────────────────────────── */
+.pt-grille-bt {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.pt-bt-carte {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 72px;
+  padding: 10px 12px;
+  text-align: left;
+  font-family: inherit;
+  background: #f8fafc;
+  border: 1px solid var(--pt-trait);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.pt-bt-carte:hover {
+  border-color: var(--pt-accent);
+}
+.pt-bt-carte.pt-choisi {
+  background: #eef4ff;
+  border-color: var(--pt-accent);
+  box-shadow: inset 0 0 0 1px var(--pt-accent);
+}
+.pt-bt-info {
+  font-size: 13px;
+  color: var(--pt-discret);
+}
+
+/* ── journal du jour ────────────────────────────────────────────────────── */
+.pt-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--pt-carte);
+  border: 1px solid var(--pt-trait);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.pt-table th,
+.pt-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid #e6ebf0;
+  font-size: 15px;
+}
+.pt-table th {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pt-discret);
+  background: #f6f8fa;
+}
+.pt-table tr:last-child td {
+  border-bottom: none;
+}
+.pt-droite {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pt-note {
+  color: var(--pt-discret);
+  font-size: 15px;
+}
+
+.pt-avis {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+.pt-avis-ok {
+  background: var(--pt-ok-fond);
+  color: var(--pt-ok);
+}
+.pt-avis-erreur {
+  background: var(--pt-err-fond);
+  color: var(--pt-err);
+}
+
+@media (max-width: 520px) {
+  .pt-chrono {
+    font-size: 36px;
+  }
+  .pt-page {
+    padding: 12px 12px 40px;
+  }
+}

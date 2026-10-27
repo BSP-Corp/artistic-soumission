@@ -1,0 +1,27 @@
+// Correction du 1er octobre 2026, en deux temps.
+//
+// Etat d'origine :
+//     url :"https://books.zoho.com/api/v3/purchaseorders?organization_id" + orgId
+//     parameters:{"JSONString":data,"organization_id":orgId}
+//   Le « = » manquait dans l'URL : le fragment « organization_id763997089 » n'etait pas
+//   interprete comme un parametre. L'identifiant ne passait donc QUE par le corps.
+//
+// Premiere correction (ajout du « = ») : Books a repondu
+//     « organization_id should not occur more than 1 times »
+//   — l'identifiant arrivait alors DEUX fois, par l'URL et par le corps. L'URL malformee
+//   masquait le doublon.
+//
+// Version retenue : organization_id dans l'URL (forme standard de l'API Books), et le corps
+// ne porte plus que la charge utile. Domaine migre vers www.zohoapis.com.
+string ZohoBooks.CreatePurchaseOrder(map data, string orgId)
+{
+	response = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/purchaseorders?organization_id=" + orgId
+		type :POST
+		parameters:{"JSONString":data}
+		connection:"zohobooks1"
+	];
+	thisapp.Debug.LogThis("CreatePurchaseOrder",zoho.loginuser,data.toString(),response.toString());
+	return response;
+}

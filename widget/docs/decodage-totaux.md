@@ -1,0 +1,398 @@
+# Décodage automatique des totaux de la feuille C
+
+Généré depuis les formules extraites du xlsm (mêmes formules que le moteur du widget).
+Chaque ligne : `cellule` = **valeur pour le job d'exemple (Qté 50)** — `formule`.
+Profondeur limitée à 3 niveaux ; les cellules déjà détaillées ne sont pas répétées.
+
+## C!J20 — TOTAL DÉBITAGE (Zund)
+
+- `C!J20` = **7,5281** — `SUM(M30:T30)`
+  - `C!M30` = **2,5094** — `M27+M28+M29`
+    - `C!M27` = **2,5094** — `IF(S!U24>0,IF(S!G9<=22,S!G9*[1]INV!CF8/[1]INV!$CH$8,0))`
+      - `S!U24` = **0,3646** — `AC4`
+      - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+      - `INV!CF8` = 73 *(paramètre INV)*
+      - `INV!CH8` = 400 *(paramètre INV)*
+    - `C!M28` = **0** — `IF(S!U24>0,IF(S!G9>=2200,S!G9*([1]INV!$CF$8/[1]INV!$CI$8),0))`
+      - `S!U24` = 0,3646 *(déjà détaillé plus haut)*
+      - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CI8` = 1000 *(paramètre INV)*
+    - `C!M29` = **false** — `IF(S!U24>0,IF(S!G9>22,IF(S!G9<2200,(S!G9*([1]INV!$CF$8/[1]INV!$CH$8))-((S!G9-22)*J21*S!G9),0)))`
+      - `S!U24` = 0,3646 *(déjà détaillé plus haut)*
+      - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CH8` = 400 *(déjà détaillé plus haut)*
+      - `C!J21` = **0** — `0.0675/2178`
+  - `C!T30` = **0** — `T27+T28+T29`
+    - `C!T27` = **false** — `IF(S!BB4>0,IF(S!G9<=22,S!G9*[1]INV!$CF$8/[1]INV!$CH$8,0))`
+      - `S!BB4` = **0** — `SUM(BB5:BB20)+BB37`
+      - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CH8` = 400 *(déjà détaillé plus haut)*
+    - `C!T28` = **false** — `IF(S!BB4>0,IF(S!G9>=2200,S!G9*([1]INV!$CF$8/[1]INV!$CI$8),0))`
+      - `S!BB4` = 0 *(déjà détaillé plus haut)*
+      - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CI8` = 1000 *(déjà détaillé plus haut)*
+    - `C!T29` = **false** — `IF(S!BB4>0,IF(S!G9>22,IF(S!G9<2200,(S!G9*([1]INV!$CF$8/[1]INV!$CH$8))-((S!G9-22)*J21*S!G9),0)))`
+      - `S!BB4` = 0 *(déjà détaillé plus haut)*
+      - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CH8` = 400 *(déjà détaillé plus haut)*
+      - `C!J21` = 0 *(déjà détaillé plus haut)*
+
+## C!J30 — TOTAL DÉCOUPE / FINITION
+
+- `C!J30` = **10,0375** — `SUM(G18:G22)+SUM(G24:G35)+J20+M36+M37+Z36`
+  - `C!G18` = **0** — `S!E22*S!G9*E18`
+    - `S!E22` = 0 *(saisie)*
+    - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+      - `S!E2` = 50 *(saisie)*
+      - `S!I2` = 0,1 *(saisie)*
+      - `S!E5` = 4 *(saisie)*
+    - `C!E18` = **0,365** — `([1]INV!$CF$8/[1]INV!$CH$13)*S!W$21+([1]INV!$CF$8/[1]INV!$CH$13)`
+      - `INV!CF8` = 73 *(paramètre INV)*
+      - `INV!CH13` = 200 *(paramètre INV)*
+      - `S!W21` = 0 *(saisie)*
+  - `C!G22` = **0** — `S!E26*S!G$9*E22`
+    - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+    - `C!E22` = **0,365** — `([1]INV!$CF$8/[1]INV!$CH$15)*S!W$21+([1]INV!$CF$8/[1]INV!$CH$15)`
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CH15` = 200 *(paramètre INV)*
+      - `S!W21` = 0 *(déjà détaillé plus haut)*
+  - `C!G24` = **0** — `(S!E27*S!F27)*(S!E2*S!I2+S!E2)*E24`
+    - `S!E2` = 50 *(déjà détaillé plus haut)*
+    - `S!I2` = 0,1 *(déjà détaillé plus haut)*
+    - `C!E24` = **0,1825** — `([1]INV!$CF$8/[1]INV!$CI$15)*S!W$21+([1]INV!$CF$8/[1]INV!$CI$15)`
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CI15` = 400 *(paramètre INV)*
+      - `S!W21` = 0 *(déjà détaillé plus haut)*
+  - `C!G35` = **0** — `(E35*S!G9)*S!G45+(E35*S!G9)`
+    - `C!E35` = **0** — `IF(S!E45=1,([1]INV!$CF$8/[1]INV!$CH$26)+[1]INV!$CF$33,0)`
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CH26` = 200 *(paramètre INV)*
+      - `INV!CF33` = 0,05 *(paramètre INV)*
+    - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+    - `S!G45` = 0 *(saisie)*
+  - `C!J20` = **7,5281** — `SUM(M30:T30)`
+    - `C!M30` = **2,5094** — `M27+M28+M29`
+      - `C!M27` = **2,5094** — `IF(S!U24>0,IF(S!G9<=22,S!G9*[1]INV!CF8/[1]INV!$CH$8,0))`
+      - `C!M28` = **0** — `IF(S!U24>0,IF(S!G9>=2200,S!G9*([1]INV!$CF$8/[1]INV!$CI$8),0))`
+      - `C!M29` = **false** — `IF(S!U24>0,IF(S!G9>22,IF(S!G9<2200,(S!G9*([1]INV!$CF$8/[1]INV!$CH$8))-((S!G9-22)*J21*S!G9),0)))`
+    - `C!T30` = **0** — `T27+T28+T29`
+      - `C!T27` = **false** — `IF(S!BB4>0,IF(S!G9<=22,S!G9*[1]INV!$CF$8/[1]INV!$CH$8,0))`
+      - `C!T28` = **false** — `IF(S!BB4>0,IF(S!G9>=2200,S!G9*([1]INV!$CF$8/[1]INV!$CI$8),0))`
+      - `C!T29` = **false** — `IF(S!BB4>0,IF(S!G9>22,IF(S!G9<2200,(S!G9*([1]INV!$CF$8/[1]INV!$CH$8))-((S!G9-22)*J21*S!G9),0)))`
+  - `C!M36` = **0** — `IF(I36+K36=2,0,E36+G36)`
+    - `C!I36` = **0** — `IF(E36>0.01,1,0)`
+      - `C!E36` = **0** — `IF(S!E46=0,0,(S!E46*S!F46)*(S!$E$2*S!$I$2+S!$E$2))`
+    - `C!K36` = **0** — `IF(G36>0.01,1,0)`
+      - `C!G36` = **0** — `IF(S!E46=0,0,S!E46*S!G46*S!$G$9)`
+    - `C!E36` = 0 *(déjà détaillé plus haut)*
+    - `C!G36` = 0 *(déjà détaillé plus haut)*
+  - `C!M37` = **0** — `IF(I37+K37=2,0,E37+G37)`
+    - `C!I37` = **0** — `IF(E37>0.01,1,0)`
+      - `C!E37` = **0** — `IF(S!E47=0,0,(S!E47*S!F47)*(S!$E$2*S!$I$2+S!$E$2))`
+    - `C!K37` = **0** — `IF(G37>0.01,1,0)`
+      - `C!G37` = **0** — `IF(S!E47=0,0,S!E47*S!G47*S!$G$9)`
+    - `C!E37` = 0 *(déjà détaillé plus haut)*
+    - `C!G37` = 0 *(déjà détaillé plus haut)*
+  - `C!Z36` = **0** — `V32+X32+Z32`
+    - `C!V32` = **0** — `(V30+V31)*S!D42+(V30+V31)`
+      - `C!V30` = **0** — `IF(S!E39>=1,((S!E39*(S!E2*S!I2+S!E2))/[1]INV!$CF$42)*[1]INV!$CF$8/60,0)`
+      - `C!V31` = **0** — `IF(S!D39+S!E39>1,S!G9/[1]INV!$CF$43*[1]INV!$CF$8/60,0)`
+      - `S!D42` = 0 *(saisie)*
+    - `C!X32` = **0** — `(X29+X30+X31)*S!D42+(X29+X30+X31)`
+      - `C!X29` = **0** — `IF(S!D40=1,X33+X34+X35,0)`
+      - `C!X30` = **0** — `IF(S!E40>=1,((S!E40*(S!E2*S!I2+S!E2))/[1]INV!$CF$42)*[1]INV!$CF$8/60,0)`
+      - `C!X31` = **0** — `IF(S!D40=1,S!G9/[1]INV!$CF$43*[1]INV!$CF$8/60,0)`
+      - `S!D42` = 0 *(déjà détaillé plus haut)*
+    - `C!Z32` = **0** — `(Z29+Z30+Z31)*S!D42+(Z29+Z30+Z31)`
+      - `C!Z29` = **0** — `IF(S!D41=1,Z33+Z34+Z35,0)`
+      - `C!Z30` = **0** — `IF(S!E41>=1,((S!E41*(S!E2*S!I2+S!E2))/[1]INV!$CF$42)*[1]INV!$CF$8/60,0)`
+      - `C!Z31` = **0** — `IF(S!D41=1,S!G9/[1]INV!$CF$43*[1]INV!$CF$8/60,0)`
+      - `S!D42` = 0 *(déjà détaillé plus haut)*
+
+## C!J32 — TOTAL POUR TEMPS (plaques matrices)
+
+- `C!J32` = **42,296** — `SUM(I29:I32)`
+  - `C!I29` = **0** — `G29+Q6+R6`
+    - `C!G29` = **0** — `IF(S!D33="",0,((S!E5/S!E33*S!G9)*S!D33)*E29)`
+      - `S!E5` = 4 *(saisie)*
+      - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+      - `C!E29` = **0,1825** — `([1]INV!$CF$8/[1]INV!$CH$20)*S!D$37+([1]INV!$CF$8/[1]INV!$CH$20)`
+    - `C!Q6` = **0** — `IF(S!D33=0,0,(S!D33*([1]INV!$CF$8/60)*[1]INV!$CI$54+[1]INV!$CF$22)*S!D37+(S!D33*([1]INV!$CF$8/60)*[1]INV!$CI$54+[1]INV!$CF$22))`
+      - `INV!CF8` = 73 *(paramètre INV)*
+      - `INV!CI54` = 20 *(paramètre INV)*
+      - `INV!CF22` = 7,5 *(paramètre INV)*
+      - `S!D37` = 0 *(saisie)*
+    - `C!R6` = **0** — `IF(S!E33=0,0,((S!E5/S!E33*([1]INV!$CF$8/60)*[1]INV!$CI$55-([1]INV!$CF$8/60)*[1]INV!$CI$55)*S!D37+((S!E5/S!E33*([1]INV!$CF$8/60)*[1]INV!$CI$55-([1]INV!$CF$8/60)*[1]INV!$CI$55))))`
+      - `S!E5` = 4 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CI55` = 7,5 *(paramètre INV)*
+      - `S!D37` = 0 *(déjà détaillé plus haut)*
+  - `C!I32` = **0** — `G32+Q9+R9`
+    - `C!G32` = **0** — `IF(S!D36="",0,((S!E5/S!E36*S!G9)*S!D36)*E32)`
+      - `S!E5` = 4 *(déjà détaillé plus haut)*
+      - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+      - `C!E32` = **0,1825** — `([1]INV!$CF$8/[1]INV!$CH$23)*S!D$37+([1]INV!$CF$8/[1]INV!$CH$23)`
+    - `C!Q9` = **0** — `IF(S!D36=0,0,(S!D36*([1]INV!$CF$8/60)*[1]INV!$CI$60+[1]INV!$CF$25)*S!D37+(S!D36*([1]INV!$CF$8/60)*[1]INV!$CI$60+[1]INV!$CF$25))`
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CI60` = 38,5 *(paramètre INV)*
+      - `INV!CF25` = 5 *(paramètre INV)*
+      - `S!D37` = 0 *(déjà détaillé plus haut)*
+    - `C!R9` = **0** — `IF(S!E36=0,0,((S!E5/S!E36*([1]INV!$CF$8/60)*[1]INV!$CI$61-([1]INV!$CF$8/60)*[1]INV!$CI$61)*S!D37+((S!E5/S!E36*([1]INV!$CF$8/60)*[1]INV!$CI$61-([1]INV!$CF$8/60)*[1]INV!$CI$61))))`
+      - `S!E5` = 4 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CI61` = 7,5 *(paramètre INV)*
+      - `S!D37` = 0 *(déjà détaillé plus haut)*
+
+## C!J43 — GRAND TOTAL SOUMISSION
+
+- `C!J43` = **430,8915** — `IF(S!O5=1,R39+G11+S10+J30+G40+U20+Y20+W20,G11+S10+G15+G16+G17+J30+G40+U20+Y20+W20)`
+  - `C!R39` = **0** — `SUM(R33:R38)`
+    - `C!R33` = **false** — `IF(S!$O$5=1,IF(S!$E$3=3,[1]INV!$CF$64/60*[1]INV!$CF$8,0))`
+      - `S!E3` = 2 *(saisie)*
+      - `INV!CF64` = 110 *(paramètre INV)*
+      - `INV!CF8` = 73 *(paramètre INV)*
+    - `C!R38` = **false** — `IF(S!O5=1,IF(S!E3+S!D9+S!E9+S!E10+S!BB38>6,(S!E3+S!D9+S!E9+S!E10+S!BB38-6)*(S!G9/[1]INV!$CH$9)*[1]INV!$CF$8,0))`
+      - `S!E3` = 2 *(déjà détaillé plus haut)*
+      - `S!D9` = 1 *(saisie)*
+      - `S!E9` = 1 *(saisie)*
+      - `S!BB38` = **0** — `IF(BB37>0.1,1,0)`
+      - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+      - `INV!CH9` = 250 *(paramètre INV)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+  - `C!G11` = **360,0733** — `(-[1]INV!$CF$20*G7)+G13`
+    - `INV!CF20` = 12 *(paramètre INV)*
+    - `C!G7` = **1** — `IF(S!O6=0,S!E3-(S!B4-1)-(S!D4-1)-(S!F4-1)+(1*S!D9)+S!BB38)`
+      - `S!E3` = 2 *(déjà détaillé plus haut)*
+      - `S!B4` = 2 *(saisie)*
+      - `S!D4` = 1 *(saisie)*
+      - `S!F4` = 2 *(saisie)*
+      - `S!D9` = 1 *(déjà détaillé plus haut)*
+      - `S!BB38` = 0 *(déjà détaillé plus haut)*
+    - `C!G13` = **372,0733** — `D6+D7+D8+C9+D9+E9+C10+C11+C12+D12+E12+C13+D13+E13`
+      - `C!D6` = **85** — `IF(C6=1,(((([1]INV!$CF$8/60)*[1]INV!$CI$71)+[1]INV!$CF$20)*G7),0)`
+      - `C!D7` = **0** — `IF(C7=1,(((([1]INV!$CF$8/60)*[1]INV!$CI$72)+[1]INV!$CF$20)*G7),0)`
+      - `C!D8` = **0** — `IF(C8=1,(((([1]INV!$CF$8/60)*[1]INV!$CI$73)+[1]INV!$CF$20)*G7),0)`
+      - `C!C9` = **89,1667** — `IF(C6=1,IF(S!B4+S!D4+S!F4>3,((S!B4+S!D4+S!F4)-3)*(([1]INV!$CI$73-[1]INV!$CI$71)*[1]INV!$CF$8/60+([1]INV!$CI$81-[1]INV!$CI$79)*[1]INV!$CF$8/60+([1]INV!$CF$28-[1]INV!$CF$26)),0))`
+      - `C!D9` = **false** — `IF(C7=1,IF(S!B4+S!D4+S!F4>3,((S!B4+S!D4+S!F4)-3)*(([1]INV!$CI$73-[1]INV!$CI$72)*[1]INV!$CF$8/60+([1]INV!$CI$81-[1]INV!$CI$80)*[1]INV!$CF$8/60+([1]INV!$CF$28-[1]INV!$CF$27)),0))`
+      - `C!C10` = **18,25** — `IF(S!E9="",0,S!E9*[1]INV!$CF$8/60)*([1]INV!$CI$77)`
+      - `C!C11` = **127,75** — `IF(S!E11+S!B4+S!D4+S!F4<3,0,(S!E11*([1]INV!CF8/60)*[1]INV!CI78)+((S!B4-1)*([1]INV!CF8/60)*[1]INV!CI78)+((S!D4-1)*([1]INV!CF8/60)*[1]INV!CI78)+((S!F4-1)*([1]INV!CF8/60)*[1]INV!CI78))`
+      - `C!C12` = **51,9067** — `IF(C6=FALSE,0,S!E12*(C6*(([1]INV!$CF$8/60*[1]INV!$CI$79+[1]INV!$CF$26)))+((S!B4-1)*([1]INV!$CF$8/60*[1]INV!$CI$79+[1]INV!$CF$26))+((S!D4-1)*([1]INV!$CF$8/60*[1]INV!$CI$79+[1]INV!$CF$26))+((S!F4-1)*([1]INV!$CF$8/60*[1]INV!$CI$79+[1]INV!$CF$26)))`
+      - `C!D12` = **0** — `IF(C7=FALSE,0,S!E12*(C7*(([1]INV!$CF$8/60*[1]INV!$CI$80+[1]INV!$CF$27)))+((S!B4-1)*([1]INV!$CF$8/60*[1]INV!$CI$80+[1]INV!$CF$27))+((S!D4-1)*([1]INV!$CF$8/60*[1]INV!$CI$80+[1]INV!$CF$27))+((S!F4-1)*([1]INV!$CF$8/60*[1]INV!$CI$80+[1]INV!$CF$27)))`
+      - `C!E12` = **0** — `IF(C8=0,0,S!E12*(C8*(([1]INV!$CF$8/60*[1]INV!$CI$81+[1]INV!$CF$28)))+((S!B4-1)*([1]INV!$CF$8/60*[1]INV!$CI$81+[1]INV!$CF$28))+((S!D4-1)*([1]INV!$CF$8/60*[1]INV!$CI$81+[1]INV!$CF$28))+((S!F4-1)*([1]INV!$CF$8/60*[1]INV!$CI$81+[1]INV!$CF$28)))`
+      - `C!C13` = **0** — `IF(C6="",0,S!E13*(C6*G7)*([1]INV!$CF$8/60*[1]INV!$CI$82)+S!E13*(C6*G7)*[1]INV!$CF$29)`
+      - `C!D13` = **0** — `IF(C7="",0,S!E13*(C7*G7)*([1]INV!$CF$8/60*[1]INV!$CI$83)+S!E13*(C7*G7)*[1]INV!$CF$30)`
+      - `C!E13` = **0** — `IF(C8="",0,S!E13*(C8*G7)*([1]INV!$CF$8/60*[1]INV!$CI$84)+S!E13*(C8*G7)*[1]INV!$CF$31)`
+  - `C!S10` = **30,4167** — `Q11-SUM(S6:S9)`
+    - `C!Q11` = **39,7867** — `SUM(N5:N13)+SUM(Q6:Q10)+SUM(R6:R10)+R12+R13`
+      - `C!N5` = **0** — `IF(S!E22="",0,S!E22*([1]INV!$CF$8/60)*[1]INV!$CI$42)`
+      - `C!Q6` = **0** — `IF(S!D33=0,0,(S!D33*([1]INV!$CF$8/60)*[1]INV!$CI$54+[1]INV!$CF$22)*S!D37+(S!D33*([1]INV!$CF$8/60)*[1]INV!$CI$54+[1]INV!$CF$22))`
+      - `C!Q10` = **0** — `(([1]INV!$CF$8/60*[1]INV!$CI$53)*(S!D39+S!D40+S!D41))*S!D42+(([1]INV!$CF$8/60*[1]INV!$CI$53)*(S!D39+S!D40+S!D41))`
+      - `C!R6` = **0** — `IF(S!E33=0,0,((S!E5/S!E33*([1]INV!$CF$8/60)*[1]INV!$CI$55-([1]INV!$CF$8/60)*[1]INV!$CI$55)*S!D37+((S!E5/S!E33*([1]INV!$CF$8/60)*[1]INV!$CI$55-([1]INV!$CF$8/60)*[1]INV!$CI$55))))`
+    - `C!S6` = **0** — `IF(Q6>0.01,[1]INV!$CF$22,0)`
+      - `C!Q6` = 0 *(déjà détaillé plus haut)*
+      - `INV!CF22` = 7,5 *(paramètre INV)*
+    - `C!S9` = **0** — `IF(Q9>0.01,[1]INV!$CF$25,0)`
+      - `C!Q9` = **0** — `IF(S!D36=0,0,(S!D36*([1]INV!$CF$8/60)*[1]INV!$CI$60+[1]INV!$CF$25)*S!D37+(S!D36*([1]INV!$CF$8/60)*[1]INV!$CI$60+[1]INV!$CF$25))`
+      - `INV!CF25` = 5 *(paramètre INV)*
+  - `C!J30` = **10,0375** — `SUM(G18:G22)+SUM(G24:G35)+J20+M36+M37+Z36`
+    - `C!G18` = **0** — `S!E22*S!G9*E18`
+      - `S!E22` = 0 *(saisie)*
+      - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+      - `C!E18` = **0,365** — `([1]INV!$CF$8/[1]INV!$CH$13)*S!W$21+([1]INV!$CF$8/[1]INV!$CH$13)`
+    - `C!G22` = **0** — `S!E26*S!G$9*E22`
+      - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+      - `C!E22` = **0,365** — `([1]INV!$CF$8/[1]INV!$CH$15)*S!W$21+([1]INV!$CF$8/[1]INV!$CH$15)`
+    - `C!G24` = **0** — `(S!E27*S!F27)*(S!E2*S!I2+S!E2)*E24`
+      - `S!E2` = 50 *(saisie)*
+      - `S!I2` = 0,1 *(saisie)*
+      - `C!E24` = **0,1825** — `([1]INV!$CF$8/[1]INV!$CI$15)*S!W$21+([1]INV!$CF$8/[1]INV!$CI$15)`
+    - `C!G35` = **0** — `(E35*S!G9)*S!G45+(E35*S!G9)`
+      - `C!E35` = **0** — `IF(S!E45=1,([1]INV!$CF$8/[1]INV!$CH$26)+[1]INV!$CF$33,0)`
+      - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+      - `S!G45` = 0 *(saisie)*
+    - `C!J20` = **7,5281** — `SUM(M30:T30)`
+      - `C!M30` = **2,5094** — `M27+M28+M29`
+      - `C!T30` = **0** — `T27+T28+T29`
+    - `C!M36` = **0** — `IF(I36+K36=2,0,E36+G36)`
+      - `C!I36` = **0** — `IF(E36>0.01,1,0)`
+      - `C!K36` = **0** — `IF(G36>0.01,1,0)`
+      - `C!E36` = **0** — `IF(S!E46=0,0,(S!E46*S!F46)*(S!$E$2*S!$I$2+S!$E$2))`
+      - `C!G36` = **0** — `IF(S!E46=0,0,S!E46*S!G46*S!$G$9)`
+    - `C!M37` = **0** — `IF(I37+K37=2,0,E37+G37)`
+      - `C!I37` = **0** — `IF(E37>0.01,1,0)`
+      - `C!K37` = **0** — `IF(G37>0.01,1,0)`
+      - `C!E37` = **0** — `IF(S!E47=0,0,(S!E47*S!F47)*(S!$E$2*S!$I$2+S!$E$2))`
+      - `C!G37` = **0** — `IF(S!E47=0,0,S!E47*S!G47*S!$G$9)`
+    - `C!Z36` = **0** — `V32+X32+Z32`
+      - `C!V32` = **0** — `(V30+V31)*S!D42+(V30+V31)`
+      - `C!X32` = **0** — `(X29+X30+X31)*S!D42+(X29+X30+X31)`
+      - `C!Z32` = **0** — `(Z29+Z30+Z31)*S!D42+(Z29+Z30+Z31)`
+  - `C!G40` = **6,1** — `G38+G39`
+    - `C!G38` = **1,1** — `(S!E2*S!I2+S!E2)*S!E48*E38`
+      - `S!E2` = 50 *(déjà détaillé plus haut)*
+      - `S!I2` = 0,1 *(déjà détaillé plus haut)*
+      - `S!E48` = 1 *(saisie)*
+      - `C!E38` = **0,02** — `IF(S!E48=1,S!F48,0)`
+    - `C!G39` = **5** — `IF((S!E2*S!I2+S!E2)*S!E49*E39<5,5*S!E49,(S!E2*S!I2+S!E2)*S!E49*E39)`
+      - `S!E2` = 50 *(déjà détaillé plus haut)*
+      - `S!I2` = 0,1 *(déjà détaillé plus haut)*
+      - `S!E49` = 1 *(saisie)*
+      - `C!E39` = **0,01** — `IF(S!E49=1,S!F49,0)`
+  - `C!U20` = **0** — `IF(U21>0.01,S!G9*([1]INV!CF8/[1]INV!CH89),0)`
+    - `C!U21` = **0** — `IF(S!E3>=1,SUM(S!AC42:AC63),0)`
+      - `S!E3` = 2 *(déjà détaillé plus haut)*
+      - `S!AC42` = **0** — `IF($M$24=$AE42,[1]INV!BV53,0)`
+    - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+    - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+    - `INV!CH89` = 308 *(paramètre INV)*
+  - `C!Y20` = **8,6905** — `IF(Y21>0.01,S!G9*([1]INV!CF8/[1]INV!CH91),0)`
+    - `C!Y21` = **0,3646** — `IF(S!E3>=1,SUM(S!AC27:'S'!AC36),0)`
+      - `S!E3` = 2 *(déjà détaillé plus haut)*
+      - `S!AC27` = **0,3646** — `IF($M$24=$AE27,[1]INV!BV34,0)`
+      - `S!AC36` = **0** — `IF($M$24=$AE36,[1]INV!BV938,0)`
+    - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+    - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+    - `INV!CH91` = 115,5 *(paramètre INV)*
+  - `C!G15` = **7,998** — `IF(S!O6=1,0,((S!G9*S!E3)*E15)+((S!G9*S!E13*(S!E3))*E15))`
+    - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+    - `S!E3` = 2 *(déjà détaillé plus haut)*
+    - `C!E15` = **0,2908** — `IF(Y21>0.01,([1]INV!$CF$8/[1]INV!$CH$10)*S!H18+([1]INV!$CF$8/[1]INV!$CH$10),([1]INV!$CF$8/[1]INV!$CH$9)*S!H18+([1]INV!$CF$8/[1]INV!$CH$9))`
+      - `C!Y21` = 0,3646 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CH10` = 251 *(paramètre INV)*
+      - `S!H18` = 0 *(saisie)*
+      - `INV!CH9` = 250 *(déjà détaillé plus haut)*
+  - `C!G16` = **7,5755** — `IF(S!O6=1,0,(S!G9*S!E9*E16)+(S!G9*S!E10*E16)+(S!G9*S!D9*E16)+(S!G9*S!G45*E16))`
+    - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+    - `S!E9` = 1 *(déjà détaillé plus haut)*
+    - `C!E16` = **0,2755** — `IF(Y21>0.01,([1]INV!$CF$8/[1]INV!$CH$11)*S!H18+([1]INV!$CF$8/[1]INV!$CH$11),([1]INV!$CF$8/[1]INV!$CH$12)*S!H18+([1]INV!$CF$8/[1]INV!$CH$12))`
+      - `C!Y21` = 0,3646 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CH11` = 265 *(paramètre INV)*
+      - `S!H18` = 0 *(déjà détaillé plus haut)*
+      - `INV!CH12` = 325 *(paramètre INV)*
+    - `S!D9` = 1 *(déjà détaillé plus haut)*
+    - `S!G45` = 0 *(déjà détaillé plus haut)*
+  - `C!G17` = **0** — `S!G9*E17`
+    - `S!G9` = 13,75 *(déjà détaillé plus haut)*
+    - `C!E17` = **0** — `IF(S!BB38=1,[1]INV!$CF$8/[1]INV!$CH$35,0)`
+      - `S!BB38` = 0 *(déjà détaillé plus haut)*
+      - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+      - `INV!CH35` = 162,5 *(paramètre INV)*
+
+## C!G15 — Encres (composante K61)
+
+- `C!G15` = **7,998** — `IF(S!O6=1,0,((S!G9*S!E3)*E15)+((S!G9*S!E13*(S!E3))*E15))`
+  - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+    - `S!E2` = 50 *(saisie)*
+    - `S!I2` = 0,1 *(saisie)*
+    - `S!E5` = 4 *(saisie)*
+  - `S!E3` = 2 *(saisie)*
+  - `C!E15` = **0,2908** — `IF(Y21>0.01,([1]INV!$CF$8/[1]INV!$CH$10)*S!H18+([1]INV!$CF$8/[1]INV!$CH$10),([1]INV!$CF$8/[1]INV!$CH$9)*S!H18+([1]INV!$CF$8/[1]INV!$CH$9))`
+    - `C!Y21` = **0,3646** — `IF(S!E3>=1,SUM(S!AC27:'S'!AC36),0)`
+      - `S!E3` = 2 *(déjà détaillé plus haut)*
+      - `S!AC27` = **0,3646** — `IF($M$24=$AE27,[1]INV!BV34,0)`
+      - `S!AC36` = **0** — `IF($M$24=$AE36,[1]INV!BV938,0)`
+    - `INV!CF8` = 73 *(paramètre INV)*
+    - `INV!CH10` = 251 *(paramètre INV)*
+    - `S!H18` = 0 *(saisie)*
+    - `INV!CH9` = 250 *(paramètre INV)*
+
+## C!G16 — Encres UV / autres (composante K61)
+
+- `C!G16` = **7,5755** — `IF(S!O6=1,0,(S!G9*S!E9*E16)+(S!G9*S!E10*E16)+(S!G9*S!D9*E16)+(S!G9*S!G45*E16))`
+  - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+    - `S!E2` = 50 *(saisie)*
+    - `S!I2` = 0,1 *(saisie)*
+    - `S!E5` = 4 *(saisie)*
+  - `S!E9` = 1 *(saisie)*
+  - `C!E16` = **0,2755** — `IF(Y21>0.01,([1]INV!$CF$8/[1]INV!$CH$11)*S!H18+([1]INV!$CF$8/[1]INV!$CH$11),([1]INV!$CF$8/[1]INV!$CH$12)*S!H18+([1]INV!$CF$8/[1]INV!$CH$12))`
+    - `C!Y21` = **0,3646** — `IF(S!E3>=1,SUM(S!AC27:'S'!AC36),0)`
+      - `S!E3` = 2 *(saisie)*
+      - `S!AC27` = **0,3646** — `IF($M$24=$AE27,[1]INV!BV34,0)`
+      - `S!AC36` = **0** — `IF($M$24=$AE36,[1]INV!BV938,0)`
+    - `INV!CF8` = 73 *(paramètre INV)*
+    - `INV!CH11` = 265 *(paramètre INV)*
+    - `S!H18` = 0 *(saisie)*
+    - `INV!CH12` = 325 *(paramètre INV)*
+  - `S!D9` = 1 *(saisie)*
+  - `S!G45` = 0 *(saisie)*
+
+## C!G17 — HPPL (composante K61)
+
+- `C!G17` = **0** — `S!G9*E17`
+  - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+    - `S!E2` = 50 *(saisie)*
+    - `S!I2` = 0,1 *(saisie)*
+    - `S!E5` = 4 *(saisie)*
+  - `C!E17` = **0** — `IF(S!BB38=1,[1]INV!$CF$8/[1]INV!$CH$35,0)`
+    - `S!BB38` = **0** — `IF(BB37>0.1,1,0)`
+      - `S!BB37` = **0** — `IF($M$29=$BD37,[1]INV!BV792,0)`
+    - `INV!CF8` = 73 *(paramètre INV)*
+    - `INV!CH35` = 162,5 *(paramètre INV)*
+
+## C!U20 — Temps machine (composante K61)
+
+- `C!U20` = **0** — `IF(U21>0.01,S!G9*([1]INV!CF8/[1]INV!CH89),0)`
+  - `C!U21` = **0** — `IF(S!E3>=1,SUM(S!AC42:AC63),0)`
+    - `S!E3` = 2 *(saisie)*
+    - `S!AC42` = **0** — `IF($M$24=$AE42,[1]INV!BV53,0)`
+      - `S!M24` = "Lexan Clair ,005x24x48" *(saisie)*
+      - `S!AE42` = "Lexan HP92S ,007x20x48" *(saisie)*
+      - `INV!BV53` = 1,9175 *(paramètre INV)*
+  - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+    - `S!E2` = 50 *(saisie)*
+    - `S!I2` = 0,1 *(saisie)*
+    - `S!E5` = 4 *(saisie)*
+  - `INV!CF8` = 73 *(paramètre INV)*
+  - `INV!CH89` = 308 *(paramètre INV)*
+
+## C!Y20 — Temps machine (composante K61)
+
+- `C!Y20` = **8,6905** — `IF(Y21>0.01,S!G9*([1]INV!CF8/[1]INV!CH91),0)`
+  - `C!Y21` = **0,3646** — `IF(S!E3>=1,SUM(S!AC27:'S'!AC36),0)`
+    - `S!E3` = 2 *(saisie)*
+    - `S!AC27` = **0,3646** — `IF($M$24=$AE27,[1]INV!BV34,0)`
+      - `S!M24` = "Lexan Clair ,005x24x48" *(saisie)*
+      - `S!AE27` = "Lexan Clair ,005x24x48" *(saisie)*
+      - `INV!BV34` = 0,3646 *(paramètre INV)*
+    - `S!AC36` = **0** — `IF($M$24=$AE36,[1]INV!BV938,0)`
+      - `S!M24` = "Lexan Clair ,005x24x48" *(déjà détaillé plus haut)*
+      - `S!AE36` = "Lexan Clair ,040x24x48" *(saisie)*
+      - `INV!BV938` = 3,6104 *(paramètre INV)*
+  - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+    - `S!E2` = 50 *(saisie)*
+    - `S!I2` = 0,1 *(saisie)*
+    - `S!E5` = 4 *(saisie)*
+  - `INV!CF8` = 73 *(paramètre INV)*
+  - `INV!CH91` = 115,5 *(paramètre INV)*
+
+## C!W20 — Temps machine (composante K61)
+
+- `C!W20` = "" *(saisie)*
+
+## C!R39 — Mode MULTIPRINT (composante K61)
+
+- `C!R39` = **0** — `SUM(R33:R38)`
+  - `C!R33` = **false** — `IF(S!$O$5=1,IF(S!$E$3=3,[1]INV!$CF$64/60*[1]INV!$CF$8,0))`
+    - `S!E3` = 2 *(saisie)*
+    - `INV!CF64` = 110 *(paramètre INV)*
+    - `INV!CF8` = 73 *(paramètre INV)*
+  - `C!R38` = **false** — `IF(S!O5=1,IF(S!E3+S!D9+S!E9+S!E10+S!BB38>6,(S!E3+S!D9+S!E9+S!E10+S!BB38-6)*(S!G9/[1]INV!$CH$9)*[1]INV!$CF$8,0))`
+    - `S!E3` = 2 *(déjà détaillé plus haut)*
+    - `S!D9` = 1 *(saisie)*
+    - `S!E9` = 1 *(saisie)*
+    - `S!BB38` = **0** — `IF(BB37>0.1,1,0)`
+      - `S!BB37` = **0** — `IF($M$29=$BD37,[1]INV!BV792,0)`
+    - `S!G9` = **13,75** — `IF(ISBLANK(E2),0,(E2*I2+E2)/E5)`
+      - `S!E2` = 50 *(saisie)*
+      - `S!I2` = 0,1 *(saisie)*
+      - `S!E5` = 4 *(saisie)*
+    - `INV!CH9` = 250 *(paramètre INV)*
+    - `INV!CF8` = 73 *(déjà détaillé plus haut)*
+

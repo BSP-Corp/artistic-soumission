@@ -1,0 +1,12 @@
+string Tools.ConvertIntegerToCurrency(decimal number)
+{
+	// Tout le calcul de separateurs qui occupait cette fonction etait du CODE MORT : la
+	// valeur retournee ne dependait que de l'expression reguliere ci-dessous (ancienne
+	// ligne 39). Ce code mort plantait des que le montant etait vide ou nul :
+	//   stringLen = 0  ->  separators = 0/3 - 1 = -1  ->  substring(0, 3) sur ""
+	//   -> « Index value must range between 0 and the length of the text » (ancienne ligne 35)
+	// C'est ce qui faisait echouer GeneratePOInvoiceHtml sur CHAQUE commande creee.
+	// Le resultat rendu est identique a l'ancien pour toute valeur valide.
+	montant = ifnull(number,0);
+	return "" + montant.round(2).toString().replaceAll("(?<!\.\d)(?<=\d)(?=(?:\d\d\d)+\b)",",");
+}

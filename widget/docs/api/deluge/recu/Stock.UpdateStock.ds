@@ -1,0 +1,15 @@
+void Stock.UpdateStock(int stockID, decimal qty)
+{
+	stockItem = Stock[ID == stockID];
+	if(qty > 0)
+	{
+		stockItem.In_stock=stockItem.In_stock + qty;
+		stockItem.Added=stockItem.Added + qty;
+	}
+	else if(qty < 0 && stockItem.In_stock + qty >= 0)
+	{
+		stockItem.In_stock=stockItem.In_stock + qty;
+		stockItem.Removed=stockItem.Removed + qty * -1;
+	}
+	thisapp.Stock.UpdateStockQties(stockItem.Product,stockItem.Warehouse);
+}

@@ -1,0 +1,151 @@
+// ============================================================================
+//  Custom API  v1_materiaux  —  GET /creator/custom/groupecanva/v1_materiaux
+//  Fonction Deluge autonome (Workflows → Functions → type de retour : map)
+//
+//  Paramètres à déclarer dans le builder de la Custom API (tous optionnels) :
+//     string id, string nom, string recherche, string categorie,
+//     string actif, int page, int par_page
+//
+//  GABARIT : les autres endpoints (v1_fournisseurs, v1_machines…) sont des copies
+//  de cette fonction où seuls (1) le rapport lu et (2) le mappage colonnes → noms
+//  métier changent. Deluge ne calcule rien : il lit, renomme, enveloppe.
+//
+//  Convention de réponse (voir ARCHITECTURE-API.md §3) :
+//     liste  → { donnees:[…], page, par_page, total, page_suivante }
+//     objet  → { donnees:{…} }
+//     erreur → { erreur:{ code, message, details } }   + code HTTP adapté
+// ============================================================================
+
+reponse = Map();
+try
+{
+	// ---------------------------------------------------------------- paramètres
+	p = ifnull(page, 1);
+	pp = ifnull(par_page, 100);
+	if (p < 1 || pp < 1 || pp > 200)
+	{
+		return erreurApi("PARAMETRE_INVALIDE", "page >= 1 et 1 <= par_page <= 200.", Map());
+	}
+	seulementActifs = true;
+	if (actif != null && actif.toLowerCase() == "false")
+	{
+		seulementActifs = false;
+	}
+
+	// ---------------------------------------------------------------- critère Creator
+	// Source : formulaire Product (catalogue), matériaux = Est_materiau == 1,
+	// lus via le rapport étendu Machines_Report (expose les champs Mat_*).
+	crit = "(Est_materiau == 1)";
+	if (seulementActifs)
+	{
+		crit = crit + " && (Active == true)";
+	}
+	if (id != null && id != "")
+	{
+		crit = crit + " && (ID == " + id + ")";
+	}
+	if (nom != null && nom != "")
+	{
+		crit = crit + " && (Name == \"" + nom.replaceAll("\"", "\\\"") + "\")";
+	}
+	if (recherche != null && recherche != "")
+	{
+		crit = crit + " && (Name.contains(\"" + recherche.replaceAll("\"", "\\\"") + "\"))";
+	}
+	if (categorie != null && categorie != "")
+	{
+		crit = crit + " && (Mat_Categorie == \"" + categorie.toUpperCase() + "\")";
+	}
+
+	// ---------------------------------------------------------------- lecture
+	// Tâche « Get records – v2 » : (owner, app, rapport, critère, page, limite, connexion).
+	// Vérifier l'ordre des arguments dans l'aide contextuelle de l'éditeur Deluge.
+	// « creator_conn » = connexion Zoho Creator (scope ZohoCreator.report.READ) créée
+	// une fois dans Paramètres → Connexions.
+	lignes = zoho.creator.getRecords("groupecanva", "groupecanva", "Machines_Report", crit, p, pp, "creator_conn");
+
+	// total (pour la pagination) — un 2e appel léger ; acceptable à 356 lignes.
+	// Si le volume grossit : mettre en cache ou renvoyer total = null.
+	total = zoho.creator.getRecordCount("groupecanva", "groupecanva", "Machines_Report", crit, "creator_conn");
+
+	// ---------------------------------------------------------------- mappage → noms métier
+	donnees = List();
+	for each  r in lignes
+	{
+		m = Map();
+		m.put("id", r.get("ID").toString());
+		m.put("nom", r.get("Name"));
+		m.put("categorie", r.get("Mat_Categorie"));
+		m.put("format", vide(r.get("Mat_Format")));
+		m.put("epaisseur_po", nombre(r.get("Mat_Epaisseur_po")));
+		m.put("largeur_po", nombre(r.get("Mat_Largeur_po")));
+		m.put("longueur_po", nombre(r.get("Mat_Longueur_po")));
+		// cout_pi2 : 0 dans la base tant que la réconciliation des prix n'est pas faite
+		// → on renvoie null plutôt qu'un faux 0 (le client ne doit jamais voir « 0 $ »).
+		c = nombre(r.get("Mat_Cout_pi2"));
+		if (c == 0)
+		{
+			c = null;
+		}
+		m.put("cout_pi2", c);
+		m.put("prix_paye", null);          // viendra de la réconciliation (ancienne app)
+		m.put("fournisseur", null);        // idem
+		m.put("date_dernier_prix", null);  // idem
+		m.put("stock", nombre(r.get("Mat_Qte_stock")));
+		m.put("actif", r.get("Active").toString() == "true");
+		donnees.add(m);
+	}
+
+	// ---------------------------------------------------------------- enveloppe
+	if (id != null && id != "")
+	{
+		if (donnees.size() == 0)
+		{
+			return erreurApi("MATERIAU_INTROUVABLE", "Aucun matériau avec l'id " + id + ".", Map());
+		}
+		reponse.put("donnees", donnees.get(0));
+	}
+	else
+	{
+		reponse.put("donnees", donnees);
+		reponse.put("page", p);
+		reponse.put("par_page", pp);
+		reponse.put("total", total);
+		if (p * pp < total)
+		{
+			reponse.put("page_suivante", p + 1);
+		}
+		else
+		{
+			reponse.put("page_suivante", null);
+		}
+	}
+	return reponse;
+}
+catch (e)
+{
+	// jamais le détail Deluge vers l'extérieur : on journalise, on renvoie un code générique
+	info "v1_materiaux ERREUR : " + e;
+	return erreurApi("ERREUR_INTERNE", "Erreur interne. Citez X-Request-Id au support.", Map());
+}
+
+// ============================================================================
+//  Helpers — à créer comme fonctions autonomes réutilisées par tous les endpoints
+// ============================================================================
+//
+// map erreurApi(string code, string message, map details)
+// {
+// 	err = Map();
+// 	err.put("code", code);
+// 	err.put("message", message);
+// 	err.put("details", details);
+// 	out = Map();
+// 	out.put("erreur", err);
+// 	return out;
+// }
+//
+// string vide(string v)            → null si "" sinon v
+// decimal nombre(string v)         → v.toDecimal() si numérique, sinon null
+//
+// Note : le code HTTP (400/404) se règle dans la config de la Custom API selon le
+// contenu renvoyé, ou via la réponse « status » si la version de Creator le permet.

@@ -1,0 +1,29 @@
+string ZohoBooks.CreatePurchaseReceive(map data, string ZBOOKSID, map resp, string orgId)
+{
+	params = Dev_params[ID != null];
+	lignesRecues = data.get("line_items");
+	if(lignesRecues != null)
+	{
+		lignesSaines = List();
+		for each  ligne in lignesRecues
+		{
+			propre = Map();
+			propre.putAll(ligne);
+			propre.remove("warehouse_id");
+			lignesSaines.add(propre);
+		}
+		data.put("line_items",lignesSaines);
+	}
+	receiveResponse = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/purchasereceives?organization_id=" + orgId + "&purchaseorder_id=" + ZBOOKSID
+		type :POST
+		parameters:{"JSONString":data}
+		connection:"zohobooks1"
+	];
+	thisapp.Debug.LogThis("CreateBill (receive)",zoho.loginuser,data.toString(),receiveResponse.toString());
+	result = Map();
+	result.putAll(receiveResponse);
+	result.put("bill",resp);
+	return result;
+}

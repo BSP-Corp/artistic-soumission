@@ -1,0 +1,23 @@
+// Correction du 1er octobre 2026 — meme defaut que ZohoBooks.CreateVendor.
+//
+// 1. BLOQUANT : charge utile passee en vrac (`parameters:data`) au lieu du parametre nomme
+//    JSONString attendu par l'API Books. Reponse systematique :
+//        {"code":4,"message":"Invalid value passed for JSONString"}
+//    Cette fonction n'avait donc jamais pu creer un article, quelle que soit la
+//    configuration du client. Forme correcte : parameters:{"JSONString":data}
+//
+// 2. Domaine historique books.zoho.com/api/v3 -> www.zohoapis.com/books/v3.
+//
+// La journalisation est conservee telle quelle.
+string ZohoBooks.CreateProduct(map data, string orgId)
+{
+	response = invokeurl
+	[
+		url :"https://www.zohoapis.com/books/v3/items?organization_id=" + orgId
+		type :POST
+		parameters:{"JSONString":data}
+		connection:"zohobooks1"
+	];
+	thisapp.Debug.LogThis("CreateProduct",zoho.loginuser,({"organization_id":orgId,"data":data}).toString(),response.toString());
+	return response;
+}

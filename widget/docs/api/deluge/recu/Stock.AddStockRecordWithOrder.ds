@@ -1,0 +1,42 @@
+int Stock.AddStockRecordWithOrder(int stockID, decimal qty, string detail, int orderId)
+{
+	stockItem = Stock[ID == stockID];
+	// Add a record in the Add Stock form
+	//check if the fourth argument belongs to a Vendor order or a Transfer
+	vendor_order = Purchase_Order[ID == orderId].ID;
+	ajustementID = 0;
+	porderID = null;
+	sorderID = null;
+	if(vendor_order != null)
+	{
+		porderID = orderId;
+	}
+	else
+	{
+		sorderID = orderId;
+	}
+	ajustementID = insert into Stock_Adjustment
+	[
+		Organization=stockItem.Warehouse.Organization
+		Added_User=zoho.loginuser
+		Adjustment_Date=zoho.currentdate
+		Warehouse=stockItem.Warehouse
+		Details=detail
+		Purchase_Order=porderID
+		Mode_of_adjustment="Quantity"
+	];
+	//Sales_Order=sorderID
+	//Date_d_ajout=today
+	//Succursale=stockItem.Succursale1
+	insert into SF_Adjustment
+	[
+		Quantity=qty
+		Warehouse=stockItem.Warehouse
+		Category=stockItem.Product.Product_Category
+		Part_number=stockItem.Product
+		Added_User=zoho.loginuser
+		Stock_Adjustment=ajustementID
+	]
+	thisapp.Stock.UpdateStock(stockID,qty);
+	return ajustementID;
+}
