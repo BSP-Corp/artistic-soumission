@@ -5,6 +5,8 @@
 // Un matériau AJOUTÉ par le client (absent du classeur) reste utilisable : son prix
 // est appliqué directement sur la cellule Coût pi² de la ligne où il est choisi.
 import { NOM_VERS_INV } from "@/data/nomVersInv";
+import { FORMATS_FEUILLE_SNAPSHOT } from "@/data/montageSnapshot";
+import type { FormatFeuille } from "./montage";
 import type { CellValue } from "./moteur";
 import type { ParametresCreator } from "@/services/zohoService";
 
@@ -26,6 +28,10 @@ export interface ParamsAppliques {
   categories: Record<string, string[]>;
   nbMateriaux: number;
   nbTaux: number;
+  /** formats de feuille permis (optimisation du montage). Creator fait foi dès que la table
+   *  existe ; sinon le snapshot embarqué. Les formats inactifs sont conservés : c'est
+   *  `choisirMontage` qui les écarte, en disant pourquoi. */
+  formats: FormatFeuille[];
 }
 
 export function construireParams(p: ParametresCreator): ParamsAppliques {
@@ -63,7 +69,19 @@ export function construireParams(p: ParametresCreator): ParamsAppliques {
     if (mApp && t.valeur !== null) app[mApp[1]] = t.valeur;
   }
 
-  return { surcharges, defauts, app, prixParNom, achatParNom, categories, nbMateriaux: p.materiaux.length, nbTaux: p.taux.length };
+  const formats = p.formats?.length ? p.formats : FORMATS_FEUILLE_SNAPSHOT;
+
+  return {
+    surcharges,
+    defauts,
+    app,
+    prixParNom,
+    achatParNom,
+    categories,
+    formats,
+    nbMateriaux: p.materiaux.length,
+    nbTaux: p.taux.length,
+  };
 }
 
 /** Cellules Coût pi² des 7 lignes matériaux fixes (nom choisi → cellule de prix). */

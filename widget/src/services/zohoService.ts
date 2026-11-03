@@ -7,25 +7,101 @@
 //   Client, Mod_le, No_Pi_ce, Quantit, Montant, Total, Prix_Unitaire, Donnees, S_W13…
 export const FORM_SOUMISSIONS = "Form1";
 import { regleDepuisCreator, type RegleMateriau } from "@/lib/reglesMateriaux";
+import type { FormatFeuille } from "@/lib/montage";
 
 export const REPORT_SOUMISSIONS = "Form1_Report";
 
 let insideZohoPage = false;
 
+/** Pourquoi le widget se croit hors Creator. Il n'y avait qu'un booleen, et quatre situations
+ *  tres differentes finissaient sur le meme ecran « Hors Creator » : SDK bloque, poignee de
+ *  main trop lente, vraiment hors Creator, lecture refusee. Une capture d'ecran de client
+ *  etait donc indiagnosticable — c'est ce qui est arrive le 3 novembre 2026. */
+export type EtatCreator = "indetermine" | "dedans" | "sdk-absent" | "init-expire" | "hors-creator";
+// « indetermine » tant que la detection n'a pas tranche. L'ancienne valeur de depart etait
+// « hors Creator » : lue avant la fin de l'init, elle faisait affirmer au widget une panne
+// qu'il n'avait pas encore constatee.
+let etat: EtatCreator = "indetermine";
+
+export function etatCreator(): EtatCreator {
+  return etat;
+}
+
 export function isZohoEnv(): boolean {
   return typeof ZOHO !== "undefined" && !!ZOHO?.CREATOR?.DATA && insideZohoPage;
 }
 
-export async function initZohoEnv(): Promise<void> {
-  if (typeof ZOHO === "undefined" || !ZOHO?.CREATOR?.UTIL) return;
+/** Un widget Creator est TOUJOURS servi dans une iframe (domaine zappsusercontent). Au premier
+ *  plan on est donc en dev ou en consultation directe, et attendre une reponse qui ne viendra
+ *  jamais ne sert a rien. Encadre, on est quasi certainement dans Creator : on peut etre patient.
+ *  L'acces a window.top leve si l'iframe est cross-origin, ce qui prouve deja l'encadrement. */
+function dansIframe(): boolean {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
+/** Attend que le SDK soit REELLEMENT utilisable. Le script est classique et distant
+ *  (js.zohostatic.com, voir index.html) : au moment ou notre bundle s'execute, `ZOHO` peut
+ *  exister sans que `ZOHO.CREATOR.UTIL` soit encore en place.
+ *
+ *  L'ancien code abandonnait DEFINITIVEMENT dans ce cas — un `return` sec, sans reprise — et
+ *  le widget annoncait « Hors Creator » alors qu'il tournait dans Creator. La panne depend de
+ *  la latence du CDN, ce qui explique qu'elle frappe un poste et pas un autre : observee chez
+ *  un client le 3 novembre 2026, jamais en demo. */
+async function attendreSdk(limiteMs: number): Promise<boolean> {
+  const fin = Date.now() + limiteMs;
+  for (;;) {
+    if (typeof ZOHO !== "undefined" && !!ZOHO?.CREATOR?.UTIL) return true;
+    if (Date.now() >= fin) return false;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+}
+
+let initEnCours: Promise<void> | null = null;
+
+/** Detection de l'environnement. Memoisee et ATTENDABLE : tout ce qui depend du verdict
+ *  l'attend au lieu de lire un etat a moitie determine. Sans ca, un clic sur « Ouvrir »
+ *  pendant le chargement figeait un verdict faux, definitivement. */
+export function initZohoEnv(): Promise<void> {
+  if (!initEnCours) initEnCours = determinerEnv();
+  return initEnCours;
+}
+
+async function determinerEnv(): Promise<void> {
+  if (insideZohoPage) return; // deja etabli : ne pas rejouer la poignee de main
+  // Au premier plan, ce N'EST PAS un widget Creator : un widget Creator est toujours servi
+  // dans une iframe. Verification synchrone et definitive, donc faite en premier : inutile
+  // d'attendre un SDK puis une reponse qui ne viendront jamais. Sans ce court-circuit, le cas
+  // « ouvert directement dans un navigateur » conseillait de recharger la page — un conseil
+  // faux, pour une situation parfaitement normale en demo et en dev.
+  if (!dansIframe()) {
+    etat = "hors-creator";
+    return;
+  }
+  // Encadre : on est quasi certainement dans Creator, donc on est patient, sur les DEUX temps.
+  // Le rendu n'attend pas — l'appel part d'un useEffect, donc apres le premier affichage.
+  if (!(await attendreSdk(8000))) {
+    // vraiment absent apres 8 s : script bloque par un proxy ou un pare-feu, poste hors ligne.
+    etat = "sdk-absent";
+    return;
+  }
+  // 2 s suffisaient en demo et pas chez le client : un chargement a froid depassait le delai
+  // et l'echec etait, la aussi, DEFINITIF pour la page.
   try {
     const params = await Promise.race([
       ZOHO.CREATOR.UTIL.getInitParams(),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("init-timeout")), 2000)),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("init-timeout")), 10000)),
     ]);
     insideZohoPage = !!params?.loginUser;
+    // le SDK a REPONDU : s'il n'y a pas d'utilisateur, c'est un vrai « hors Creator »,
+    // pas un delai depasse. La distinction decide du message montre a l'utilisateur.
+    etat = insideZohoPage ? "dedans" : "hors-creator";
   } catch {
     insideZohoPage = false;
+    etat = "init-expire";
   }
 }
 
@@ -33,6 +109,10 @@ export async function initZohoEnv(): Promise<void> {
 // Liens des champs = codes colonnes Excel (BO=nom, BV=coût pi², CF/CH/CI=taux…).
 export const REPORT_MATERIAUX = "Materiaux_Report";
 export const REPORT_TAUX = "Taux_Calcul_Report";
+/** Formats de feuille permis (optimisation du montage). La table n'existe pas encore dans
+ *  Creator : tant qu'elle manque, la lecture renvoie [] et le widget retombe sur le snapshot
+ *  `FORMATS_FEUILLE_SNAPSHOT`. Voir widget/docs/montage-imposition.md. */
+export const REPORT_FORMATS_FEUILLE = "Formats_Feuille_Report";
 
 export interface MateriauCreator {
   id: string;
@@ -62,6 +142,8 @@ export interface TauxCreator {
 export interface ParametresCreator {
   materiaux: MateriauCreator[];
   taux: TauxCreator[];
+  /** formats de feuille permis ; [] si la table Creator n'existe pas encore (→ snapshot) */
+  formats: FormatFeuille[];
 }
 
 function num(v: unknown): number | null {
@@ -157,6 +239,26 @@ async function materiauxDepuisProduct(): Promise<MateriauCreator[]> {
   }
 }
 
+/** Formats de feuille permis depuis Creator. Renvoie [] — jamais une erreur — si la table
+ *  n'existe pas encore : l'appelant retombe alors sur le snapshot embarqué. */
+async function formatsDepuisCreator(): Promise<FormatFeuille[]> {
+  try {
+    const lignes = await toutesLignes(REPORT_FORMATS_FEUILLE);
+    return lignes
+      .map((r) => ({
+        nom: String(r.Nom_format ?? "").trim(),
+        largeurPo: num(r.Largeur_po) ?? 0,
+        hauteurPo: num(r.Hauteur_po) ?? 0,
+        actif: String(r.Actif ?? "").trim().toLowerCase() !== "non" && num(r.Actif) !== 0,
+      }))
+      .filter((f) => f.largeurPo > 0 && f.hauteurPo > 0)
+      .map((f) => ({ ...f, nom: f.nom || `${f.largeurPo} × ${f.hauteurPo}` }));
+  } catch (e) {
+    console.warn("formatsDepuisCreator (table absente ?) :", e);
+    return [];
+  }
+}
+
 /** Charge matériaux + taux depuis Creator. null hors Zoho ou en cas d'échec (→ snapshot embarqué).
  *  Matériaux : Product (catalogue) en priorité, ancien formulaire Materiaux en repli. */
 export async function chargerParametres(): Promise<ParametresCreator | null> {
@@ -168,9 +270,14 @@ export async function chargerParametres(): Promise<ParametresCreator | null> {
     // Le garder en repli entretenait un bug reel : la lecture venait de Product, mais
     // l'enregistrement d'un prix partait dans Materiaux — la correction n'avait donc
     // aucun effet visible. Voir sauvegarderMateriau() plus bas.
-    const [materiaux, taux] = await Promise.all([materiauxDepuisProduct(), toutesLignes(REPORT_TAUX)]);
+    const [materiaux, taux, formats] = await Promise.all([
+      materiauxDepuisProduct(),
+      toutesLignes(REPORT_TAUX),
+      formatsDepuisCreator(),
+    ]);
     return {
       materiaux,
+      formats,
       taux: taux
         .map((r) => ({
           id: String(r.ID ?? ""),
@@ -533,11 +640,18 @@ export interface SoumissionResume {
 }
 
 /** Liste les soumissions enregistrées (Form1), plus récentes d'abord. null hors Zoho. */
-export async function chargerSoumissions(): Promise<SoumissionResume[] | null> {
-  if (!isZohoEnv()) return null;
+/** Pourquoi la liste est indisponible. « lecture-refusee » est le cas que l'ancien code
+ *  maquillait en « hors Creator » : Creator repond bien, mais pas sur CE rapport. */
+export type ResultatSoumissions =
+  | { ok: true; liste: SoumissionResume[] }
+  | { ok: false; cause: EtatCreator | "lecture-refusee"; detail?: string };
+
+export async function chargerSoumissions(): Promise<ResultatSoumissions> {
+  await initZohoEnv(); // ne jamais conclure sur un verdict pas encore rendu
+  if (!isZohoEnv()) return { ok: false, cause: etatCreator() };
   try {
     const lignes = await toutesLignes(REPORT_SOUMISSIONS);
-    return lignes
+    const liste = lignes
       .map((r) => ({
         id: String(r.ID ?? ""),
         client: String(r.Client ?? "").trim(),
@@ -549,10 +663,13 @@ export async function chargerSoumissions(): Promise<SoumissionResume[] | null> {
         donnees: String(r.Donnees ?? ""),
       }))
       .filter((s) => s.id)
-      .sort((a, b) => (a.id < b.id ? 1 : -1)); // IDs croissants dans le temps → tri décroissant = plus récentes d'abord
+      .sort((a, b) => (a.id < b.id ? 1 : -1)); // IDs croissants dans le temps -> tri decroissant = plus recentes d'abord
+    return { ok: true, liste };
   } catch (e) {
+    // Creator repond, mais pas sur ce rapport : role sans acces a Form1_Report, rapport
+    // renomme, ou coupure reseau. Le dire, au lieu d'accuser l'environnement.
     console.warn("chargerSoumissions:", e);
-    return null;
+    return { ok: false, cause: "lecture-refusee", detail: String((e as Error)?.message ?? e) };
   }
 }
 

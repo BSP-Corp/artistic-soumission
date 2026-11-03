@@ -185,7 +185,10 @@ export default function AppBT() {
       const a = await chargerAdmin();
       if (a) setMachinesCreator(a.machines);
       setBons(await chargerBonsTravail());
-      setSoumissions(await chargerSoumissions());
+      // le Bon de travail ne fait que peupler une liste deroulante : il n'a pas d'ecran
+      // ou afficher la cause d'un refus, donc il retombe sur null comme avant.
+      const rs = await chargerSoumissions();
+      setSoumissions(rs.ok ? rs.liste : null);
       const cat = await chargerCouleurs();
       if (cat && cat.length) setCouleurs(cat);
     })();
