@@ -13,20 +13,60 @@ export const REPORT_SOUMISSIONS = "Form1_Report";
 
 let insideZohoPage = false;
 
+/** Pourquoi le widget se croit hors Creator. Il n'y avait qu'un booleen, et quatre situations
+ *  tres differentes finissaient sur le meme ecran « Hors Creator » : SDK bloque, poignee de
+ *  main trop lente, vraiment hors Creator, lecture refusee. Une capture d'ecran de client
+ *  etait donc indiagnosticable — c'est ce qui est arrive le 3 novembre 2026. */
+export type EtatCreator = "dedans" | "sdk-absent" | "init-expire" | "hors-creator";
+let etat: EtatCreator = "sdk-absent";
+
+export function etatCreator(): EtatCreator {
+  return etat;
+}
+
 export function isZohoEnv(): boolean {
   return typeof ZOHO !== "undefined" && !!ZOHO?.CREATOR?.DATA && insideZohoPage;
 }
 
+/** Un widget Creator est TOUJOURS servi dans une iframe (domaine zappsusercontent). Au premier
+ *  plan on est donc en dev ou en consultation directe, et attendre une reponse qui ne viendra
+ *  jamais ne sert a rien. Encadre, on est quasi certainement dans Creator : on peut etre patient.
+ *  L'acces a window.top leve si l'iframe est cross-origin, ce qui prouve deja l'encadrement. */
+function dansIframe(): boolean {
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
 export async function initZohoEnv(): Promise<void> {
-  if (typeof ZOHO === "undefined" || !ZOHO?.CREATOR?.UTIL) return;
+  if (insideZohoPage) return; // deja etabli : ne pas rejouer la poignee de main
+  // Le SDK est charge depuis js.zohostatic.com dans TOUS les contextes (voir index.html) :
+  // sa presence ne prouve pas qu'on est dans Creator — d'ou la poignee de main ci-dessous.
+  // Son ABSENCE, elle, a une cause propre (script bloque par un proxy, poste hors ligne)
+  // qu'il faut nommer a part au lieu de la confondre avec « hors Creator ».
+  if (typeof ZOHO === "undefined" || !ZOHO?.CREATOR?.UTIL) {
+    etat = "sdk-absent";
+    return;
+  }
+  // 2 s suffisaient en demo et pas chez le client : un chargement a froid depassait le delai,
+  // l'echec etait DEFINITIF pour la page (aucune reprise) et le widget annoncait « Hors
+  // Creator » alors qu'il tournait dans Creator. Le rendu n'attend pas ce delai : l'appel est
+  // fait dans un useEffect, donc apres le premier affichage.
+  const limite = dansIframe() ? 10000 : 1000;
   try {
     const params = await Promise.race([
       ZOHO.CREATOR.UTIL.getInitParams(),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("init-timeout")), 2000)),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("init-timeout")), limite)),
     ]);
     insideZohoPage = !!params?.loginUser;
+    // le SDK a REPONDU : s'il n'y a pas d'utilisateur, c'est un vrai « hors Creator »,
+    // pas un delai depasse. La distinction decide du message montre a l'utilisateur.
+    etat = insideZohoPage ? "dedans" : "hors-creator";
   } catch {
     insideZohoPage = false;
+    etat = "init-expire";
   }
 }
 
@@ -565,11 +605,17 @@ export interface SoumissionResume {
 }
 
 /** Liste les soumissions enregistrées (Form1), plus récentes d'abord. null hors Zoho. */
-export async function chargerSoumissions(): Promise<SoumissionResume[] | null> {
-  if (!isZohoEnv()) return null;
+/** Pourquoi la liste est indisponible. « lecture-refusee » est le cas que l'ancien code
+ *  maquillait en « hors Creator » : Creator repond bien, mais pas sur CE rapport. */
+export type ResultatSoumissions =
+  | { ok: true; liste: SoumissionResume[] }
+  | { ok: false; cause: EtatCreator | "lecture-refusee"; detail?: string };
+
+export async function chargerSoumissions(): Promise<ResultatSoumissions> {
+  if (!isZohoEnv()) return { ok: false, cause: etatCreator() };
   try {
     const lignes = await toutesLignes(REPORT_SOUMISSIONS);
-    return lignes
+    const liste = lignes
       .map((r) => ({
         id: String(r.ID ?? ""),
         client: String(r.Client ?? "").trim(),
@@ -581,10 +627,13 @@ export async function chargerSoumissions(): Promise<SoumissionResume[] | null> {
         donnees: String(r.Donnees ?? ""),
       }))
       .filter((s) => s.id)
-      .sort((a, b) => (a.id < b.id ? 1 : -1)); // IDs croissants dans le temps → tri décroissant = plus récentes d'abord
+      .sort((a, b) => (a.id < b.id ? 1 : -1)); // IDs croissants dans le temps -> tri decroissant = plus recentes d'abord
+    return { ok: true, liste };
   } catch (e) {
+    // Creator repond, mais pas sur ce rapport : role sans acces a Form1_Report, rapport
+    // renomme, ou coupure reseau. Le dire, au lieu d'accuser l'environnement.
     console.warn("chargerSoumissions:", e);
-    return null;
+    return { ok: false, cause: "lecture-refusee", detail: String((e as Error)?.message ?? e) };
   }
 }
 

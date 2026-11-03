@@ -3,32 +3,57 @@
 // JSON Donnees (y compris machines choisies X!* et lignes QTÉ ajoutées). Suppression possible.
 import { useEchap } from "@/hooks/useEchap";
 import { useMemo, useState } from "react";
-import type { SoumissionResume } from "@/services/zohoService";
+import type { ResultatSoumissions, SoumissionResume } from "@/services/zohoService";
 import { supprimerSoumission } from "@/services/zohoService";
 import { argent } from "@/lib/format";
 
+/** Un seul message « Hors Creator » couvrait quatre pannes sans rapport entre elles, dont une
+ *  — le rôle sans accès au rapport — qui n'a rien à voir avec l'environnement. Chaque cause
+ *  porte maintenant ce que l'utilisateur peut en faire : il est seul devant son écran. */
+const EXPLICATION: Record<string, { titre: string; quoiFaire: string }> = {
+  "sdk-absent": {
+    titre: "Le SDK Zoho n'a pas pu être chargé.",
+    quoiFaire:
+      "Le script js.zohostatic.com est injoignable — proxy, pare-feu ou bloqueur de publicités. À signaler au service informatique.",
+  },
+  "init-expire": {
+    titre: "Creator n'a pas répondu au widget dans le délai imparti.",
+    quoiFaire:
+      "Rechargez la page (F5). Si cela se répète, c'est la liaison du poste vers Zoho qui est en cause, pas la soumission.",
+  },
+  "hors-creator": {
+    titre: "Le widget ne tourne pas dans Creator.",
+    quoiFaire: "Les soumissions enregistrées ne sont lisibles que depuis l'application Creator.",
+  },
+  "lecture-refusee": {
+    titre: "Creator a refusé la lecture des soumissions.",
+    quoiFaire:
+      "Votre rôle n'a probablement pas accès au rapport Form1_Report. À faire vérifier par l'administrateur de l'application.",
+  },
+};
+
 interface Props {
-  soumissions: SoumissionResume[] | null; // null = hors Zoho ou pas encore chargées
+  resultat: ResultatSoumissions | null; // null = pas encore chargé
   chargement: boolean;
   onOuvrir: (s: SoumissionResume) => void;
   onSupprimee: (id: string) => void;
   onClose: () => void;
 }
 
-export function PopupSoumissions({ soumissions, chargement, onOuvrir, onSupprimee, onClose }: Props) {
+export function PopupSoumissions({ resultat, chargement, onOuvrir, onSupprimee, onClose }: Props) {
   useEchap(onClose);
   const [q, setQ] = useState("");
   const [message, setMessage] = useState("");
   const [confirmationId, setConfirmationId] = useState<string | null>(null);
 
   const filtrees = useMemo(() => {
-    const liste = soumissions ?? [];
+    const liste = resultat?.ok ? resultat.liste : [];
     const term = q.trim().toLowerCase();
     if (!term) return liste;
     return liste.filter((s) =>
       [s.client, s.modele, s.noPce].some((v) => v.toLowerCase().includes(term)),
     );
-  }, [soumissions, q]);
+  }, [resultat, q]);
 
   async function supprimer(id: string) {
     if (confirmationId !== id) {
@@ -63,7 +88,16 @@ export function PopupSoumissions({ soumissions, chargement, onOuvrir, onSupprime
           {message && <p className="taux-msg">{message}</p>}
           {chargement ? (
             <p className="taux-note">Chargement des soumissions…</p>
-          ) : soumissions === null ? (
+          ) : resultat && !resultat.ok ? (
+            <div className="taux-note">
+              <p>
+                <b>{EXPLICATION[resultat.cause]?.titre ?? "Les soumissions enregistrées ne sont pas disponibles."}</b>
+              </p>
+              <p>{EXPLICATION[resultat.cause]?.quoiFaire ?? ""}</p>
+              {resultat.detail && <p className="soum-detail">Détail technique : {resultat.detail}</p>}
+              <p className="soum-detail">Code : {resultat.cause}</p>
+            </div>
+          ) : !resultat ? (
             <p className="taux-note">Hors Creator — les soumissions enregistrées ne sont pas disponibles.</p>
           ) : filtrees.length === 0 ? (
             <p className="taux-note">{q ? "Aucune soumission ne correspond à la recherche." : "Aucune soumission enregistrée pour le moment — utilisez le bouton « Enregistrer »."}</p>

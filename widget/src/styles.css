@@ -1445,6 +1445,15 @@ td.ajout-qte-cell {
 }
 
 /* ── popup Soumissions enregistrées ── */
+/* detail technique sous un refus de chargement : lisible mais discret, l'utilisateur
+   doit pouvoir le recopier a l'administrateur sans que ca domine le panneau */
+.soum-detail {
+  margin-top: 4px;
+  font-size: 11px;
+  opacity: 0.7;
+  word-break: break-word;
+}
+
 .soum-liste {
   display: flex;
   flex-direction: column;

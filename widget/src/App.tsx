@@ -53,7 +53,7 @@ import {
   chargerSoumissions,
   chargerReglesMateriaux,
   isZohoEnv,
-  type SoumissionResume,
+  type ResultatSoumissions,
   type TauxCreator,
   type ParametresBase,
   type FournituresProduction,
@@ -97,7 +97,7 @@ export default function App() {
   const [guideOuvert, setGuideOuvert] = useState(false);
   const [administrationOuvert, setAdministrationOuvert] = useState(false);
   const [soumissionsOuvert, setSoumissionsOuvert] = useState(false);
-  const [soumissions, setSoumissions] = useState<SoumissionResume[] | null>(null);
+  const [soumissions, setSoumissions] = useState<ResultatSoumissions | null>(null);
   const [soumissionsChargement, setSoumissionsChargement] = useState(false);
   /** popup de vérification : `valider` = enchaîne sur le bon de travail quand tout est en ordre */
   const [propositionOuverte, setPropositionOuverte] = useState(false);
@@ -109,8 +109,8 @@ export default function App() {
   function ouvrirSoumissions() {
     setSoumissionsOuvert(true);
     setSoumissionsChargement(true);
-    void chargerSoumissions().then((liste) => {
-      setSoumissions(liste);
+    void chargerSoumissions().then((r) => {
+      setSoumissions(r);
       setSoumissionsChargement(false);
     });
   }
@@ -834,7 +834,7 @@ export default function App() {
       )}
       {soumissionsOuvert && (
         <PopupSoumissions
-          soumissions={soumissions}
+          resultat={soumissions}
           chargement={soumissionsChargement}
           onOuvrir={(sr) => {
             const ok = s.chargerDonnees(sr.donnees);
@@ -847,7 +847,11 @@ export default function App() {
                 : "Impossible d'ouvrir cette soumission (données absentes ou format inattendu).",
             );
           }}
-          onSupprimee={(id) => setSoumissions((prev) => (prev ? prev.filter((x) => x.id !== id) : prev))}
+          onSupprimee={(id) =>
+            setSoumissions((prev) =>
+              prev?.ok ? { ...prev, liste: prev.liste.filter((x) => x.id !== id) } : prev,
+            )
+          }
           onClose={() => setSoumissionsOuvert(false)}
         />
       )}
