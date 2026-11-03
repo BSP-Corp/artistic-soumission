@@ -17,8 +17,11 @@ let insideZohoPage = false;
  *  tres differentes finissaient sur le meme ecran « Hors Creator » : SDK bloque, poignee de
  *  main trop lente, vraiment hors Creator, lecture refusee. Une capture d'ecran de client
  *  etait donc indiagnosticable — c'est ce qui est arrive le 3 novembre 2026. */
-export type EtatCreator = "dedans" | "sdk-absent" | "init-expire" | "hors-creator";
-let etat: EtatCreator = "sdk-absent";
+export type EtatCreator = "indetermine" | "dedans" | "sdk-absent" | "init-expire" | "hors-creator";
+// « indetermine » tant que la detection n'a pas tranche. L'ancienne valeur de depart etait
+// « hors Creator » : lue avant la fin de l'init, elle faisait affirmer au widget une panne
+// qu'il n'avait pas encore constatee.
+let etat: EtatCreator = "indetermine";
 
 export function etatCreator(): EtatCreator {
   return etat;
@@ -40,25 +43,57 @@ function dansIframe(): boolean {
   }
 }
 
-export async function initZohoEnv(): Promise<void> {
+/** Attend que le SDK soit REELLEMENT utilisable. Le script est classique et distant
+ *  (js.zohostatic.com, voir index.html) : au moment ou notre bundle s'execute, `ZOHO` peut
+ *  exister sans que `ZOHO.CREATOR.UTIL` soit encore en place.
+ *
+ *  L'ancien code abandonnait DEFINITIVEMENT dans ce cas — un `return` sec, sans reprise — et
+ *  le widget annoncait « Hors Creator » alors qu'il tournait dans Creator. La panne depend de
+ *  la latence du CDN, ce qui explique qu'elle frappe un poste et pas un autre : observee chez
+ *  un client le 3 novembre 2026, jamais en demo. */
+async function attendreSdk(limiteMs: number): Promise<boolean> {
+  const fin = Date.now() + limiteMs;
+  for (;;) {
+    if (typeof ZOHO !== "undefined" && !!ZOHO?.CREATOR?.UTIL) return true;
+    if (Date.now() >= fin) return false;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+}
+
+let initEnCours: Promise<void> | null = null;
+
+/** Detection de l'environnement. Memoisee et ATTENDABLE : tout ce qui depend du verdict
+ *  l'attend au lieu de lire un etat a moitie determine. Sans ca, un clic sur « Ouvrir »
+ *  pendant le chargement figeait un verdict faux, definitivement. */
+export function initZohoEnv(): Promise<void> {
+  if (!initEnCours) initEnCours = determinerEnv();
+  return initEnCours;
+}
+
+async function determinerEnv(): Promise<void> {
   if (insideZohoPage) return; // deja etabli : ne pas rejouer la poignee de main
-  // Le SDK est charge depuis js.zohostatic.com dans TOUS les contextes (voir index.html) :
-  // sa presence ne prouve pas qu'on est dans Creator — d'ou la poignee de main ci-dessous.
-  // Son ABSENCE, elle, a une cause propre (script bloque par un proxy, poste hors ligne)
-  // qu'il faut nommer a part au lieu de la confondre avec « hors Creator ».
-  if (typeof ZOHO === "undefined" || !ZOHO?.CREATOR?.UTIL) {
+  // Au premier plan, ce N'EST PAS un widget Creator : un widget Creator est toujours servi
+  // dans une iframe. Verification synchrone et definitive, donc faite en premier : inutile
+  // d'attendre un SDK puis une reponse qui ne viendront jamais. Sans ce court-circuit, le cas
+  // « ouvert directement dans un navigateur » conseillait de recharger la page — un conseil
+  // faux, pour une situation parfaitement normale en demo et en dev.
+  if (!dansIframe()) {
+    etat = "hors-creator";
+    return;
+  }
+  // Encadre : on est quasi certainement dans Creator, donc on est patient, sur les DEUX temps.
+  // Le rendu n'attend pas — l'appel part d'un useEffect, donc apres le premier affichage.
+  if (!(await attendreSdk(8000))) {
+    // vraiment absent apres 8 s : script bloque par un proxy ou un pare-feu, poste hors ligne.
     etat = "sdk-absent";
     return;
   }
-  // 2 s suffisaient en demo et pas chez le client : un chargement a froid depassait le delai,
-  // l'echec etait DEFINITIF pour la page (aucune reprise) et le widget annoncait « Hors
-  // Creator » alors qu'il tournait dans Creator. Le rendu n'attend pas ce delai : l'appel est
-  // fait dans un useEffect, donc apres le premier affichage.
-  const limite = dansIframe() ? 10000 : 1000;
+  // 2 s suffisaient en demo et pas chez le client : un chargement a froid depassait le delai
+  // et l'echec etait, la aussi, DEFINITIF pour la page.
   try {
     const params = await Promise.race([
       ZOHO.CREATOR.UTIL.getInitParams(),
-      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("init-timeout")), limite)),
+      new Promise<never>((_, rej) => setTimeout(() => rej(new Error("init-timeout")), 10000)),
     ]);
     insideZohoPage = !!params?.loginUser;
     // le SDK a REPONDU : s'il n'y a pas d'utilisateur, c'est un vrai « hors Creator »,
@@ -612,6 +647,7 @@ export type ResultatSoumissions =
   | { ok: false; cause: EtatCreator | "lecture-refusee"; detail?: string };
 
 export async function chargerSoumissions(): Promise<ResultatSoumissions> {
+  await initZohoEnv(); // ne jamais conclure sur un verdict pas encore rendu
   if (!isZohoEnv()) return { ok: false, cause: etatCreator() };
   try {
     const lignes = await toutesLignes(REPORT_SOUMISSIONS);

@@ -25,6 +25,10 @@ const EXPLICATION: Record<string, { titre: string; quoiFaire: string }> = {
     titre: "Le widget ne tourne pas dans Creator.",
     quoiFaire: "Les soumissions enregistrées ne sont lisibles que depuis l'application Creator.",
   },
+  indetermine: {
+    titre: "La connexion a Creator n'a pas encore abouti.",
+    quoiFaire: "Refermez et rouvrez cette fenetre dans quelques secondes.",
+  },
   "lecture-refusee": {
     titre: "Creator a refusé la lecture des soumissions.",
     quoiFaire:
