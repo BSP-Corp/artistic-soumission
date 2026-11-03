@@ -1344,6 +1344,19 @@ td.ajout-qte-cell {
   white-space: normal;
   overflow-wrap: anywhere;
 }
+/* réserve du bloc « Montage suggéré » : une ligne plus discrète que l'info machine qui la
+   porte, pour que la suggestion ne se lise pas comme un prix déjà recalculé. */
+.machine-info .hint {
+  display: inline-block;
+  margin-top: 3px;
+  font-size: 10.5px;
+  font-style: normal;
+  opacity: 0.85;
+}
+.machine-info .btn.petit {
+  margin-left: 2px;
+  vertical-align: baseline;
+}
 .machine-warn {
   color: #b3341f;
   background: #fdeeea;

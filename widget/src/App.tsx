@@ -26,6 +26,17 @@ import {
   CELL_MATRICE,
 } from "@/lib/machines";
 import { METHODE_COUT, tauxOperation, TAUX_HORAIRE_CLASSEUR } from "@/lib/methodeCout";
+import {
+  choisirMontage,
+  reglesMontage,
+  libelleFormat,
+  CELL_ESPACE_UP,
+  CELL_POURTOUR,
+  CELL_MONTAGE_FORMAT,
+  CELL_MONTAGE_UP,
+  type PresseFormat,
+} from "@/lib/montage";
+import { FORMATS_FEUILLE_SNAPSHOT } from "@/data/montageSnapshot";
 import type { FamilleMachine } from "@/data/machinesCalc";
 import type { CellValue } from "@/lib/moteur";
 
@@ -294,6 +305,51 @@ export default function App() {
     const setupCoul = coul >= 3 && coul <= 6 ? s.num(["INV!CF64", "INV!CF65", "INV!CF66", "INV!CF67"][coul - 3]) : 0;
     return { libelle: ["petite", "moyenne", "grande"][gabarit], montage, nettoyage, setupCoul, coul };
   }, [s]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── montage suggéré (imposition) ──────────────────────────────────────────
+  // Suggestion à côté du calcul : rien n'est injecté dans le moteur tant que le chargé de
+  // projet n'a pas cliqué « Accepter ». L'espace entre up et le pourtour viennent du
+  // classeur (FT!AH43 / FT!AH44), les trois autres réglages de Taux_Calcul (APP_MONTAGE_*).
+  //
+  // Quantité retenue : celle du job (S!E2), sans la perte. La perte est une marge matière,
+  // pas des pièces à imprimer en plus ; le classeur l'applique ailleurs (FT!E39 = E38 × 1,1,
+  // alimenté sur le bon de travail, pas ici).
+  //
+  // Formats : la table Creator fait foi dès qu'elle existe, sinon le snapshot du 2 nov.
+  // Presses : les fiches machines, seule source de formats maxi déjà en place. Voir le
+  // conflit de données documenté dans data/montageSnapshot.ts.
+  const montage = useMemo(() => {
+    const regles = reglesMontage(
+      { espace: s.moteur.val(CELL_ESPACE_UP), pourtour: s.moteur.val(CELL_POURTOUR) },
+      s.params?.app,
+    );
+    const presses: PresseFormat[] = machinesFamille(s.machinesCalc, "presse").map((m) => ({
+      nom: m.nom,
+      largeurMaxPo: m.largeurPo,
+      hauteurMaxPo: m.hauteurPo,
+    }));
+    const feuillesFT = s.num("FT!E44");
+    return choisirMontage(
+      s.params?.formats ?? FORMATS_FEUILLE_SNAPSHOT,
+      presses,
+      toNum(s.saisie(IN.dimPceX)),
+      toNum(s.saisie(IN.dimPceY)),
+      toNum(s.saisie(IN.quantite)),
+      regles,
+      feuillesFT > 0 ? feuillesFT : null,
+    );
+  }, [s.entrees, s.params, s.machinesCalc, version]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const montageRetenu = String(s.saisie(CELL_MONTAGE_FORMAT) ?? "").trim();
+  const accepterMontage = () => {
+    if (!montage.meilleur) return;
+    s.set(CELL_MONTAGE_FORMAT, libelleFormat(montage.meilleur.format));
+    s.set(CELL_MONTAGE_UP, montage.meilleur.upParFeuille);
+  };
+  const annulerMontage = () => {
+    s.set(CELL_MONTAGE_FORMAT, "");
+    s.set(CELL_MONTAGE_UP, "");
+  };
 
   // comparatif découpe Zund vs Platine : le VRAI moteur tourne deux fois (lib/comparatifMoteur.ts).
   // Le coût de matrice vient du champ « Matrice job » du bloc Platine (X!MATRICE, saisi par job).
@@ -926,6 +982,51 @@ export default function App() {
                   </tr>
                 )}
                 {avertFormat("feuille-presse", 6)}
+                {/* ── Montage suggéré (imposition) ──────────────────────────────────────
+                    N'apparaît qu'au-delà du seuil de feuilles (APP_MONTAGE_SEUIL_FEUILLES,
+                    350 par défaut) : sur un petit job, la question ne se pose pas. Le format
+                    accepté est rangé dans X!MONTAGEFORMAT — il voyage avec la soumission et
+                    AUCUNE formule du classeur ne le lit pour l'instant. */}
+                {montage.seuilAtteint && montage.meilleur && (
+                  <tr>
+                    <td className="machine-info" colSpan={6}>
+                      <b>Montage suggéré</b> — feuille {libelleFormat(montage.meilleur.format)} po :{" "}
+                      {montage.meilleur.upHorizontal} × {montage.meilleur.upVertical} ={" "}
+                      <b>{montage.meilleur.upParFeuille} up/feuille</b> ·{" "}
+                      <b>{montage.meilleur.nbFeuilles.toLocaleString("fr-CA")} feuilles</b>
+                      {montage.gainFeuilles !== null && montage.gainFeuilles > 0
+                        ? ` · ${montage.gainFeuilles.toLocaleString("fr-CA")} feuilles de moins que le format courant`
+                        : montage.feuillesBase === null
+                          ? " · pas de format courant saisi : aucun gain chiffré"
+                          : ""}
+                      {montage.meilleur.presses.length > 0
+                        ? ` · roulable sur ${montage.meilleur.presses.join(", ")}`
+                        : ""}
+                      {montage.meilleur.pieceTournee ? " · pièce tournée de 90°" : ""}
+                      {montageRetenu ? (
+                        <>
+                          {" "}
+                          — <b>retenu : {montageRetenu}</b>{" "}
+                          <button type="button" className="btn ghost petit" onClick={annulerMontage}>
+                            Annuler
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {" "}
+                          <button type="button" className="btn ghost petit" onClick={accepterMontage}>
+                            Accepter
+                          </button>
+                        </>
+                      )}
+                      <br />
+                      <span className="hint">
+                        Suggestion seulement : le prix et le temps d'impression ne sont pas encore
+                        recalculés sur ce format (étape 6 du handoff, à câbler).
+                      </span>
+                    </td>
+                  </tr>
+                )}
                 <tr>
                   <td className="lb">Passe Additionnel</td>
                   <td className="ct">{N(IN.passeAdd1, 52)}</td>

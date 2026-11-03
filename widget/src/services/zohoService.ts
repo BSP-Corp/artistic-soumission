@@ -7,6 +7,7 @@
 //   Client, Mod_le, No_Pi_ce, Quantit, Montant, Total, Prix_Unitaire, Donnees, S_W13…
 export const FORM_SOUMISSIONS = "Form1";
 import { regleDepuisCreator, type RegleMateriau } from "@/lib/reglesMateriaux";
+import type { FormatFeuille } from "@/lib/montage";
 
 export const REPORT_SOUMISSIONS = "Form1_Report";
 
@@ -33,6 +34,10 @@ export async function initZohoEnv(): Promise<void> {
 // Liens des champs = codes colonnes Excel (BO=nom, BV=coût pi², CF/CH/CI=taux…).
 export const REPORT_MATERIAUX = "Materiaux_Report";
 export const REPORT_TAUX = "Taux_Calcul_Report";
+/** Formats de feuille permis (optimisation du montage). La table n'existe pas encore dans
+ *  Creator : tant qu'elle manque, la lecture renvoie [] et le widget retombe sur le snapshot
+ *  `FORMATS_FEUILLE_SNAPSHOT`. Voir widget/docs/montage-imposition.md. */
+export const REPORT_FORMATS_FEUILLE = "Formats_Feuille_Report";
 
 export interface MateriauCreator {
   id: string;
@@ -62,6 +67,8 @@ export interface TauxCreator {
 export interface ParametresCreator {
   materiaux: MateriauCreator[];
   taux: TauxCreator[];
+  /** formats de feuille permis ; [] si la table Creator n'existe pas encore (→ snapshot) */
+  formats: FormatFeuille[];
 }
 
 function num(v: unknown): number | null {
@@ -157,6 +164,26 @@ async function materiauxDepuisProduct(): Promise<MateriauCreator[]> {
   }
 }
 
+/** Formats de feuille permis depuis Creator. Renvoie [] — jamais une erreur — si la table
+ *  n'existe pas encore : l'appelant retombe alors sur le snapshot embarqué. */
+async function formatsDepuisCreator(): Promise<FormatFeuille[]> {
+  try {
+    const lignes = await toutesLignes(REPORT_FORMATS_FEUILLE);
+    return lignes
+      .map((r) => ({
+        nom: String(r.Nom_format ?? "").trim(),
+        largeurPo: num(r.Largeur_po) ?? 0,
+        hauteurPo: num(r.Hauteur_po) ?? 0,
+        actif: String(r.Actif ?? "").trim().toLowerCase() !== "non" && num(r.Actif) !== 0,
+      }))
+      .filter((f) => f.largeurPo > 0 && f.hauteurPo > 0)
+      .map((f) => ({ ...f, nom: f.nom || `${f.largeurPo} × ${f.hauteurPo}` }));
+  } catch (e) {
+    console.warn("formatsDepuisCreator (table absente ?) :", e);
+    return [];
+  }
+}
+
 /** Charge matériaux + taux depuis Creator. null hors Zoho ou en cas d'échec (→ snapshot embarqué).
  *  Matériaux : Product (catalogue) en priorité, ancien formulaire Materiaux en repli. */
 export async function chargerParametres(): Promise<ParametresCreator | null> {
@@ -168,9 +195,14 @@ export async function chargerParametres(): Promise<ParametresCreator | null> {
     // Le garder en repli entretenait un bug reel : la lecture venait de Product, mais
     // l'enregistrement d'un prix partait dans Materiaux — la correction n'avait donc
     // aucun effet visible. Voir sauvegarderMateriau() plus bas.
-    const [materiaux, taux] = await Promise.all([materiauxDepuisProduct(), toutesLignes(REPORT_TAUX)]);
+    const [materiaux, taux, formats] = await Promise.all([
+      materiauxDepuisProduct(),
+      toutesLignes(REPORT_TAUX),
+      formatsDepuisCreator(),
+    ]);
     return {
       materiaux,
+      formats,
       taux: taux
         .map((r) => ({
           id: String(r.ID ?? ""),
