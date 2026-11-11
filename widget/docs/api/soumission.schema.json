@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://groupecanva.example/schemas/soumission-1.2.json",
+  "$id": "https://groupecanva.example/schemas/soumission-1.3.json",
   "title": "Soumission Matériaux Souples",
   "description": "Charge utile envoyée par Zoho Creator à la plateforme partenaire à chaque soumission validée. Conventions : pourcentages en 0-100, montants CAD (2 décimales, prix unitaire 4), durées sous forme { heures, minutes, minutes_totales }, null si non saisi.",
   "type": "object",
@@ -38,7 +38,23 @@
         },
         "date_requise": {
           "type": "string",
-          "description": "Date requise par le client, telle que saisie (texte libre pour l'instant)."
+          "description": "v1.3 — Date requise par le client, en ISO YYYY-MM-DD. null quand la saisie n'est pas une date lisible (« ASAP », « fin du mois ») : le texte d'origine est alors dans date_requise_texte. RETYPÉ en v1.3 — était du texte libre jusqu'en v1.2."
+        },
+        "date_requise_texte": {
+          "type": "string",
+          "description": "v1.3 — La date requise telle que saisie, sans interprétation. Conserve le comportement v1.2 pour les intégrations qui le préfèrent."
+        },
+        "date_commande": {
+          "type": "string",
+          "description": "v1.3 — Date de la commande ferme du client (réception du PO), ISO YYYY-MM-DD. null tant qu'elle n'est pas saisie."
+        },
+        "date_expedition_prevue": {
+          "type": "string",
+          "description": "v1.3 — Date d'expédition prévue, ISO YYYY-MM-DD. null tant qu'elle n'est pas saisie. C'est la date à comparer à date_requise pour juger d'un délai."
+        },
+        "moment": {
+          "type": "string",
+          "description": "v1.3 — Moment du parcours qui a produit cet envoi : avant_envoi (proposition produite, client pas encore servi — c'est là qu'une alerte peut encore servir) | validation (passage en production, après acceptation du client)."
         },
         "reference_externe": {
           "type": [
@@ -60,6 +76,10 @@
         "source",
         "date_soumission",
         "date_requise",
+        "date_requise_texte",
+        "date_commande",
+        "date_expedition_prevue",
+        "moment",
         "reference_externe",
         "notes"
       ],
@@ -184,11 +204,23 @@
         },
         "nb_matrices": {
           "type": "integer",
-          "description": "Nombre de matrices (feuilles) à produire = quantité × (1 + perte) ÷ up, arrondi au plein supérieur (comme affiché dans le widget)."
+          "description": "Nombre de feuilles RETENU — c'est la valeur sur laquelle raisonner. v1.3 : vaut nb_matrices_corrige quand le chef d'atelier a corrigé à la main, sinon nb_matrices_calcule. CHANGEMENT DE SENS en v1.3 : jusqu'en v1.2 ce champ portait toujours le calcul."
+        },
+        "nb_matrices_calcule": {
+          "type": "integer",
+          "description": "v1.3 — Le calcul seul = quantité × (1 + perte) ÷ up, arrondi au plein supérieur. C'est ce que portait nb_matrices jusqu'en v1.2."
+        },
+        "nb_matrices_corrige": {
+          "type": "integer",
+          "description": "v1.3 — Correction manuelle du chef d'atelier. null quand personne n'a corrigé : ne jamais lire 0 comme une correction."
+        },
+        "nb_matrices_source": {
+          "type": "string",
+          "description": "v1.3 — D'où vient nb_matrices : calcul | correction. Évite d'avoir à comparer les deux champs pour le savoir."
         },
         "nb_matrices_exact": {
           "type": "number",
-          "description": "Même valeur avant arrondi."
+          "description": "Le calcul avant arrondi. Non affecté par une correction manuelle."
         },
         "surface_matrice_po2": {
           "type": "number",
@@ -249,6 +281,9 @@
         "nb_up",
         "matrice_po",
         "nb_matrices",
+        "nb_matrices_calcule",
+        "nb_matrices_corrige",
+        "nb_matrices_source",
         "nb_matrices_exact",
         "surface_matrice_po2",
         "multiprint",
@@ -503,6 +538,14 @@
             "type": "number",
             "description": "Coût au pied carré retenu (catalogue, ou saisi pour les lignes Xtra)."
           },
+          "epaisseur_po": {
+            "type": "number",
+            "description": "v1.3 — Épaisseur du matériau en POUCES, lue dans l'inventaire Creator (fiche produit, Dim_Epaisseur_po). null si la fiche ne la porte pas — jamais 0."
+          },
+          "epaisseur_mil": {
+            "type": "number",
+            "description": "v1.3 — La même épaisseur en mil (= pouces × 1000), l'unité des règles de découpe. 0,020 po = 20 mil. null si l'épaisseur est inconnue."
+          },
           "perte_pct": {
             "type": [
               "null",
@@ -523,6 +566,8 @@
           "ligne",
           "nom",
           "cout_pi2",
+          "epaisseur_po",
+          "epaisseur_mil",
           "perte_pct",
           "montant",
           "temps_debitage_min"
@@ -2199,7 +2244,7 @@
   "additionalProperties": false,
   "examples": [
     {
-      "schema_version": "1.2",
+      "schema_version": "1.3",
       "soumission": {
         "id": "4153107000022542146",
         "no_soumission": "S-2026-0142",
@@ -2208,6 +2253,10 @@
         "source": "widget",
         "date_soumission": "2026-09-10",
         "date_requise": "2026-09-26",
+        "date_requise_texte": "2026-09-26",
+        "date_commande": "2026-09-11",
+        "date_expedition_prevue": "2026-09-24",
+        "moment": "validation",
         "reference_externe": null,
         "notes": "Client demande une épreuve PDF avant production."
       },
@@ -2237,7 +2286,10 @@
           "largeur": 8,
           "hauteur": 9.5
         },
-        "nb_matrices": 14,
+        "nb_matrices": 16,
+        "nb_matrices_calcule": 14,
+        "nb_matrices_corrige": 16,
+        "nb_matrices_source": "correction",
         "nb_matrices_exact": 13.75,
         "surface_matrice_po2": 76,
         "multiprint": false,
@@ -2305,6 +2357,8 @@
           "ligne": "lexan",
           "nom": "Lexan Clair ,005x24x48",
           "cout_pi2": 0.36,
+          "epaisseur_po": 0.005,
+          "epaisseur_mil": 5,
           "perte_pct": null,
           "montant": 3.57,
           "temps_debitage_min": 2.06
@@ -2313,6 +2367,8 @@
           "ligne": "vinyle",
           "nom": "Vinyle Blanc Opaque V-23 ,002x30x38",
           "cout_pi2": 0.89,
+          "epaisseur_po": 0.002,
+          "epaisseur_mil": 2,
           "perte_pct": null,
           "montant": 8.7,
           "temps_debitage_min": 2.06
@@ -2321,6 +2377,8 @@
           "ligne": "alu_foil",
           "nom": "Foil 7942 Argent Brillant ,0037x20x27",
           "cout_pi2": 1.62,
+          "epaisseur_po": 0.0037,
+          "epaisseur_mil": 3.7,
           "perte_pct": null,
           "montant": 15.89,
           "temps_debitage_min": 2.06
@@ -2329,6 +2387,8 @@
           "ligne": "adhesif",
           "nom": "Adhésif 467 ,002x24x6480",
           "cout_pi2": 0.68,
+          "epaisseur_po": 0.002,
+          "epaisseur_mil": 2,
           "perte_pct": null,
           "montant": 6.69,
           "temps_debitage_min": 0

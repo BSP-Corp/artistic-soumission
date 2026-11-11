@@ -1,6 +1,6 @@
 # Contrat d'échange — Soumission (Zoho Creator → plateforme client)
 
-**Version du schéma : `1.2`** · Généré le 2026-09-29 à partir du code du widget
+**Version du schéma : `1.3`** · Généré le 2026-11-05 à partir du code du widget
 (le document et le payload sont produits par la même source : ils ne peuvent pas diverger).
 
 Ce document décrit **ce que Zoho enverra** à votre API à chaque soumission validée.
@@ -31,19 +31,31 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
 - Colonne **Origine** : *saisi* = entré par l'estimateur ; ***calculé*** = produit par le moteur de prix ; *méta* = ajouté par Zoho.
 - Nouveaux champs = version mineure (`1.x`), compatible. Suppression / renommage = version majeure, annoncée à l'avance.
 
-**95 champs saisis · 24 champs calculés.**
+**99 champs saisis · 26 champs calculés.**
 
 ### Historique des versions
 
 | Version | Date | Changements |
 |---|---|---|
+| `1.3` | 2026-11-05 | **Réponses aux questions 1, 2, 3 et 5.** *Ajouts (compatibles)* : `soumission.date_commande`, `soumission.date_expedition_prevue`, `soumission.date_requise_texte`, `soumission.moment`, `materiaux[].epaisseur_po`, `materiaux[].epaisseur_mil`, `production.nb_matrices_calcule`, `production.nb_matrices_corrige`, `production.nb_matrices_source`. *Deux changements à lire avant d'intégrer* : (1) `soumission.date_requise` **passe de texte libre à date ISO** et vaut `null` quand la saisie n'est pas une date — le texte d'origine part intact dans `date_requise_texte` ; (2) `production.nb_matrices` **change de sens** : il porte désormais la valeur **retenue** (la correction de l'atelier quand elle existe), le calcul seul restant dans `nb_matrices_calcule`. |
 | `1.2` | 2026-09-28 | **Élargissement de type (compatible)** : `decoupe.finition.coins_ronds.quantite` accepte `null` — l'opération « coins ronds » a été retirée de l'outil, le champ reste au contrat et vaut toujours `null`. Aucun autre changement de structure. À noter : le **taux horaire passe de 73 à 74 $/h**, donc les montants d'une même fiche changent — c'est une donnée, pas une rupture de contrat. |
 | `1.1` | 2026-09-16 | **Ajouts (compatibles)** : `prix.prix_vendu_unitaire`, `prix.prix_vendu_total`, `production.quantites_alternatives[].prix_vendu_unitaire` — le prix **décidé par le chargé de projet**, distinct du prix calculé. Précisions sans changement de type : `decoupe.zund.*.contour` et `decoupe.platine.kiss_cut.nb_die` valent désormais 0 ou 1 ; `impression.faces.*` vaut toujours 1. |
 | `1.0` | 2026-09-10 | Version initiale. |
 
 > **Pour votre intégration (v1.1)** : le prix à retenir pour le client est `prix.prix_vendu_unitaire`
-> **s'il n'est pas `null`**, sinon `prix.prix_unitaire`. Aucun champ existant n'a été retiré, renommé ni retypé :
-> un parseur v1.0 continue de fonctionner tel quel.
+> **s'il n'est pas `null`**, sinon `prix.prix_unitaire`.
+>
+> **Pour votre intégration (v1.3)** — trois points, dans l'ordre d'importance :
+> 1. **Le nombre de feuilles sur lequel raisonner est `production.nb_matrices`.** Il vaut
+>    maintenant la correction du chef d'atelier quand il y en a une. `nb_matrices_source` vous
+>    dit laquelle a servi (`calcul` ou `correction`) sans avoir à comparer les champs.
+>    C'était votre question 2 : lire le calcul là où l'atelier avait corrigé produisait une
+>    fausse alerte sur chaque dossier corrigé.
+> 2. **`soumission.date_requise` est maintenant une date ISO**, ou `null`. Un `null` ne veut pas
+>    dire « pas de date demandée » : il veut dire « ce qui a été saisi n'est pas une date »
+>    (`ASAP`, `fin du mois`). Dans ce cas, `date_requise_texte` porte la saisie telle quelle.
+>    Pour comparer un délai, utilisez `date_requise` et `date_expedition_prevue`.
+> 3. **`soumission.moment` vous dit où vous êtes dans le parcours** — voir la section 2 bis.
 
 ---
 
@@ -51,7 +63,7 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
 
 ```json
 {
-  "schema_version": "1.2",
+  "schema_version": "1.3",
   "soumission": {
     "id": "4153107000022542146",
     "no_soumission": "S-2026-0142",
@@ -60,6 +72,10 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
     "source": "widget",
     "date_soumission": "2026-09-10",
     "date_requise": "2026-09-26",
+    "date_requise_texte": "2026-09-26",
+    "date_commande": "2026-09-11",
+    "date_expedition_prevue": "2026-09-24",
+    "moment": "validation",
     "reference_externe": null,
     "notes": "Client demande une épreuve PDF avant production."
   },
@@ -89,7 +105,10 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
       "largeur": 8,
       "hauteur": 9.5
     },
-    "nb_matrices": 14,
+    "nb_matrices": 16,
+    "nb_matrices_calcule": 14,
+    "nb_matrices_corrige": 16,
+    "nb_matrices_source": "correction",
     "nb_matrices_exact": 13.75,
     "surface_matrice_po2": 76,
     "multiprint": false,
@@ -157,6 +176,8 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
       "ligne": "lexan",
       "nom": "Lexan Clair ,005x24x48",
       "cout_pi2": 0.36,
+      "epaisseur_po": 0.005,
+      "epaisseur_mil": 5,
       "perte_pct": null,
       "montant": 3.57,
       "temps_debitage_min": 2.06
@@ -165,6 +186,8 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
       "ligne": "vinyle",
       "nom": "Vinyle Blanc Opaque V-23 ,002x30x38",
       "cout_pi2": 0.89,
+      "epaisseur_po": 0.002,
+      "epaisseur_mil": 2,
       "perte_pct": null,
       "montant": 8.7,
       "temps_debitage_min": 2.06
@@ -173,6 +196,8 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
       "ligne": "alu_foil",
       "nom": "Foil 7942 Argent Brillant ,0037x20x27",
       "cout_pi2": 1.62,
+      "epaisseur_po": 0.0037,
+      "epaisseur_mil": 3.7,
       "perte_pct": null,
       "montant": 15.89,
       "temps_debitage_min": 2.06
@@ -181,6 +206,8 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
       "ligne": "adhesif",
       "nom": "Adhésif 467 ,002x24x6480",
       "cout_pi2": 0.68,
+      "epaisseur_po": 0.002,
+      "epaisseur_mil": 2,
       "perte_pct": null,
       "montant": 6.69,
       "temps_debitage_min": 0
@@ -536,6 +563,37 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
 
 ---
 
+## 2 bis. Quand l'envoi part — les deux moments
+
+C'est la réponse à votre question 5, et c'est le point à lire en premier.
+
+Vous partiez du passage au statut **Valide**. Or dans Zoho, « Valide » est posé par le bouton
+**« Valider → Bon de travail »** : il marque le moment où la job **part en production**, donc
+**après** que la proposition a été envoyée au client et acceptée. Une alerte à ce moment-là
+arrive après la décision qu'elle devait éclairer.
+
+Nous avons donc ouvert **un second moment**, en amont. Les deux envoient le même contrat, au
+même endpoint ; `soumission.moment` dit lequel :
+
+| `soumission.moment` | Quand | Appels | Ce que vous pouvez encore faire |
+|---|---|---|---|
+| `avant_envoi` | Le chargé de projet vient de produire la proposition. **Le client ne l'a pas encore reçue.** Déclenché par le bouton « Analyser avant envoi » du widget. | `POST /analyses` seulement | **Tout.** Un oubli signalé ici se corrige avant que le client voie quoi que ce soit. |
+| `validation` | La soumission passe en production (« Valider → Bon de travail »), après acceptation du client. | `PUT /history` puis `POST /analyses` | Alimenter l'historique et la comparaison ; la correction coûte déjà quelque chose. |
+
+**Pourquoi `avant_envoi` n'alimente pas `/history`** : l'historique est votre base de
+comparaison entre soumissions réelles. Y verser des propositions qui ne seront peut-être
+jamais acceptées fausserait les comparaisons à venir. L'historique reste alimenté par la
+validation seule.
+
+**Vos 8 à 20 secondes sont prises en compte.** Aucun des deux moments n'appelle votre API
+depuis le workflow d'enregistrement : l'utilisateur serait bloqué devant un bouton figé, et
+Deluge coupe de toute façon les exécutions longues. Le widget pose un drapeau
+(`Webhook_Statut`), et une fonction séparée fait l'appel.
+
+Dans l'exemple ci-dessus, `moment` vaut `validation`.
+
+---
+
 ## 3. Référence des champs
 
 ### `schema_version`
@@ -554,7 +612,11 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
 | `soumission.statut` | chaîne | méta | Brouillon | Valide | En_production | Termine. |
 | `soumission.source` | chaîne | méta | widget (saisie manuelle) | api (créée par la plateforme) | import. |
 | `soumission.date_soumission` | date ISO YYYY-MM-DD | méta | Date d'enregistrement, format ISO YYYY-MM-DD. |
-| `soumission.date_requise` | chaîne ou null | saisi | Date requise par le client, telle que saisie (texte libre pour l'instant). |
+| `soumission.date_requise` | date ISO YYYY-MM-DD ou null | saisi | v1.3 — Date requise par le client, en ISO YYYY-MM-DD. null quand la saisie n'est pas une date lisible (« ASAP », « fin du mois ») : le texte d'origine est alors dans date_requise_texte. RETYPÉ en v1.3 — était du texte libre jusqu'en v1.2. |
+| `soumission.date_requise_texte` | chaîne ou null | saisi | v1.3 — La date requise telle que saisie, sans interprétation. Conserve le comportement v1.2 pour les intégrations qui le préfèrent. |
+| `soumission.date_commande` | date ISO YYYY-MM-DD ou null | saisi | v1.3 — Date de la commande ferme du client (réception du PO), ISO YYYY-MM-DD. null tant qu'elle n'est pas saisie. |
+| `soumission.date_expedition_prevue` | date ISO YYYY-MM-DD ou null | saisi | v1.3 — Date d'expédition prévue, ISO YYYY-MM-DD. null tant qu'elle n'est pas saisie. C'est la date à comparer à date_requise pour juger d'un délai. |
+| `soumission.moment` | chaîne | méta | v1.3 — Moment du parcours qui a produit cet envoi : avant_envoi (proposition produite, client pas encore servi — c'est là qu'une alerte peut encore servir) | validation (passage en production, après acceptation du client). |
 | `soumission.reference_externe` | chaîne ou null | méta | Référence de la plateforme du client (idempotence). null si créée dans Zoho. |
 | `soumission.notes` | chaîne | méta | Notes libres (champ long). |
 
@@ -587,8 +649,11 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
 | `production.nb_up` | entier ou null | saisi | Nombre de pièces par feuille (« Up »). |
 | `production.matrice_po.largeur` | nombre ou null | saisi | Largeur de la matrice (feuille imprimée), en pouces. |
 | `production.matrice_po.hauteur` | nombre ou null | saisi | Hauteur de la matrice, en pouces. |
-| `production.nb_matrices` | entier | **calculé** | Nombre de matrices (feuilles) à produire = quantité × (1 + perte) ÷ up, arrondi au plein supérieur (comme affiché dans le widget). |
-| `production.nb_matrices_exact` | nombre | **calculé** | Même valeur avant arrondi. |
+| `production.nb_matrices` | entier | **calculé** | Nombre de feuilles RETENU — c'est la valeur sur laquelle raisonner. v1.3 : vaut nb_matrices_corrige quand le chef d'atelier a corrigé à la main, sinon nb_matrices_calcule. CHANGEMENT DE SENS en v1.3 : jusqu'en v1.2 ce champ portait toujours le calcul. |
+| `production.nb_matrices_calcule` | entier | **calculé** | v1.3 — Le calcul seul = quantité × (1 + perte) ÷ up, arrondi au plein supérieur. C'est ce que portait nb_matrices jusqu'en v1.2. |
+| `production.nb_matrices_corrige` | entier ou null | saisi | v1.3 — Correction manuelle du chef d'atelier. null quand personne n'a corrigé : ne jamais lire 0 comme une correction. |
+| `production.nb_matrices_source` | chaîne | **calculé** | v1.3 — D'où vient nb_matrices : calcul | correction. Évite d'avoir à comparer les deux champs pour le savoir. |
+| `production.nb_matrices_exact` | nombre | **calculé** | Le calcul avant arrondi. Non affecté par une correction manuelle. |
 | `production.surface_matrice_po2` | nombre | **calculé** | Surface d'une matrice en pouces carrés = largeur × hauteur. |
 | `production.multiprint` | booléen | saisi | Mode presse MultiPrint (1 à 6 couleurs en ligne). |
 | `production.numerique_multiup` | booléen | saisi | Impression numérique multi-up. |
@@ -641,6 +706,8 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
 | `materiaux[].ligne` | chaîne | méta | lexan | vinyle | polyester | alu_foil | divers | adhesif | overlaminating | xtra1..xtra4. |
 | `materiaux[].nom` | chaîne | saisi | Nom exact du matériau dans le catalogue (clé de jointure avec l'inventaire). |
 | `materiaux[].cout_pi2` | montant CAD ou null | **calculé** | Coût au pied carré retenu (catalogue, ou saisi pour les lignes Xtra). |
+| `materiaux[].epaisseur_po` | nombre ou null | méta | v1.3 — Épaisseur du matériau en POUCES, lue dans l'inventaire Creator (fiche produit, Dim_Epaisseur_po). null si la fiche ne la porte pas — jamais 0. |
+| `materiaux[].epaisseur_mil` | nombre ou null | méta | v1.3 — La même épaisseur en mil (= pouces × 1000), l'unité des règles de découpe. 0,020 po = 20 mil. null si l'épaisseur est inconnue. |
 | `materiaux[].perte_pct` | pourcentage 0-100 (nombre) | saisi | Perte spécifique à la ligne (lignes Xtra uniquement, sinon null). |
 | `materiaux[].montant` | montant CAD (nombre, 2 déc.) | **calculé** | Montant matière de la ligne = surface × coût pi² × (1 + perte) × multiplicateur. |
 | `materiaux[].temps_debitage_min` | nombre ou null | **calculé** | Temps de débitage (guillotine) de la ligne, en minutes. |
@@ -799,7 +866,9 @@ Pagination : `?page=1&par_page=200`, réponse `{ "donnees": [...], "page": 1, "t
 
 | Point | État |
 |---|---|
-| `soumission.date_requise` | texte libre aujourd'hui ; passera en date ISO dès que le format de saisie sera fixé |
+| `soumission.date_requise` | **Réglé en v1.3** — date ISO, avec le texte d'origine conservé dans `date_requise_texte`. Côté Zoho, le champ du formulaire reste à retyper en Date : tant que ce n'est pas fait, un estimateur peut encore saisir « ASAP », et le contrat renverra alors `null`. |
+| Heures par **département** et charge planifiée | N'existent pas dans Zoho (votre question 11). Le temps par **opération** est dans `ventilation_couts[].temps`. Les heures par département se construiraient à partir des opérations — c'est un développement ; la charge planifiée supposerait un ordonnancement, qui n'existe pas. |
+| Composition et fiche technique des matériaux | N'existent nulle part dans Zoho (votre question 4a). L'épaisseur, elle, est livrée depuis la v1.3. |
 | `soumission.notes` + fichiers joints | champ Notes long prévu ; **fichiers : nombre et taille max à confirmer** (25 fichiers / 50-100 Mo évoqués, vs limites de votre moteur d'analyse) — nous proposons d'envoyer des **URL signées** plutôt que les fichiers eux-mêmes dans le JSON |
 | Réponse de votre API | libre pour l'instant ; si vous renvoyez un verdict structuré (ex. `{ "alertes": [...] }`), dites-nous le format et on l'affichera tel quel dans le widget |
 | Règles métier | à répartir Zoho / IA d'après votre liste — les règles déterministes (seuils, champs obligatoires, combinaisons interdites) restent côté Zoho |

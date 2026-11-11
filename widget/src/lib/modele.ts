@@ -303,6 +303,29 @@ export const VERROUS_MATERIAUX = [
   { cle: "encre", drapeau: IN.sansEncre, verrou: "C!Q63", libelle: "encre", question: "Aucune encre n'est comptée (pas de couleur visible). Vous acceptez de ne pas mettre d'encre ?", conseil: "Renseignez les couleurs visibles ou une encre HPPL / texture." },
 ] as const;
 
+/** Dates du dossier (contrat v1.3 — questions 1 et 13 d'Openmind).
+ *
+ *  `IN.date` (FT!Y5) est la date requise du classeur : du texte libre, où l'on trouve
+ *  aussi bien « 2026-09-26 » que « ASAP » ou « fin du mois ». Elle reste la source de
+ *  saisie, et le contrat l'expose maintenant DEUX fois : telle quelle (`date_requise_texte`)
+ *  et normalisée en ISO (`date_requise`) quand elle est lisible comme date.
+ *
+ *  Les deux autres dates n'existent nulle part dans le classeur : pseudo-cellules, comme
+ *  `X!VENDU`. Elles sont sauvegardées avec la soumission et n'entrent dans aucun calcul —
+ *  aucune formule du classeur ne les lit, elles ne peuvent donc pas déplacer un prix. */
+export const CELL_DATE_COMMANDE = "X!DATE_CMD";
+export const CELL_DATE_EXPEDITION = "X!DATE_EXP";
+
+/** Nombre de feuilles corrigé à la main par le chef d'atelier (contrat v1.3 — question 2
+ *  et règle 4 d'Openmind). Vide par défaut. Quand il est renseigné, c'est LUI que le
+ *  contrat expose comme valeur retenue ; le calcul reste envoyé à côté, pour que la
+ *  plateforme sache toujours laquelle a servi.
+ *
+ *  Pseudo-cellule, donc hors du moteur : corriger le nombre de feuilles ne doit PAS
+ *  recalculer le prix. La correction dit ce que l'atelier produira, pas ce qui a été vendu —
+ *  rebrancher l'une sur l'autre changerait un prix déjà donné au client. */
+export const CELL_NB_FEUILLES_CORRIGE = "X!NBF_CORR";
+
 /** Prix vendu manuel (v1.1) : décidé par le chargé de projet, jamais recalculé.
  *  Une pseudo-cellule par quantité : `X!VENDU` pour la quantité principale (S!E2),
  *  `X!VENDU1` / `X!VENDU2` pour S!J9 / S!J10, `X!VENDUn` pour la ligne ajoutée X!QTEn. */

@@ -1,6 +1,6 @@
 {
-  "schema_version": "1.2",
-  "genere_le": "2026-09-29",
+  "schema_version": "1.3",
+  "genere_le": "2026-11-05",
   "champs": [
     {
       "chemin": "schema_version",
@@ -53,9 +53,37 @@
     },
     {
       "chemin": "soumission.date_requise",
+      "type": "date|null",
+      "origine": "in",
+      "description": "v1.3 — Date requise par le client, en ISO YYYY-MM-DD. null quand la saisie n'est pas une date lisible (« ASAP », « fin du mois ») : le texte d'origine est alors dans date_requise_texte. RETYPÉ en v1.3 — était du texte libre jusqu'en v1.2.",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.date_requise_texte",
       "type": "string|null",
       "origine": "in",
-      "description": "Date requise par le client, telle que saisie (texte libre pour l'instant).",
+      "description": "v1.3 — La date requise telle que saisie, sans interprétation. Conserve le comportement v1.2 pour les intégrations qui le préfèrent.",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.date_commande",
+      "type": "date|null",
+      "origine": "in",
+      "description": "v1.3 — Date de la commande ferme du client (réception du PO), ISO YYYY-MM-DD. null tant qu'elle n'est pas saisie.",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.date_expedition_prevue",
+      "type": "date|null",
+      "origine": "in",
+      "description": "v1.3 — Date d'expédition prévue, ISO YYYY-MM-DD. null tant qu'elle n'est pas saisie. C'est la date à comparer à date_requise pour juger d'un délai.",
+      "section": "soumission"
+    },
+    {
+      "chemin": "soumission.moment",
+      "type": "string",
+      "origine": "meta",
+      "description": "v1.3 — Moment du parcours qui a produit cet envoi : avant_envoi (proposition produite, client pas encore servi — c'est là qu'une alerte peut encore servir) | validation (passage en production, après acceptation du client).",
       "section": "soumission"
     },
     {
@@ -181,14 +209,35 @@
       "chemin": "production.nb_matrices",
       "type": "integer",
       "origine": "out",
-      "description": "Nombre de matrices (feuilles) à produire = quantité × (1 + perte) ÷ up, arrondi au plein supérieur (comme affiché dans le widget).",
+      "description": "Nombre de feuilles RETENU — c'est la valeur sur laquelle raisonner. v1.3 : vaut nb_matrices_corrige quand le chef d'atelier a corrigé à la main, sinon nb_matrices_calcule. CHANGEMENT DE SENS en v1.3 : jusqu'en v1.2 ce champ portait toujours le calcul.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.nb_matrices_calcule",
+      "type": "integer",
+      "origine": "out",
+      "description": "v1.3 — Le calcul seul = quantité × (1 + perte) ÷ up, arrondi au plein supérieur. C'est ce que portait nb_matrices jusqu'en v1.2.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.nb_matrices_corrige",
+      "type": "integer|null",
+      "origine": "in",
+      "description": "v1.3 — Correction manuelle du chef d'atelier. null quand personne n'a corrigé : ne jamais lire 0 comme une correction.",
+      "section": "production"
+    },
+    {
+      "chemin": "production.nb_matrices_source",
+      "type": "string",
+      "origine": "out",
+      "description": "v1.3 — D'où vient nb_matrices : calcul | correction. Évite d'avoir à comparer les deux champs pour le savoir.",
       "section": "production"
     },
     {
       "chemin": "production.nb_matrices_exact",
       "type": "number",
       "origine": "out",
-      "description": "Même valeur avant arrondi.",
+      "description": "Le calcul avant arrondi. Non affecté par une correction manuelle.",
       "section": "production"
     },
     {
@@ -448,6 +497,20 @@
       "type": "money|null",
       "origine": "out",
       "description": "Coût au pied carré retenu (catalogue, ou saisi pour les lignes Xtra).",
+      "section": "materiaux"
+    },
+    {
+      "chemin": "materiaux[].epaisseur_po",
+      "type": "number|null",
+      "origine": "meta",
+      "description": "v1.3 — Épaisseur du matériau en POUCES, lue dans l'inventaire Creator (fiche produit, Dim_Epaisseur_po). null si la fiche ne la porte pas — jamais 0.",
+      "section": "materiaux"
+    },
+    {
+      "chemin": "materiaux[].epaisseur_mil",
+      "type": "number|null",
+      "origine": "meta",
+      "description": "v1.3 — La même épaisseur en mil (= pouces × 1000), l'unité des règles de découpe. 0,020 po = 20 mil. null si l'épaisseur est inconnue.",
       "section": "materiaux"
     },
     {
