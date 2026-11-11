@@ -52,20 +52,29 @@ export interface ReglesMontage {
   pourtour: number;
   /** aucun côté de feuille sous cette dimension — APP_MONTAGE_DIM_MIN */
   dimMin: number;
-  /** grain figé : une seule orientation, pas de rotation 90° — APP_MONTAGE_GRAIN_FIGE */
+  /** grain figé : une seule orientation, pas de rotation 90° — APP_MONTAGE_GRAIN_FIGE.
+   *  Faux depuis le 9 novembre 2026 : le client a répondu que le grain est sans importance,
+   *  donc les deux orientations sont testées et on garde la meilleure. Le drapeau reste —
+   *  si un matériau à grain arrive un jour, il suffit de remettre APP_MONTAGE_GRAIN_FIGE = 1
+   *  dans Taux_Calcul, sans toucher au code. */
   grainFige: boolean;
   /** au-delà de ce nombre de feuilles, on propose un autre format — APP_MONTAGE_SEUIL_FEUILLES */
   seuilFeuilles: number;
 }
 
 /** Valeurs par défaut. espace/pourtour sont celles du classeur ; les trois autres sont les
- *  valeurs fournies par le client le 2 novembre 2026. Toutes surchargeables (voir
- *  `reglesMontage`), aucune n'est en dur dans le calcul. */
+ *  valeurs fournies par le client le 2 novembre 2026, `grainFige` corrigée par sa réponse du
+ *  9 novembre. Toutes surchargeables (voir `reglesMontage`), aucune n'est en dur dans le
+ *  calcul. */
 export const REGLES_MONTAGE_DEFAUT: ReglesMontage = {
   espace: 0.25,
   pourtour: 0.5,
   dimMin: 8,
-  grainFige: true,
+  // Le 2 novembre la consigne était « grain figé = Oui » ; le 9, le client a tranché que le
+  // grain est sans importance. Conséquence concrète, pas théorique : une pièce 7 × 1,4 sur
+  // une feuille 12 × 24 passe de 14 up (1 × 14, pièce telle que saisie) à 18 up (6 × 3,
+  // pièce tournée) — 29 % de feuilles en moins sur le même format.
+  grainFige: false,
   seuilFeuilles: 350,
 };
 
@@ -279,6 +288,14 @@ export const CELL_POURTOUR = "FT!AH44";
 export const CELL_MONTAGE_FORMAT = "X!MONTAGEFORMAT";
 /** Pseudo-cellule du nombre de up par feuille retenu (information de production). */
 export const CELL_MONTAGE_UP = "X!MONTAGEUP";
+/** Pseudo-cellule : la pièce doit-elle être posée à 90° pour obtenir ce montage ?
+ *
+ *  Tant que le grain était figé, format + up décrivaient entièrement le montage. Depuis que
+ *  les deux orientations sont testées (réponse client du 9 nov. 2026), ils ne suffisent plus :
+ *  une pièce 7 × 1,4 sur une feuille 12 × 24 donne 14 up à plat et 18 up tournée. Sans ce
+ *  drapeau, l'atelier reçoit « 18 up sur du 12 × 24 » et doit redéduire le sens de pose —
+ *  et un montage posé dans le mauvais sens ne tient tout simplement pas sur la feuille. */
+export const CELL_MONTAGE_TOURNEE = "X!MONTAGETOURNEE";
 
 /** Libellé court d'un format, tel qu'affiché et tel que rangé dans X!MONTAGEFORMAT. */
 export function libelleFormat(f: FormatFeuille): string {

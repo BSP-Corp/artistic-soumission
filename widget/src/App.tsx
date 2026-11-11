@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState, Fragment, type ReactNode } from "react";
 import { useSoumission, simulerQuantite, CLASSEUR } from "@/hooks/useSoumission";
 import { tauxApplicable, LIBELLE_NIVEAU, type TauxRetenu } from "@/services/tauxChangeService";
-import { IN, OUT, DECOUPE_HM, CATALOGUES, listeCatalogue, cellVendu, CELL_VENDU, cellContrat, CELL_TAUX_INV, CELLS_MATERIAU_IMPR, XTRA_PLACEHOLDER } from "@/lib/modele";
+import { IN, OUT, DECOUPE_HM, CATALOGUES, listeCatalogue, cellVendu, CELL_VENDU, cellContrat, CELL_TAUX_INV, CELLS_MATERIAU_IMPR, XTRA_PLACEHOLDER, CELL_DATE_COMMANDE, CELL_DATE_EXPEDITION, CELL_NB_FEUILLES_CORRIGE } from "@/lib/modele";
 import { controlesSoumission, controlesPrix, SEUIL_DOUBLE_CHECK_DEFAUT } from "@/lib/controles";
 import { REGLES_DEFAUT, fusionnerRegles, type RegleMateriau } from "@/lib/reglesMateriaux";
 import { deduireAdhesif } from "@/lib/adhesif";
@@ -33,6 +33,7 @@ import {
   CELL_ESPACE_UP,
   CELL_POURTOUR,
   CELL_MONTAGE_FORMAT,
+  CELL_MONTAGE_TOURNEE,
   CELL_MONTAGE_UP,
   type PresseFormat,
 } from "@/lib/montage";
@@ -60,6 +61,7 @@ import {
   type TransportParams,
   type Amortissements,
   type Machine,
+  majDatesCreator,
 } from "@/services/zohoService";
 import { creerBonTravail } from "@/services/bonTravailService";
 import { construireSoumissionJSON } from "@/api/contratSoumission";
@@ -345,10 +347,15 @@ export default function App() {
     if (!montage.meilleur) return;
     s.set(CELL_MONTAGE_FORMAT, libelleFormat(montage.meilleur.format));
     s.set(CELL_MONTAGE_UP, montage.meilleur.upParFeuille);
+    // Le sens de pose fait partie du montage retenu : depuis que la piece peut tourner,
+    // format + up ne le decrivent plus entierement (7 x 1,4 sur 12 x 24 : 14 up a plat,
+    // 18 up tournee). Un montage pose dans le mauvais sens ne tient pas sur la feuille.
+    s.set(CELL_MONTAGE_TOURNEE, montage.meilleur.pieceTournee ? 1 : 0);
   };
   const annulerMontage = () => {
     s.set(CELL_MONTAGE_FORMAT, "");
     s.set(CELL_MONTAGE_UP, "");
+    s.set(CELL_MONTAGE_TOURNEE, "");
   };
 
   // comparatif découpe Zund vs Platine : le VRAI moteur tourne deux fois (lib/comparatifMoteur.ts).
@@ -356,6 +363,13 @@ export default function App() {
   // Une cinquantaine de recalculs (~5 ms chacun) : on attend une pause de saisie plutôt que
   // de recalculer à chaque frappe.
   const matriceJob = toNum(s.saisie(CELL_MATRICE));
+  // Correction manuelle du nombre de feuilles : null tant que personne n'a corrigé.
+  // 0 n'est pas une correction, c'est un champ vide — le lire autrement enverrait « 0 feuille »
+  // à la plateforme d'analyse.
+  const nbFeuillesCorrige = (() => {
+    const n = toNum(s.saisie(CELL_NB_FEUILLES_CORRIGE));
+    return n > 0 ? Math.round(n) : null;
+  })();
   const embossageActif = toNum(s.saisie(IN.platEmbossageDie)) > 0;
   const [comparatif, setComparatif] = useState<ComparatifMoteur | null>(null);
   useEffect(() => {
@@ -539,7 +553,7 @@ export default function App() {
 
   /** JSON contractuel envoyé à la plateforme du client (voir docs/api/CONTRAT-SOUMISSION.md).
    *  `id` n'est connu qu'après l'insert → passé en paramètre. */
-  function contratJSON(id: string, statut: string) {
+  function contratJSON(id: string, statut: string, moment: "avant_envoi" | "validation" = "validation") {
     return construireSoumissionJSON({
       m: s.moteur,
       e: s.entrees,
@@ -550,12 +564,19 @@ export default function App() {
         date_soumission: new Date().toISOString().slice(0, 10),
         reference_externe: null,
         notes: "",
+        moment,
       },
       simuler: (qte) => simulerQuantite(s.entrees, qte, s.params, { ...s.overridesTaux, ...s.surchargesMach }),
+      // L'épaisseur vient de l'inventaire Creator, pas du formulaire (question 3) : hors Zoho
+      // la table est vide et le contrat expose null — jamais une épaisseur inventée.
+      epaisseurPo: (nom) => s.params?.epaisseurParNom[nom.toLowerCase()] ?? null,
     });
   }
 
-  async function enregistrer(statut: "Brouillon" | "Valide" = "Brouillon") {
+  async function enregistrer(
+    statut: "Brouillon" | "Valide" = "Brouillon",
+    moment: "avant_envoi" | "validation" = "validation",
+  ) {
     setMessage("Enregistrement…");
     // Une soumission déjà enregistrée pendant cette session est MISE À JOUR, pas recréée :
     // « Enregistrer » puis « Valider » fabriquaient deux enregistrements pour le même travail
@@ -564,9 +585,13 @@ export default function App() {
     // À la création, l'ID Creator n'existe pas encore : on met un jeton de substitution que le
     // workflow Deluge remplace par le vrai ID avant l'envoi, puis réécrit dans Soumission_JSON.
     const dossier = {
-      soumission_json: JSON.stringify(contratJSON(idSoumission || ID_SUBSTITUTION, statut)),
+      soumission_json: JSON.stringify(contratJSON(idSoumission || ID_SUBSTITUTION, statut, moment)),
       statut,
-      webhook_statut: statut === "Valide" ? "En_attente" : "",
+      // « Analyse_demandee » est le drapeau que relève analyserAvantEnvoi (voir
+      // docs/api/deluge/analyser_avant_envoi.ds). L'appel dure 8 à 20 s : il ne part JAMAIS
+      // d'ici, sinon l'utilisateur attendrait devant un bouton figé.
+      webhook_statut:
+        moment === "avant_envoi" ? "Analyse_demandee" : statut === "Valide" ? "En_attente" : "",
       client: String(s.saisie(IN.client) ?? ""),
       no_client: String(s.saisie(IN.noClient) ?? ""),
       modele: String(s.saisie(IN.modele) ?? ""),
@@ -580,12 +605,46 @@ export default function App() {
     };
     const res = idSoumission ? await majSoumission(idSoumission, dossier) : await sauvegarderSoumission(dossier);
     if (res.ok && res.id) setIdSoumission(res.id);
+
+    // Les trois dates vont dans leurs champs Creator (type Date) APRES coup, pas dans le
+    // payload principal : le format attendu par Creator (dd-MMM-yyyy) n'a pas pu etre verifie
+    // en ecriture reelle, et un champ refuse fait echouer TOUT le payload. Une date mal
+    // formatee ne doit jamais coûter la soumission. Elles restent de toute facon dans
+    // Donnees et dans Soumission_JSON, qui alimentent le contrat client.
+    const idPourDates = res.id ?? idSoumission;
+    if (res.ok && idPourDates) {
+      const d = await majDatesCreator(idPourDates, {
+        requise: s.saisie(IN.date),
+        commande: s.saisie(CELL_DATE_COMMANDE),
+        expedition: s.saisie(CELL_DATE_EXPEDITION),
+      });
+      if (!d.ok) console.warn("majDatesCreator:", d.message, d.envoye);
+    }
     setMessage(
       res.ok && idSoumission && statut === "Valide"
         ? res.message + " Envoi vers la plateforme : utilisez « Renvoyer à la plateforme » sur la soumission."
         : res.message,
     );
     return res;
+  }
+
+  /** Analyse préventive — question 5 d'Openmind.
+   *
+   *  Leur outil partait du passage à « Valide ». Or « Valide » est posé par le bouton
+   *  « Valider → Bon de travail », donc quand la job part en PRODUCTION : le client a déjà
+   *  reçu et accepté la proposition, et une alerte à ce moment-là arrive trop tard pour ce
+   *  à quoi elle sert. Ce bouton ouvre le second moment : la proposition est prête, le
+   *  client ne l'a pas encore reçue.
+   *
+   *  La soumission reste un BROUILLON : demander un avis n'est pas s'engager. */
+  async function demanderAnalysePrealable() {
+    setMessage("Analyse préalable demandée…");
+    const res = await enregistrer("Brouillon", "avant_envoi");
+    setMessage(
+      res.ok
+        ? "Analyse préalable demandée. La plateforme répond en 8 à 20 s — la réponse revient dans la soumission."
+        : res.message,
+    );
   }
 
   /** Valide la soumission : l'enregistre puis ouvre un bon de travail (feuille FT) pré-rempli.
@@ -801,6 +860,13 @@ export default function App() {
           Enregistrer
         </button>
         <button
+          className="btn ghost"
+          title="Envoie la soumission à la plateforme d'analyse AVANT de la proposer au client. Reste un brouillon : rien n'est engagé."
+          onClick={() => void demanderAnalysePrealable()}
+        >
+          Analyser avant envoi
+        </button>
+        <button
           className="btn solid"
           title="Vérifie la soumission, l'enregistre puis crée le bon de travail (feuille FT) pré-rempli"
           onClick={demanderValidation}
@@ -941,6 +1007,31 @@ export default function App() {
                     <Va cell={OUT.nbMrxExact} label="Nb. matrices (arrondi au plein)">{Math.ceil(s.num(OUT.nbMrxExact))}</Va>
                   </td>
                 </tr>
+                {/* Correction du chef d'atelier (contrat v1.3, question 2 d'Openmind).
+                    Vide par défaut. Elle ne recalcule RIEN : elle dit ce que l'atelier
+                    produira, pas ce qui a été vendu. Le prix reste celui du calcul. */}
+                <tr>
+                  <td className="lb" title="Correction manuelle du chef d'atelier. Vide = on garde le calcul. Ne change aucun prix.">
+                    Nb. feuilles corrigé
+                  </td>
+                  <td className="ct">{N(CELL_NB_FEUILLES_CORRIGE, 52, "Nb de feuilles corrigé par le chef d'atelier (vide = calcul)")}</td>
+                  {/* cellules vides : sans elles la case du nombre s'etirait sur toute la
+                      largeur de la carte, le 16 collé au bord droit */}
+                  <td colSpan={4} />
+                </tr>
+                {/* La note va sur SA PROPRE ligne, pleine largeur, comme la ligne d'info de la
+                    presse juste en dessous. Logée à côté de la saisie dans les colonnes
+                    étroites du gabarit Excel, elle élargissait la table à 482 px pour une
+                    carte de 458 : la fin du message (« le prix ne change pas ») se faisait
+                    rogner silencieusement, sur tous les écrans — ce n'était pas un défaut de
+                    capture, les utilisateurs ne voyaient pas la phrase entière. */}
+                <tr>
+                  <td className="machine-info" colSpan={6}>
+                    {nbFeuillesCorrige === null
+                      ? "vide — le calcul fait foi"
+                      : `retenu : ${nbFeuillesCorrige} au lieu de ${Math.ceil(s.num(OUT.nbMrxExact))} · le prix ne change pas`}
+                  </td>
+                </tr>
                 {/* Le sélecteur de presse et sa ligne d'info occupent toute la largeur du bloc :
                     logés dans les colonnes étroites du gabarit Excel (68 px), ils débordaient la
                     carte et se faisaient rogner silencieusement (.carte overflow). */}
@@ -989,8 +1080,11 @@ export default function App() {
                 {/* ── Montage suggéré (imposition) ──────────────────────────────────────
                     N'apparaît qu'au-delà du seuil de feuilles (APP_MONTAGE_SEUIL_FEUILLES,
                     350 par défaut) : sur un petit job, la question ne se pose pas. Le format
-                    accepté est rangé dans X!MONTAGEFORMAT — il voyage avec la soumission et
-                    AUCUNE formule du classeur ne le lit pour l'instant. */}
+                    accepté est rangé dans X!MONTAGEFORMAT, les up dans X!MONTAGEUP, et le
+                    sens de pose dans X!MONTAGETOURNEE — depuis que la pièce peut tourner
+                    (9 nov. 2026), format + up ne décrivent plus entièrement le montage.
+                    Les trois voyagent avec la soumission et AUCUNE formule du classeur ne
+                    les lit pour l'instant. */}
                 {montage.seuilAtteint && montage.meilleur && (
                   <tr>
                     <td className="machine-info" colSpan={6}>
@@ -1520,6 +1614,32 @@ export default function App() {
                       <td className="lb">Date</td>
                       <td colSpan={4}>
                         <CelluleDate cell={IN.date} value={s.saisie(IN.date)} onChange={s.set} label="Date de la soumission" />
+                      </td>
+                    </tr>
+                    {/* Dates du dossier (contrat v1.3) : elles n'entrent dans AUCUN calcul —
+                        aucune formule du classeur ne les lit. Elles servent à la plateforme
+                        d'analyse, qui compare la date requise à l'expédition prévue pour dire
+                        si un délai tient debout. */}
+                    <tr>
+                      <td className="lb">Commande</td>
+                      <td colSpan={4}>
+                        <CelluleDate
+                          cell={CELL_DATE_COMMANDE}
+                          value={s.saisie(CELL_DATE_COMMANDE)}
+                          onChange={s.set}
+                          label="Date de la commande ferme (réception du PO client)"
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="lb">Exp. prévue</td>
+                      <td colSpan={4}>
+                        <CelluleDate
+                          cell={CELL_DATE_EXPEDITION}
+                          value={s.saisie(CELL_DATE_EXPEDITION)}
+                          onChange={s.set}
+                          label="Date d'expédition prévue"
+                        />
                       </td>
                     </tr>
                   </tbody>

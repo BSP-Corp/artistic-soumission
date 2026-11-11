@@ -1,7 +1,15 @@
 # Optimisation du montage (imposition)
 
-État au 3 novembre 2026. Donne la dimension d'une pièce et la quantité : le widget propose le
+État au 10 novembre 2026. Donne la dimension d'une pièce et la quantité : le widget propose le
 format de feuille qui met le plus de « up » par feuille, donc le moins de feuilles imprimées.
+
+> **Changement du 9 novembre 2026 — le grain est sans importance.** La consigne du 2 novembre
+> était « grain figé = Oui », donc une seule orientation. Le client a tranché l'inverse : les
+> **deux orientations** sont désormais testées et on garde la meilleure. Ce n'est pas un
+> détail de confort — une pièce 7 × 1,4 sur une feuille 12 × 24 passe de **14 up** (1 × 14) à
+> **18 up** (6 × 3, pièce tournée), soit 112 feuilles au lieu de 143 pour 2 000 pièces. Aucune
+> formule du classeur ne change ; le drapeau `APP_MONTAGE_GRAIN_FIGE` reste là pour revenir en
+> arrière si un matériau à grain apparaît un jour.
 
 | Étape du handoff (2 nov.) | État |
 |---|---|
@@ -68,7 +76,7 @@ Les trois autres sont des enregistrements `Taux_Calcul`, créés et vérifiés l
 |---|---|---|
 | `APP_MONTAGE_SEUIL_FEUILLES` | 350 | au-delà de ce nombre de feuilles, on propose un format |
 | `APP_MONTAGE_DIM_MIN` | 8 | aucun côté de feuille sous 8 po |
-| `APP_MONTAGE_GRAIN_FIGE` | 1 | 1 = une seule orientation ; 0 = rotation 90° permise |
+| `APP_MONTAGE_GRAIN_FIGE` | **0** | 1 = une seule orientation ; 0 = rotation 90° permise — passé à 0 le 9 nov. 2026 |
 
 Modifiables dans Creator sans redéploiement. Le code garde les mêmes valeurs en défaut :
 une valeur absente ou aberrante retombe sur le défaut, jamais sur 0.
@@ -166,7 +174,14 @@ Conséquence de la règle 2, visible dans la vérification : à 50 pièces de 7 
 Bloc « Montage suggéré » dans la carte Presse. Il **n'apparaît qu'au-delà du seuil** : sur un
 petit job la question ne se pose pas. Il annonce le format, les up par feuille, le nombre de
 feuilles, le gain, et les presses capables de le rouler. Deux boutons : **Accepter** (range le
-format dans la pseudo-cellule `X!MONTAGEFORMAT`, et les up dans `X!MONTAGEUP`) et **Annuler**.
+format dans la pseudo-cellule `X!MONTAGEFORMAT`, les up dans `X!MONTAGEUP`, et le sens de pose
+dans `X!MONTAGETOURNEE`) et **Annuler**.
+
+> Le sens de pose est enregistré **depuis le 11 novembre**, en conséquence directe du passage
+> aux deux orientations : tant que le grain était figé, format + up décrivaient entièrement le
+> montage. Ce n'est plus vrai — une pièce 7 × 1,4 sur du 12 × 24 donne 14 up à plat et 18 up
+> tournée. Sans ce drapeau, l'atelier recevait « 18 up sur du 12 × 24 » et devait redéduire le
+> sens ; un montage posé dans le mauvais sens ne tient pas sur la feuille.
 
 Comme toutes les pseudo-cellules `X!`, elles voyagent et se sauvegardent avec la soumission,
 et **aucune formule du classeur ne les lit**. Le moteur n'est pas touché.
@@ -201,12 +216,16 @@ Sept sections, toutes au vert :
    pas seulement plausible.
 2. `FT!AH43 = 0,25` et `FT!AH44 = 0,5` lus dans le moteur ; la formule directe reproduit le
    cache Excel (8 et 7,35).
-3. Les deux cas de test du handoff, dont la correction 13 → 14.
+3. Les cas de test du handoff, dont la correction 13 → 14, **et les deux orientations** :
+   le 24 × 48 donne 84 up dans les deux sens (3 × 28 et 14 × 6 — une coïncidence
+   arithmétique, pas une règle), le 12 × 24 passe de 14 à 18 up en tournant la pièce, et le
+   candidat retenu porte bien le drapeau « pièce tournée ».
 4. La sélection sur les 9 formats, avec les formats maxi client **et** avec les fiches
    Creator, côte à côte — c'est la sortie qui documente le conflit.
 5. Garde-fous : quantité 0, dimensions manquantes, pièce trop grande, dimension minimale,
-   grain libre jamais moins bon que grain figé.
-6. Le seuil : un job de 143 feuilles ne déclenche rien, un job de 2 143 feuilles déclenche et
+   grain libre jamais moins bon que grain figé — vérifié format par format, c'est ce qui rend
+   le passage à la rotation sans risque de régression.
+6. Le seuil : un job de 143 feuilles ne déclenche rien, un job de 1 667 feuilles déclenche et
    annonce un gain cohérent.
 7. Intégration : mêmes entrées que l'écran (moteur, fiches machines, scénario Exemple).
 
@@ -221,10 +240,10 @@ Sept sections, toutes au vert :
    choix d'implémentation.
 2. **Créer `Formats_Feuille`** + son rapport (ci-dessus).
 3. **Trancher le conflit des formats maxi** et corriger les fiches machines.
-4. Les 4 points « À reconfirmer » du handoff. Le point 2 (« minimum 8″ » = dimension minimale
-   d'une feuille) est implémenté selon l'interprétation retenue ; le point 4 (grain figé =
-   pièce telle que saisie) aussi, et le code sait déjà faire tourner la pièce si la réponse
-   change (`APP_MONTAGE_GRAIN_FIGE = 0`).
+4. ~~Les 4 points « À reconfirmer » du handoff.~~ **Revenus le 9 novembre.** Les trois premiers
+   confirment l'interprétation déjà implémentée (presses et formats maxi, « minimum 8″ » =
+   dimension minimale d'une feuille, 24 × 36 conservé). Le quatrième l'infirme : le grain est
+   sans importance, pas figé — appliqué (voir l'encadré en tête de ce document).
 
 ## Hors sujet, noté à la réunion du 2 nov.
 

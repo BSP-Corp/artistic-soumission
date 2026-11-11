@@ -6,8 +6,8 @@
 //     decimal pieceW, decimal pieceH, int qty, decimal espace, decimal pourtour,
 //     decimal dimMin, boolean grainFige, int seuilFeuilles, int feuillesBase
 //
-//  Retour : { format, up_par_feuille, up_h, up_v, nb_feuilles, presses,
-//             gain_feuilles, seuil_atteint, ecartes }
+//  Retour : { format, up_par_feuille, up_h, up_v, piece_tournee, nb_feuilles,
+//             presses, gain_feuilles, seuil_atteint, ecartes }
 //
 //  ⚠ CE N'EST PAS LA SOURCE DE VÉRITÉ. Le widget calcule le montage en local
 //  (widget/src/lib/montage.ts) parce que la suggestion doit suivre la saisie au
@@ -29,6 +29,10 @@
 //  5. Le seuil de déclenchement (350) ne figurait pas dans la fonction. Ajouté.
 //  6. Division : `qty / upBest` sur deux entiers peut renvoyer un décimal selon le
 //     contexte. Le plafond est calculé explicitement.
+//  7. `piece_tournee` : le pseudo-code ne renvoyait pas si la pièce avait dû être
+//     posée à 90°. Sans grain figé (réponse client du 9 nov. 2026) ce n'est plus un
+//     détail : l'atelier doit savoir dans quel sens monter la pièce, sinon le nombre
+//     de up annoncé est intenable sur la table.
 // ============================================================================
 
 resultat = Map();
@@ -42,6 +46,7 @@ bestFormat = "";
 bestUp = 0;
 bestUpH = 0;
 bestUpV = 0;
+bestTournee = false;
 bestFeuilles = 0;
 bestSurface = 0.0;
 bestPresses = "";
@@ -52,6 +57,7 @@ if (pieceW <= 0 || pieceH <= 0 || qty <= 0)
 {
 	resultat.put("format", "");
 	resultat.put("up_par_feuille", 0);
+	resultat.put("piece_tournee", false);
 	resultat.put("nb_feuilles", 0);
 	resultat.put("seuil_atteint", false);
 	resultat.put("ecartes", "dimensions ou quantité manquantes");
@@ -104,6 +110,7 @@ for each f in Formats_Feuille[Actif == 1]
 		upV = 0;
 	}
 	// grain libre : la pièce peut aussi être posée à 90°, on garde le meilleur des deux
+	tournee = false;
 	if (grainFige == false)
 	{
 		rotH = ((fw - marge + espace) / pas_v).floor();
@@ -120,6 +127,7 @@ for each f in Formats_Feuille[Actif == 1]
 		{
 			upH = rotH;
 			upV = rotV;
+			tournee = true;
 		}
 	}
 	upBest = upH * upV;
@@ -155,6 +163,7 @@ for each f in Formats_Feuille[Actif == 1]
 		bestUp = upBest;
 		bestUpH = upH;
 		bestUpV = upV;
+		bestTournee = tournee;
 		bestFeuilles = feuilles;
 		bestSurface = surfaceF;
 		bestPresses = listePresses.toString(", ");
@@ -177,6 +186,7 @@ resultat.put("format", bestFormat);
 resultat.put("up_par_feuille", bestUp);
 resultat.put("up_h", bestUpH);
 resultat.put("up_v", bestUpV);
+resultat.put("piece_tournee", bestTournee);
 resultat.put("nb_feuilles", bestFeuilles);
 resultat.put("presses", bestPresses);
 resultat.put("gain_feuilles", gain);
