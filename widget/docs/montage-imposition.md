@@ -274,6 +274,20 @@ montage accepté puis une quantité revue à la baisse, et le bloc disparaissait
 trois cellules restaient écrasées : un montage invisible pilotant le prix, sans moyen de
 l'annuler. La ligne reste donc affichée tant qu'un montage est retenu, seuil ou pas.
 
+**5. La presse choisie est enfin prise en compte — en avertissant, pas en restreignant.**
+`choisirMontage` reçoit toutes les presses actives et n'écarte un format que si *aucune* ne
+peut le rouler : la presse choisie dans la soumission n'entrait jamais dans le calcul. On
+pouvait donc lire « feuille max 12 × 8 po » et, juste en dessous, un montage suggéré en
+24 × 48. L'écran le dit maintenant explicitement. Restreindre serait pire : la Cameo 18 no.116
+ne proposerait plus jamais rien, et le conflit des formats maxi n'étant pas tranché, sa fiche
+peut être fausse.
+
+**6. Les boutons étaient illisibles.** `.btn.ghost` met le texte en blanc — elle est faite pour
+la barre d'outils, sur fond foncé. Le bloc montage la réutilisait dans une cellule
+`.machine-info`, sur fond clair : « Accepter » et « Annuler » s'affichaient comme des
+rectangles vides. Ils fonctionnaient, sans libellé visible. À revérifier **dans Creator**, pas
+seulement en développement.
+
 **À faire avant de s'y fier** : le protocole de `montage-protocole-tests.md`, en particulier
 T10 (le coût matière ne s'effondre pas) — il demande une soumission avec une **vraie ligne
 fournisseur**, ce que le scénario Exemple ne couvre pas.

@@ -374,6 +374,25 @@ export default function App() {
     return null;
   }, [montageRetenu, montageUpRetenu, montage]);
 
+  /** La presse choisie dans la soumission peut-elle rouler ce format ?
+   *
+   *  `choisirMontage` reçoit TOUTES les presses actives et n'écarte un format que si AUCUNE ne
+   *  peut le rouler : la presse choisie n'entre donc pas dans le calcul. On avertit, on ne
+   *  restreint pas — limiter les formats à la presse choisie ferait que la Cameo 18 no.116
+   *  (12 × 8 à sa fiche) ne proposerait plus jamais rien, sans que personne comprenne pourquoi.
+   *  Et le conflit des formats maxi n'est pas tranché, donc la fiche peut être fausse.
+   *
+   *  Le contrôle de format existant (`controles.ts` §3.2) ne rattrape pas le cas tant que rien
+   *  n'est accepté : il teste la feuille COURANTE, pas le format proposé. */
+  const presseIncompatible = useMemo(() => {
+    if (!presse) return null;
+    const cible = montageRetenu
+      ? montage.candidats.find((c) => libelleFormat(c.format) === montageRetenu)
+      : montage.meilleur;
+    if (!cible || cible.presses.includes(presse.nom)) return null;
+    return `${presse.nom} (${presse.largeurPo} × ${presse.hauteurPo} po)`;
+  }, [presse, montage, montageRetenu]);
+
   const accepterMontage = () => {
     if (!montage.meilleur) return;
     const m = montage.meilleur;
@@ -1195,6 +1214,18 @@ export default function App() {
                           <button type="button" className="btn ghost petit" onClick={accepterMontage}>
                             Accepter
                           </button>
+                        </>
+                      )}
+                      {presseIncompatible && (
+                        <>
+                          <br />
+                          <b className="perime">
+                            ⚠ la presse choisie — {presseIncompatible} — ne peut pas rouler ce format
+                          </b>
+                          .{" "}
+                          {montageRetenu
+                            ? "Le prix porte ce montage, mais l'atelier ne pourra pas le monter sur cette presse."
+                            : "Changer de presse, ou accepter en sachant que la job partira sur une autre."}
                         </>
                       )}
                       <br />
