@@ -32,9 +32,13 @@ import {
   libelleFormat,
   CELL_ESPACE_UP,
   CELL_POURTOUR,
+  CELL_PERTE,
   CELL_MONTAGE_FORMAT,
   CELL_MONTAGE_TOURNEE,
   CELL_MONTAGE_UP,
+  CELL_AVANT_UP,
+  CELL_AVANT_DIM_X,
+  CELL_AVANT_DIM_Y,
   type PresseFormat,
 } from "@/lib/montage";
 import { FORMATS_FEUILLE_SNAPSHOT } from "@/data/montageSnapshot";
@@ -322,7 +326,7 @@ export default function App() {
   // conflit de données documenté dans data/montageSnapshot.ts.
   const montage = useMemo(() => {
     const regles = reglesMontage(
-      { espace: s.moteur.val(CELL_ESPACE_UP), pourtour: s.moteur.val(CELL_POURTOUR) },
+      { espace: s.moteur.val(CELL_ESPACE_UP), pourtour: s.moteur.val(CELL_POURTOUR), perte: s.moteur.val(CELL_PERTE) },
       s.params?.app,
     );
     const presses: PresseFormat[] = machinesFamille(s.machinesCalc, "presse").map((m) => ({
@@ -330,7 +334,14 @@ export default function App() {
       largeurMaxPo: m.largeurPo,
       hauteurMaxPo: m.hauteurPo,
     }));
-    const feuillesFT = s.num("FT!E44");
+    // Le seuil doit comparer la SITUATION ACTUELLE au seuil, pas la solution optimale.
+    // `FT!E44` ne pouvait pas servir de base : `= IF(E43=0, 0, E39/E42/E43)`, et `E43` est une
+    // saisie de la feuille bon de travail, vide pendant une soumission — donc toujours 0.
+    // Faute de base, le seuil se mesurait sur le meilleur format : une job de 2 000 pièces à
+    // 4 up (550 feuilles, bien au-delà du seuil de 350) restait masquée parce que la solution
+    // optimale n'en fait que 27. C'était inversé. `S!G9` est le nombre de feuilles du montage
+    // courant, toujours renseigné, et c'est lui que l'écran affiche sous NB.MRX.
+    const feuillesCourantes = s.num(OUT.nbMrxExact);
     return choisirMontage(
       s.params?.formats ?? FORMATS_FEUILLE_SNAPSHOT,
       presses,
@@ -338,21 +349,67 @@ export default function App() {
       toNum(s.saisie(IN.dimPceY)),
       toNum(s.saisie(IN.quantite)),
       regles,
-      feuillesFT > 0 ? feuillesFT : null,
+      feuillesCourantes > 0 ? feuillesCourantes : null,
     );
   }, [s.entrees, s.params, s.machinesCalc, version]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const montageRetenu = String(s.saisie(CELL_MONTAGE_FORMAT) ?? "").trim();
+  const montageUpRetenu = toNum(s.saisie(CELL_MONTAGE_UP));
+
+  /** Le montage accepté correspond-il encore à la pièce et à la quantité saisies ?
+   *
+   *  Tant qu'aucune formule ne lisait le montage retenu, un format périmé était sans
+   *  conséquence. Depuis qu'« Accepter » écrit S!E5/E6/H6, c'est un générateur de prix faux :
+   *  on accepte 24 × 48 à 84 up, on change la pièce pour du 4 × 6 qui n'en permet que 35, et
+   *  le prix reste calculé sur 84 up — 2,4 fois trop peu de feuilles, silencieusement.
+   *
+   *  On ne l'efface pas tout seul : c'est une décision du chargé de projet, elle doit être
+   *  reprise explicitement, pas disparaître. On le dit, et il réaccepte. */
+  const montagePerime = useMemo(() => {
+    if (!montageRetenu) return null;
+    const encore = montage.candidats.find((c) => libelleFormat(c.format) === montageRetenu);
+    if (!encore) return "la pièce ne tient plus sur ce format";
+    if (encore.upParFeuille !== montageUpRetenu)
+      return `ce format donne maintenant ${encore.upParFeuille} up par feuille, plus ${montageUpRetenu}`;
+    return null;
+  }, [montageRetenu, montageUpRetenu, montage]);
+
   const accepterMontage = () => {
     if (!montage.meilleur) return;
-    s.set(CELL_MONTAGE_FORMAT, libelleFormat(montage.meilleur.format));
-    s.set(CELL_MONTAGE_UP, montage.meilleur.upParFeuille);
+    const m = montage.meilleur;
+    // Mémoriser l'état d'origine AVANT la première écriture seulement (voir CELL_AVANT_UP) :
+    // réaccepter par-dessus un montage existant ne doit pas écraser la sauvegarde.
+    if (!montageRetenu) {
+      s.set(CELL_AVANT_UP, s.saisie(IN.nbUp));
+      s.set(CELL_AVANT_DIM_X, s.saisie(IN.dimMrxX));
+      s.set(CELL_AVANT_DIM_Y, s.saisie(IN.dimMrxY));
+    }
+    s.set(CELL_MONTAGE_FORMAT, libelleFormat(m.format));
+    s.set(CELL_MONTAGE_UP, m.upParFeuille);
     // Le sens de pose fait partie du montage retenu : depuis que la piece peut tourner,
     // format + up ne le decrivent plus entierement (7 x 1,4 sur 12 x 24 : 14 up a plat,
     // 18 up tournee). Un montage pose dans le mauvais sens ne tient pas sur la feuille.
-    s.set(CELL_MONTAGE_TOURNEE, montage.meilleur.pieceTournee ? 1 : 0);
+    s.set(CELL_MONTAGE_TOURNEE, m.pieceTournee ? 1 : 0);
+    // LES TROIS ENSEMBLE, jamais S!E5 seul. Le coût matière se calcule sur la surface de la
+    // feuille : `S!V41 = ((E6*H6/144) * (E2/E5)) * (...)`. Passer les up de 4 à 84 sans
+    // toucher E6/H6 ferait croire au classeur qu'il consomme 27 feuilles aux ANCIENNES
+    // dimensions (8 × 9,5) au lieu de 27 feuilles de 24 × 48 : coût matière 20 fois trop bas.
+    // Invisible sur le scénario Exemple (R41 vide), bien réel dès qu'il y a une ligne
+    // fournisseur. Écrire E5 seul est donc plus dangereux que de ne rien écrire.
+    s.set(IN.nbUp, m.upParFeuille);
+    s.set(IN.dimMrxX, m.format.largeurPo);
+    s.set(IN.dimMrxY, m.format.hauteurPo);
   };
+
   const annulerMontage = () => {
+    // Restaurer, pas effacer : le classeur avait un nombre de up et des dimensions de feuille
+    // avant le montage. Les vider donnerait une surface nulle, donc un coût matière nul.
+    s.set(IN.nbUp, s.saisie(CELL_AVANT_UP));
+    s.set(IN.dimMrxX, s.saisie(CELL_AVANT_DIM_X));
+    s.set(IN.dimMrxY, s.saisie(CELL_AVANT_DIM_Y));
+    s.set(CELL_AVANT_UP, "");
+    s.set(CELL_AVANT_DIM_X, "");
+    s.set(CELL_AVANT_DIM_Y, "");
     s.set(CELL_MONTAGE_FORMAT, "");
     s.set(CELL_MONTAGE_UP, "");
     s.set(CELL_MONTAGE_TOURNEE, "");
@@ -1078,30 +1135,53 @@ export default function App() {
                 )}
                 {avertFormat("feuille-presse", 6)}
                 {/* ── Montage suggéré (imposition) ──────────────────────────────────────
-                    N'apparaît qu'au-delà du seuil de feuilles (APP_MONTAGE_SEUIL_FEUILLES,
-                    350 par défaut) : sur un petit job, la question ne se pose pas. Le format
-                    accepté est rangé dans X!MONTAGEFORMAT, les up dans X!MONTAGEUP, et le
-                    sens de pose dans X!MONTAGETOURNEE — depuis que la pièce peut tourner
-                    (9 nov. 2026), format + up ne décrivent plus entièrement le montage.
-                    Les trois voyagent avec la soumission et AUCUNE formule du classeur ne
-                    les lit pour l'instant. */}
-                {montage.seuilAtteint && montage.meilleur && (
+                    La SUGGESTION n'apparaît qu'au-delà du seuil de feuilles
+                    (APP_MONTAGE_SEUIL_FEUILLES, 350 par défaut) : sur un petit job, la
+                    question ne se pose pas. Mais dès qu'un montage est ACCEPTÉ, la ligne
+                    reste visible même sous le seuil — « Accepter » écrit désormais S!E5, S!E6
+                    et S!H6, donc le montage pilote le prix. Le masquer reviendrait à laisser
+                    un montage invisible décider du prix, sans moyen de l'annuler : il suffit
+                    de baisser la quantité après avoir accepté pour tomber dans ce cas.
+                    Le format retenu est aussi rangé dans X!MONTAGEFORMAT, les up dans
+                    X!MONTAGEUP et le sens de pose dans X!MONTAGETOURNEE, pour le bon de
+                    travail et la relecture d'une soumission. */}
+                {((montage.seuilAtteint && montage.meilleur) || montageRetenu) && (
                   <tr>
                     <td className="machine-info" colSpan={6}>
-                      <b>Montage suggéré</b> — feuille {libelleFormat(montage.meilleur.format)} po :{" "}
-                      {montage.meilleur.upHorizontal} × {montage.meilleur.upVertical} ={" "}
-                      <b>{montage.meilleur.upParFeuille} up/feuille</b> ·{" "}
-                      <b>{montage.meilleur.nbFeuilles.toLocaleString("fr-CA")} feuilles</b>
-                      {montage.gainFeuilles !== null && montage.gainFeuilles > 0
-                        ? ` · ${montage.gainFeuilles.toLocaleString("fr-CA")} feuilles de moins que le format courant`
-                        : montage.feuillesBase === null
-                          ? " · pas de format courant saisi : aucun gain chiffré"
-                          : ""}
-                      {montage.meilleur.presses.length > 0
-                        ? ` · roulable sur ${montage.meilleur.presses.join(", ")}`
-                        : ""}
-                      {montage.meilleur.pieceTournee ? " · pièce tournée de 90°" : ""}
-                      {montageRetenu ? (
+                      {montage.meilleur && (
+                        <>
+                          <b>Montage suggéré</b> — feuille {libelleFormat(montage.meilleur.format)} po :{" "}
+                          {montage.meilleur.upHorizontal} × {montage.meilleur.upVertical} ={" "}
+                          <b>{montage.meilleur.upParFeuille} up/feuille</b> ·{" "}
+                          <b>{montage.meilleur.nbFeuilles.toLocaleString("fr-CA")} feuilles</b>
+                          {montage.gainFeuilles !== null && montage.gainFeuilles > 0
+                            ? ` · ${montage.gainFeuilles.toLocaleString("fr-CA")} feuilles de moins que le format courant`
+                            : montage.feuillesBase === null
+                              ? " · pas de format courant saisi : aucun gain chiffré"
+                              : ""}
+                          {montage.meilleur.presses.length > 0
+                            ? ` · roulable sur ${montage.meilleur.presses.join(", ")}`
+                            : ""}
+                          {montage.meilleur.pieceTournee ? " · pièce tournée de 90°" : ""}
+                        </>
+                      )}
+                      {montagePerime ? (
+                        <>
+                          {" "}
+                          — <b className="perime">⚠ le montage retenu ({montageRetenu}) ne correspond plus : {montagePerime}</b>.{" "}
+                          Le prix est encore calculé sur l'ancien montage.{" "}
+                          {montage.meilleur && (
+                            <>
+                              <button type="button" className="btn ghost petit" onClick={accepterMontage}>
+                                Reprendre la suggestion
+                              </button>{" "}
+                            </>
+                          )}
+                          <button type="button" className="btn ghost petit" onClick={annulerMontage}>
+                            Revenir au montage d'origine
+                          </button>
+                        </>
+                      ) : montageRetenu ? (
                         <>
                           {" "}
                           — <b>retenu : {montageRetenu}</b>{" "}
@@ -1119,8 +1199,9 @@ export default function App() {
                       )}
                       <br />
                       <span className="hint">
-                        Suggestion seulement : le prix et le temps d'impression ne sont pas encore
-                        recalculés sur ce format (étape 6 du handoff, à câbler).
+                        {montageRetenu
+                          ? "Montage accepté : le nombre de up et les dimensions de feuille du calcul portent ce format, donc le prix et le bon de travail le suivent. « Annuler » restaure les valeurs d'origine."
+                          : "« Accepter » pose ce format dans le calcul : nombre de up et dimensions de feuille, donc le prix et le bon de travail suivent."}
                       </span>
                     </td>
                   </tr>

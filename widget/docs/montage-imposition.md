@@ -225,22 +225,64 @@ Sept sections, toutes au vert :
 5. Garde-fous : quantité 0, dimensions manquantes, pièce trop grande, dimension minimale,
    grain libre jamais moins bon que grain figé — vérifié format par format, c'est ce qui rend
    le passage à la rotation sans risque de régression.
-6. Le seuil : un job de 143 feuilles ne déclenche rien, un job de 1 667 feuilles déclenche et
-   annonce un gain cohérent.
+6. Le seuil : un job de 143 feuilles ne déclenche rien, un job de 1 834 feuilles déclenche et
+   annonce un gain cohérent (1 834 et non 1 667 depuis que les feuilles se comptent avec la
+   gâche, comme `S!G9`).
 7. Intégration : mêmes entrées que l'écran (moteur, fiches machines, scénario Exemple).
 
 ---
 
+## Étape 6 — faite le 16 novembre 2026
+
+Elle était notée « pas faite, volontairement : cela change des prix ». L'arbitrage que
+j'attendais n'était pas nécessaire : l'investigation consignée dans **`montage-etape6.md`**
+montre qu'**aucune cadence n'est à toucher**. Le classeur dérive déjà le temps d'impression du
+nombre de up. Les quatre correctifs ont été appliqués dans l'ordre que ce document propose.
+
+**1. Le seuil comparait la mauvaise chose.** `feuillesBase` venait de `FT!E44`, dont la formule
+`IF(E43=0, 0, …)` dépend d'une saisie du bon de travail — vide pendant une soumission, donc
+toujours 0. Faute de base, le seuil se mesurait sur la solution **optimale** : une job de
+2 000 pièces à 4 up (550 feuilles, seuil 350) restait masquée parce que l'optimum n'en fait que
+27. C'était inversé. `feuillesBase` vient maintenant de `S!G9`, toujours renseigné, celui que
+l'écran affiche sous NB.MRX.
+
+**2. Le format retenu se périmait en silence.** Accepter 24 × 48 à 84 up, puis changer la pièce
+pour du 4 × 6 qui n'en permet que 35 : l'écran affichait toujours « retenu : 24 × 48 ». Sans
+conséquence tant qu'aucune formule ne lisait ces cellules — **générateur de prix faux** dès
+l'étape 6. Le montage retenu est maintenant comparé au recalcul ; s'il ne correspond plus,
+l'écran le dit et demande une reprise explicite. Il ne s'efface pas tout seul : c'est une
+décision du chargé de projet, elle ne doit pas disparaître sans qu'il le voie.
+
+**3. Les feuilles se comptent avec la gâche.** `S!G9 = (E2*I2+E2)/E5` l'inclut, `montage.ts` la
+négligeait : 24 feuilles annoncées contre 27 réelles. Le gain affiché soustrayait donc deux
+mesures différentes. `ReglesMontage.perte` (S!I2) aligne les deux.
+
+**4. « Accepter » écrit trois cellules, jamais une.** `S!E5` (up), `S!E6` et `S!H6`
+(dimensions de la feuille) **ensemble** — parce que le coût matière se calcule sur la surface :
+`S!V41 = ((E6*H6/144) * (E2/E5)) * (…)`. Écrire `S!E5` seul ferait croire au classeur qu'il
+consomme les nouvelles feuilles aux **anciennes** dimensions : coût matière **20 fois trop
+bas**, invisible sur le scénario Exemple (`R41` vide) et bien réel dès qu'il y a une ligne
+fournisseur. Écrire une cellule sur trois est donc plus dangereux que de n'en écrire aucune.
+« Annuler » **restaure** les trois valeurs d'origine, mémorisées dans `X!MONTAGEAVANT*` à la
+première acceptation seulement — les vider donnerait une surface nulle, donc un coût nul.
+
+Ça débloque aussi le bon de travail : `FT!E42 = S!E5`, donc l'atelier reçoit enfin le montage
+retenu au lieu des valeurs d'origine.
+
+**Un piège introduit au passage, et refermé.** Le bloc n'apparaissait qu'au-delà du seuil. Un
+montage accepté puis une quantité revue à la baisse, et le bloc disparaissait alors que les
+trois cellules restaient écrasées : un montage invisible pilotant le prix, sans moyen de
+l'annuler. La ligne reste donc affichée tant qu'un montage est retenu, seuil ou pas.
+
+**À faire avant de s'y fier** : le protocole de `montage-protocole-tests.md`, en particulier
+T10 (le coût matière ne s'effondre pas) — il demande une soumission avec une **vraie ligne
+fournisseur**, ce que le scénario Exemple ne couvre pas.
+
 ## Ce qui reste
 
-1. **Étape 6 — réinjecter le format dans le temps d'impression.** Pas fait, et volontairement :
-   cela change des prix. Le temps de roulement du classeur est porté par six cellules de
-   cadence (voir le commentaire de `lib/machines.ts`) ; décider lesquelles le nombre de
-   feuilles doit alimenter, et avec quel effet sur le prix, est un arbitrage client, pas un
-   choix d'implémentation.
-2. **Créer `Formats_Feuille`** + son rapport (ci-dessus).
-3. **Trancher le conflit des formats maxi** et corriger les fiches machines.
-4. ~~Les 4 points « À reconfirmer » du handoff.~~ **Revenus le 9 novembre.** Les trois premiers
+1. **Créer `Formats_Feuille`** + son rapport (ci-dessus).
+2. **Trancher le conflit des formats maxi** et corriger les fiches machines.
+3. ~~Les 4 points « À reconfirmer » du handoff.~~ **Revenus le 9 novembre.** Les trois premiers
    confirment l'interprétation déjà implémentée (presses et formats maxi, « minimum 8″ » =
    dimension minimale d'une feuille, 24 × 36 conservé). Le quatrième l'infirme : le grain est
    sans importance, pas figé — appliqué (voir l'encadré en tête de ce document).

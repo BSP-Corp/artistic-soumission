@@ -1364,6 +1364,11 @@ td.ajout-qte-cell {
   padding: 5px 8px;
   border-radius: var(--radius-sm);
 }
+/* Montage retenu devenu périmé : il pilote le prix, donc l'avertissement doit se voir dans
+   la ligne d'information sans en casser le flux de texte (pas de bloc, pas de fond plein). */
+.machine-info .perime {
+  color: #b3341f;
+}
 
 /* ── comparatif Zund vs Platine ── */
 .comparatif {
