@@ -13,6 +13,7 @@
     "pack:bt": "vite build --config vite.bt.config.ts && cd bontravail && zet pack",
     "gen:api": "esbuild src/api/gen-exemple.ts --bundle --platform=node --format=cjs --alias:@=./src --outfile=.gen/gen-api.cjs --log-level=warning && node .gen/gen-api.cjs && esbuild src/api/gen-champs.ts --bundle --platform=node --format=cjs --alias:@=./src --outfile=.gen/gen-champs.cjs --log-level=warning && node .gen/gen-champs.cjs && esbuild src/api/gen-schema.ts --bundle --platform=node --format=cjs --alias:@=./src --outfile=.gen/gen-schema.cjs --log-level=warning && node .gen/gen-schema.cjs && node src/api/gen-page.mjs",
     "gen:page": "node src/api/gen-page.mjs",
+    "verif:montage": "esbuild src/verif-montage.ts --bundle --platform=node --format=cjs --alias:@=./src --outfile=.gen/verif-montage.cjs --log-level=warning && node .gen/verif-montage.cjs",
     "build:pointage": "vite build --config vite.pointage.config.ts",
     "pack:pointage": "vite build --config vite.pointage.config.ts && cd pointage && zet pack"
   },
