@@ -4,7 +4,8 @@
 //
 //  Signature à déclarer dans le builder :
 //     decimal pieceW, decimal pieceH, int qty, decimal espace, decimal pourtour,
-//     decimal dimMin, boolean grainFige, int seuilFeuilles, int feuillesBase
+//     decimal dimMin, boolean grainFige, int seuilFeuilles, int feuillesBase,
+//     decimal perte
 //
 //  Retour : { format, up_par_feuille, up_h, up_v, piece_tournee, nb_feuilles,
 //             presses, gain_feuilles, seuil_atteint, ecartes }
@@ -33,6 +34,10 @@
 //     posée à 90°. Sans grain figé (réponse client du 9 nov. 2026) ce n'est plus un
 //     détail : l'atelier doit savoir dans quel sens monter la pièce, sinon le nombre
 //     de up annoncé est intenable sur la table.
+//  8. `perte` (gâche, S!I2) : nouveau paramètre. Le pseudo-code comptait les feuilles
+//     sur la quantité nue, alors que le classeur les compte avec la gâche
+//     (`S!G9 = (E2*I2+E2)/E5`). Les deux doivent compter la même chose, sinon le gain
+//     affiché soustrait deux mesures différentes. 2000 pièces à 84 up : 27, pas 24.
 // ============================================================================
 
 resultat = Map();
@@ -136,9 +141,13 @@ for each f in Formats_Feuille[Actif == 1]
 		ecartes.add(nomF + " : la pièce n'y tient pas");
 		continue;
 	}
-	// plafond explicite de qty / upBest
-	feuilles = (qty / upBest).floor();
-	if ((feuilles * upBest) < qty)
+	// Feuilles AVEC la gâche, comme le classeur : S!G9 = (E2*I2+E2)/E5. Compter sans la
+	// gâche sous-estimait les feuilles (24 au lieu de 27 sur 2000 pièces à 84 up), donc le
+	// seuil se déclenchait trop tard et le gain s'annonçait trop beau.
+	qteGache = qty * (1 + perte);
+	// plafond explicite de qteGache / upBest
+	feuilles = (qteGache / upBest).floor();
+	if ((feuilles * upBest) < qteGache)
 	{
 		feuilles = feuilles + 1;
 	}

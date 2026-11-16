@@ -105,8 +105,15 @@ const f = (largeurPo: number, hauteurPo: number): FormatFeuille => ({ nom: `${la
 const c1 = evaluerFormat(f(24, 48), 7, 1.4, 2000, reglesFige, toutesPresses)!;
 console.log(`piece 7 x 1,4 sur 24 x 48 : ${c1.upHorizontal} x ${c1.upVertical} = ${c1.upParFeuille} up/feuille`);
 console.log(ok(c1.upParFeuille === 84), "attendu 84 up/feuille (3 x 28)");
-console.log(`2000 pieces -> ${c1.nbFeuilles} feuilles`);
-console.log(ok(c1.nbFeuilles === 24), "attendu 24 feuilles");
+// 27 et non 24 : les feuilles se comptent AVEC la gache, comme le classeur
+// (`S!G9 = (E2*I2+E2)/E5`). 2000 x 1,1 = 2200, / 84 = 26,19 -> 27. Compter sans la gache
+// donnait 24, donc un gain affiche faux : les deux cotes de la soustraction ne mesuraient
+// pas la meme chose.
+console.log(`2000 pieces -> ${c1.nbFeuilles} feuilles (gache ${regles.perte * 100} %)`);
+console.log(ok(c1.nbFeuilles === 27), "attendu 27 feuilles, gache comprise");
+const sansGache = evaluerFormat(f(24, 48), 7, 1.4, 2000, { ...reglesFige, perte: 0 }, toutesPresses)!;
+console.log(ok(sansGache.nbFeuilles === 24), "sans gache on retrouve bien 24 : c'est la gache qui fait l'ecart");
+console.log(ok(Math.ceil((2000 * 1.1) / 84) === c1.nbFeuilles), "le compte colle a la formule du classeur (E2*I2+E2)/E5");
 // Sur CE format la rotation ne change rien : 3 x 28 et 14 x 6 donnent tous deux 84. C'est
 // une coincidence arithmetique, pas une regle generale -- d'ou le cas 12 x 24 juste apres.
 const c1r = evaluerFormat(f(24, 48), 7, 1.4, 2000, regles, toutesPresses)!;
