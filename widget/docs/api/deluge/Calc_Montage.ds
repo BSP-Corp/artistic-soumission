@@ -1,0 +1,185 @@
+// ============================================================================
+//  Calc_Montage  —  optimisation du montage (imposition), côté serveur Deluge
+//  Workflows → Functions → type de retour : map
+//
+//  Signature à déclarer dans le builder :
+//     decimal pieceW, decimal pieceH, int qty, decimal espace, decimal pourtour,
+//     decimal dimMin, boolean grainFige, int seuilFeuilles, int feuillesBase
+//
+//  Retour : { format, up_par_feuille, up_h, up_v, nb_feuilles, presses,
+//             gain_feuilles, seuil_atteint, ecartes }
+//
+//  ⚠ CE N'EST PAS LA SOURCE DE VÉRITÉ. Le widget calcule le montage en local
+//  (widget/src/lib/montage.ts) parce que la suggestion doit suivre la saisie au
+//  clavier, sans aller-retour serveur. Cette fonction est le même algorithme pour
+//  un usage Creator (workflow, bon de travail, Custom API). Toute correction faite
+//  ici doit l'être aussi dans montage.ts, et inversement — la vérification
+//  `npm run verif:montage` ne couvre que la version TypeScript.
+//
+//  ── Écarts voulus avec le pseudo-code du handoff du 2 nov. ────────────────
+//  1. `feuilles < bestFeuilles` seul ne départage pas deux formats à égalité de
+//     feuilles. Le handoff demande pourtant « à égalité, préférer le plus petit
+//     format ». Ajouté : comparaison de surface en second critère.
+//  2. `Formats_Feuille[Actif == true]` échoue si `Actif` est un champ numérique
+//     (c'est le cas : la colonne vaut 1/0, comme `Actif` dans Taux_Calcul).
+//     Corrigé en `Actif == 1`.
+//  3. Le garde-fou presse ne sortait pas de la boucle une fois une presse trouvée.
+//  4. Une presse sans format maxi renseigné n'est PAS supposée tout pouvoir : elle
+//     est ignorée. Valider un format sur une donnée absente est pire que l'écarter.
+//  5. Le seuil de déclenchement (350) ne figurait pas dans la fonction. Ajouté.
+//  6. Division : `qty / upBest` sur deux entiers peut renvoyer un décimal selon le
+//     contexte. Le plafond est calculé explicitement.
+// ============================================================================
+
+resultat = Map();
+ecartes = List();
+
+marge = 2 * pourtour;
+pas_h = pieceW + espace;
+pas_v = pieceH + espace;
+
+bestFormat = "";
+bestUp = 0;
+bestUpH = 0;
+bestUpV = 0;
+bestFeuilles = 0;
+bestSurface = 0.0;
+bestPresses = "";
+
+// garde-fou d'entrée : sans dimensions ni quantité, il n'y a rien à proposer —
+// et surtout aucune division à risquer.
+if (pieceW <= 0 || pieceH <= 0 || qty <= 0)
+{
+	resultat.put("format", "");
+	resultat.put("up_par_feuille", 0);
+	resultat.put("nb_feuilles", 0);
+	resultat.put("seuil_atteint", false);
+	resultat.put("ecartes", "dimensions ou quantité manquantes");
+	return resultat;
+}
+
+for each f in Formats_Feuille[Actif == 1]
+{
+	fw = f.Largeur_po;
+	fh = f.Hauteur_po;
+	nomF = f.Nom_format;
+	if (nomF == null || nomF == "")
+	{
+		nomF = fw + " x " + fh;
+	}
+	// dimension minimale : aucun côté sous dimMin
+	if (fw < dimMin || fh < dimMin)
+	{
+		ecartes.add(nomF + " : côté sous " + dimMin + " po");
+		continue;
+	}
+	// au moins une presse sait rouler ce format ; une fiche sans format maxi est ignorée
+	presseOK = false;
+	listePresses = List();
+	for each p in Fiche_Machine[Categorie == "Serigraphie" && Statut == "Actif"]
+	{
+		pl = ifnull(p.Largeur_max_po, 0);
+		ph = ifnull(p.Hauteur_max_po, 0);
+		if (pl > 0 && ph > 0 && fw <= pl && fh <= ph)
+		{
+			presseOK = true;
+			listePresses.add(p.Nom_machine);
+		}
+	}
+	if (presseOK == false)
+	{
+		ecartes.add(nomF + " : aucune presse ne peut le rouler");
+		continue;
+	}
+	// up par axe — inversion de FT!AF39 : N = plancher((dim - 2*pourtour + espace) / (piece + espace))
+	// Le « + espace » traduit les N-1 espaces entre N up. L'omettre sous-estime N d'une unité.
+	upH = ((fw - marge + espace) / pas_h).floor();
+	upV = ((fh - marge + espace) / pas_v).floor();
+	if (upH < 0)
+	{
+		upH = 0;
+	}
+	if (upV < 0)
+	{
+		upV = 0;
+	}
+	// grain libre : la pièce peut aussi être posée à 90°, on garde le meilleur des deux
+	if (grainFige == false)
+	{
+		rotH = ((fw - marge + espace) / pas_v).floor();
+		rotV = ((fh - marge + espace) / pas_h).floor();
+		if (rotH < 0)
+		{
+			rotH = 0;
+		}
+		if (rotV < 0)
+		{
+			rotV = 0;
+		}
+		if ((rotH * rotV) > (upH * upV))
+		{
+			upH = rotH;
+			upV = rotV;
+		}
+	}
+	upBest = upH * upV;
+	if (upBest <= 0)
+	{
+		ecartes.add(nomF + " : la pièce n'y tient pas");
+		continue;
+	}
+	// plafond explicite de qty / upBest
+	feuilles = (qty / upBest).floor();
+	if ((feuilles * upBest) < qty)
+	{
+		feuilles = feuilles + 1;
+	}
+	surfaceF = fw * fh;
+	// 1. le moins de feuilles ; 2. à égalité, le plus petit format (moins de perte)
+	meilleur = false;
+	if (bestUp == 0)
+	{
+		meilleur = true;
+	}
+	else if (feuilles < bestFeuilles)
+	{
+		meilleur = true;
+	}
+	else if (feuilles == bestFeuilles && surfaceF < bestSurface)
+	{
+		meilleur = true;
+	}
+	if (meilleur)
+	{
+		bestFormat = nomF;
+		bestUp = upBest;
+		bestUpH = upH;
+		bestUpV = upV;
+		bestFeuilles = feuilles;
+		bestSurface = surfaceF;
+		bestPresses = listePresses.toString(", ");
+	}
+}
+
+// ── seuil de déclenchement ────────────────────────────────────────────────
+// Mesuré sur le format courant quand on le connaît (feuillesBase), sinon sur le
+// nombre de feuilles du format recommandé : tant que la soumission n'a pas de
+// champ « format de feuille », c'est la seule mesure de la taille du job.
+mesure = bestFeuilles;
+gain = 0;
+if (feuillesBase != null && feuillesBase > 0)
+{
+	mesure = feuillesBase;
+	gain = feuillesBase - bestFeuilles;
+}
+
+resultat.put("format", bestFormat);
+resultat.put("up_par_feuille", bestUp);
+resultat.put("up_h", bestUpH);
+resultat.put("up_v", bestUpV);
+resultat.put("nb_feuilles", bestFeuilles);
+resultat.put("presses", bestPresses);
+resultat.put("gain_feuilles", gain);
+resultat.put("seuil_atteint", mesure > seuilFeuilles);
+resultat.put("ecartes", ecartes.toString(" · "));
+return resultat;
