@@ -289,7 +289,11 @@ vraie ligne fournisseur, pour vérifier que le coût matière suit. Le scénario
 pas (`R41` vide). Et pousser jusqu'au **bon de travail** : « Nombre de Up » et « Mrx (po.) » doivent
 y porter les valeurs du format retenu, pas celles d'origine.
 
-### Ce que les tests du 16 novembre ont déjà validé — ne pas le refaire
+### Ce que les tests du 16 novembre ont validé sur la version actuelle
+
+> **À rejouer après tes correctifs**, en non-régression : voir `montage-protocole-tests.md`, qui
+> reprend ces cas et ajoute un test par correctif. Attention, **deux de ces résultats attendus
+> changent** une fois le seuil corrigé — ce n'est pas une régression.
 
 Cinq comportements vérifiés dans Creator sur le build `2026-11-05 15:12 UTC` :
 
