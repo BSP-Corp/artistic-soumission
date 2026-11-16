@@ -291,12 +291,18 @@ y porter les valeurs du format retenu, pas celles d'origine.
 
 ### Ce que les tests du 16 novembre ont déjà validé — ne pas le refaire
 
-Quatre comportements vérifiés dans Creator sur le build `2026-11-05 15:12 UTC` : le bloc reste
-masqué sous le seuil ; une pièce qui ne tient dans aucune feuille ne produit aucune suggestion (et
-les contrôles bloquent le prix, ce qui est le comportement voulu) ; le calcul suit bien les
-dimensions de la pièce (7 × 1,4 → 84 up/feuille ; 4 × 6 → 35) ; et le format retenu survit à
-l'enregistrement et à la réouverture. **Le calcul et la persistance sont sains.** Ce qui manque,
-ce sont les branchements.
+Cinq comportements vérifiés dans Creator sur le build `2026-11-05 15:12 UTC` :
+
+| Testé | Résultat |
+|---|---|
+| Job sous le seuil (2 000 pièces) | bloc masqué, comme voulu |
+| Pièce qui ne tient dans aucune feuille (60 × 60) | aucune suggestion, et les contrôles bloquent le prix |
+| Le calcul suit les dimensions de la pièce | 7 × 1,4 → 84 up/feuille ; 4 × 6 → 35 up/feuille |
+| **Le choix du format compare bien les neuf** | pièce 26 × 5 → **30 × 28**, 1 × 5 = 5 up, 8 000 feuilles — et non 24 × 48, trop étroit pour une pièce de 26 po |
+| Enregistrer puis rouvrir | le format retenu est toujours là |
+
+**Le calcul, la sélection du format et la persistance sont sains.** Ce qui manque, ce sont les
+branchements.
 
 ---
 
