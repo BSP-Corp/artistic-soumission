@@ -95,6 +95,23 @@ yeux — ou pire, passerait inaperçu dans le bon sens pour le client et le mauv
 « Annuler » doit **restaurer les trois valeurs d'origine** — donc les mémoriser avant d'écrire.
 Les pseudo-cellules `X!` sont l'endroit naturel pour ça (`X!MONTAGE_E5_AVANT`, etc.).
 
+### Et d'abord : le format retenu devient périmé sans que rien ne le dise
+
+Relevé en testant le 16 novembre. `accepterMontage` écrit `X!MONTAGEFORMAT` et `X!MONTAGEUP`, et
+**rien ne les invalide ensuite**. On a accepté 24 × 48 / 84 up sur une pièce 7 × 1,4, puis changé
+la pièce pour 4 × 6 : le bloc recalcule correctement (35 up/feuille) mais affiche toujours
+« retenu : 24 × 48 », et `X!MONTAGEUP` vaut encore **84**.
+
+Aujourd'hui c'est sans conséquence, puisque aucune formule ne lit ces cellules. **Dès que l'étape 6
+les branche sur `S!E5`, ça devient un générateur de prix faux** : le prix serait calculé sur 84 up
+alors que la pièce n'en permet que 35, soit 2,4 fois trop peu de feuilles. Silencieusement.
+
+**À faire avant tout le reste :** invalider le format retenu dès qu'une entrée du montage change —
+dimensions de pièce, quantité, et plus tard le matériau. Soit en effaçant les pseudo-cellules, soit
+en comparant le retenu au recalcul et en affichant « le format retenu ne correspond plus » avec
+réacceptation explicite. La seconde option est préférable : elle ne fait pas disparaître en silence
+une décision prise par le chargé de projet.
+
 ---
 
 ## 4. Le seuil ne se déclenche pas quand il devrait
