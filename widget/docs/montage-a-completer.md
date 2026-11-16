@@ -78,6 +78,11 @@ développement. Ne le supprime pas. Il devient simplement inutilisé en producti
 
 ## 2. Corriger `APP_MONTAGE_GRAIN_FIGE` — 1 minute, aucun redéploiement
 
+> ✅ **Réglé depuis, dans le code** : `grainFige` vaut `false` par défaut (`montage.ts`), donc rien
+> à paramétrer. Il reste à vérifier qu'aucun `APP_MONTAGE_GRAIN_FIGE` à `1` ne traîne dans
+> `Taux_Calcul` — il écraserait le défaut et refermerait le grain. La section ci-dessous explique
+> pourquoi ce choix.
+
 Le paramètre vaut **1** (pas de rotation de la pièce), repris de l'onglet « Paramètres » du gabarit
 Excel, où Roberto avait coché « Oui ».
 
@@ -101,33 +106,57 @@ sortir avec la mention « pièce tournée de 90° ».
 
 ---
 
-## 3. Trancher le conflit des formats maxi des presses — demande au client
+## 3. Corriger les fiches machines — **tranché par Roberto le 16 novembre**
 
-Les formats maxi fournis par Roberto ne correspondent pas aux fiches machines déjà dans Creator.
-Relevé le 3 novembre, documenté en tête de `montageSnapshot.ts` :
+Roberto a répondu le 16 novembre à 15 h 06 : **« utilise ma liste »**. Ce sont donc ses chiffres
+du 2 novembre qui font foi, et les fiches Creator qui sont à corriger — l'inverse de ce qu'on
+faisait en attendant.
 
-| Presse | Liste Roberto | Fiche Creator | |
-|---|---|---|---|
-| 110 | 21 × 30 | 26 × 18 | ≠ |
-| 116 | 16 × 12 | 12 × 8 | ≠ |
-| 120 | 30 × 28 | vides, fiche inactive | ≠ |
-| 130 | 21 × 28 | 21 × 28 | ✅ seule concordance |
-| 140 | 24 × 24 | 25 × 38 | ≠ |
-| 150 | 44 × 64 | 30 × 50 | ≠ |
-| 170 | 30 × 39 | 30 × 40 | ≈ |
-| 182 | absente | 24 × 44, active | — |
+### Les sept presses de sa liste
 
-Les presses « One man » (48 × 96) et « DTS » sont actives dans Creator et absentes de la liste.
+| Presse | Fiche Creator aujourd'hui | **À corriger pour** |
+|---|---|---|
+| 110 | 26 × 18 | **21 × 30** |
+| 116 | 12 × 8 | **16 × 12** |
+| 120 | vides, fiche inactive | **30 × 28** — et à réactiver, Roberto la liste |
+| 130 | 21 × 28 | inchangée ✅ |
+| 140 | 25 × 38 | **24 × 24** |
+| 150 | 30 × 50 | **44 × 64** |
+| 170 | 30 × 40 | **30 × 39** |
 
-**Conséquence concrète :** le format 16 × 12 n'existe dans la liste que parce que la 116 ferait
-16 × 12. Avec la fiche Creator (12 × 8), aucune presse ne peut le rouler et le calcul l'écarte.
+### Les trois fiches qui n'étaient pas dans sa liste
 
-**En attendant, les fiches Creator font foi** — elles sont la source déjà branchée et déjà affichée
-dans l'écran. Rien n'est écrasé. Ce point demande un appel à Roberto, pas du code.
+Il les a reprises une par une, et aucune des trois n'était ce qu'on croyait.
 
-> À noter : le 3 novembre à 14 h 29, Christian écrivait à Roberto *« Tu as oublié le fichier 😊 »*.
-> Un fichier devait accompagner ses réponses et n'est jamais arrivé. C'est peut-être la liste
-> corrigée. À réclamer avant de trancher.
+**« One man » — 48 × 96, mais pas encore.** *« une presse qui sera réactivée prochainement »*. Le
+format est confirmé. Tant qu'elle n'est pas remise en service elle n'a rien à faire dans la liste
+de choix ; c'est la seule des trois dont la fiche est juste.
+
+**« DTS » — ce n'est pas une presse.** *Direct To Screen* : la machine qui **brûle les soies**
+utilisées sur les presses. Son format maxi de cadre est 1200 × 1500 mm, soit ≈ **47 × 59 po** —
+pas le 48 × 96 de sa fiche. À retirer des presses sélectionnables : tant qu'elle y figure à
+48 × 96, elle fait croire au calcul qu'un format géant est roulable alors qu'aucune presse ne
+l'imprimerait.
+
+**« 182 » — probablement la 180.** *« tu dois sûrement vouloir dire la 180 »* : une presse
+multi-tête 6 couleurs rotative, en fonction, **impression 28 × 38**. La fiche porte 24 × 44, qui
+ne correspond à rien de connu. À confirmer avec lui que c'est bien la même machine avant de
+renommer — c'est la seule inconnue qui reste.
+
+### Ce que ça change pour le calcul
+
+Le conflit se referme proprement : **avec la liste de Roberto, chacun des neuf formats permis est
+roulable par au moins une presse.** Le 16 × 12 redevient disponible — il n'existait dans les neuf
+qu'à cause de la 116, et la fiche à 12 × 8 l'écartait de tout.
+
+Le test T12 du protocole devient donc caduc tel qu'il est écrit : il demande de choisir la
+Cameo 18 no.116 et d'attendre un avertissement. Une fois la fiche corrigée à 16 × 12, cette
+presse roule le 16 × 12 et l'avertissement ne doit plus sortir pour ce format. Prendre une autre
+presse pour éprouver l'avertissement — la 140 à 24 × 24 face à une suggestion 24 × 48, par
+exemple.
+
+> Le fichier que Christian réclamait le 3 novembre (« Tu as oublié le fichier 😊 ») n'est jamais
+> arrivé et n'est plus attendu : la réponse du 16 novembre tranche sans lui.
 
 ---
 
@@ -162,22 +191,22 @@ que le contraste passait sur l'écran de dev que le défaut n'a pas été vu.
 
 ## Récapitulatif
 
-| # | Quoi | Où | Redéploiement |
+| # | Quoi | Où | État au 16 nov. (soir) |
 |---|---|---|---|
-| 1 | Créer `Formats_Feuille` + les 9 lignes | Creator (builder) | non |
-| 2 | `APP_MONTAGE_GRAIN_FIGE` → 0 | Creator (`Taux_Calcul`) | non |
-| 3 | Conflit des formats maxi presses | Appel client | — |
-| 4 | Boutons illisibles (CSS) | Code | **oui** |
+| 1 | Créer `Formats_Feuille` + les 9 lignes | Creator (builder) | CSV d'import prêt, table à créer |
+| 2 | Grain libre | Code | ✅ défaut dans le code — vérifier qu'aucun `APP_MONTAGE_GRAIN_FIGE` à 1 ne traîne |
+| 3 | Fiches machines selon la liste Roberto | Creator (`Fiche_Machine`) | tranché, à saisir |
+| 4 | Boutons illisibles (CSS) | Code | ✅ corrigé, à revoir dans Creator |
 
-Les trois premiers ne touchent pas au code ; le quatrième est quelques lignes de CSS. L'**étape 6**
-— réinjecter le format retenu dans le temps d'impression et donc dans le prix — reste le seul vrai
-chantier de développement, et elle attend un arbitrage client parce qu'elle change des prix.
+Reste donc deux choses à faire dans Creator : la table des formats et les fiches machines. Le
+reste est dans le code, sur `main`, et attend d'être déployé puis validé — le protocole est dans
+`montage-protocole-tests.md`.
 
 > **Vérifié en production le 16 novembre** (build `2026-11-05 15:12 UTC`, Creator : 211 matériaux ·
-> 124 taux) : le montage est bien déployé et calcule juste. Pièce 7 × 1,4 po, 40 000 exemplaires →
-> feuille 24 × 48, 3 × 28 = 84 up/feuille, 477 feuilles. Après « Accepter », coût, total, prix
-> unitaire et temps sont **inchangés au cent près** — l'étape 6 confirmée manquante sur le
-> déployé, pas seulement en local.
+> 124 taux) : le montage était bien déployé et calculait juste. Pièce 7 × 1,4 po, 40 000
+> exemplaires → feuille 24 × 48, 3 × 28 = 84 up/feuille, 477 feuilles. Après « Accepter », coût,
+> total, prix unitaire et temps étaient **inchangés au cent près** — c'est ce constat qui a
+> déclenché l'étape 6, livrée depuis.
 
 ---
 

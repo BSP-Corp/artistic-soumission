@@ -173,11 +173,23 @@ Après T9, cliquer **Annuler**.
 
 ### T12 — L'avertissement de presse (correctif §6)
 
-Pièce **7 × 1,4**, quantité **40 000**. Choisir la presse **Cameo 18 no.116** (format maxi 12 × 8).
+Pièce **7 × 1,4**, quantité **40 000** → suggestion attendue **24 × 48**.
+
+> ⚠️ **Le choix de presse dépend de l'état des fiches machines.** Roberto a tranché le 16 novembre
+> au soir (« utilise ma liste ») : les fiches sont à corriger, voir `montage-a-completer.md` §3.
+>
+> - **Fiches pas encore corrigées** → choisir la **Cameo 18 no.116** (12 × 8 à sa fiche).
+> - **Fiches corrigées** → la 116 passe à 16 × 12 et roule ce format : prendre la **140**
+>   (24 × 24) à la place, qui ne peut pas rouler du 24 × 48.
+>
+> Noter dans la capture quelle presse a été choisie et quel format maxi sa fiche affichait.
 
 - **Attendu :** le bloc continue de proposer 24 × 48, **et** affiche un avertissement visible :
   la presse choisie ne peut pas rouler ce format.
-- Vérifier ensuite avec la **Viking no.150** : l'avertissement doit disparaître.
+- Vérifier ensuite avec la **Viking no.150** : l'avertissement doit disparaître. (Sa fiche porte
+  30 × 50 aujourd'hui, 44 × 64 après correction — dans les deux cas le 24 × 48 passe.)
+- Reprendre l'essai **montage retenu** : le message doit être plus net une fois accepté, puisque
+  le prix porte alors un montage que l'atelier ne pourra pas monter.
 - ☐ Validé — captures avec les deux presses : ______
 
 ### T13 — Les boutons sont lisibles (`montage-a-completer.md` §4)
