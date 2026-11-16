@@ -131,6 +131,35 @@ dans l'écran. Rien n'est écrasé. Ce point demande un appel à Roberto, pas du
 
 ---
 
+## 4. Les boutons « Accepter » / « Annuler » sont illisibles — correctif CSS
+
+Relevé en testant le widget déployé dans Creator le 16 novembre. Les deux boutons du bloc montage
+s'affichent comme des **rectangles blancs vides**. Ils fonctionnent — cliquer « Accepter » inscrit
+bien « retenu : 24 × 48 » — mais leur libellé est invisible.
+
+Ce n'est pas Creator qui écrase le style, c'est le nôtre. Dans `src/styles.css` :
+
+```css
+.btn.ghost {
+  background: transparent;
+  color: #fff;        /* texte blanc */
+  border: 1px solid #4a4a4a;
+}
+```
+
+`btn ghost` est faite pour la **barre d'outils du haut**, sur fond foncé. Dans `App.tsx` le bloc
+montage la réutilise (`className="btn ghost petit"`) pour des boutons placés dans une cellule
+`.machine-info`, **sur fond clair** : texte blanc sur fond blanc.
+
+**Correctif :** une variante à texte foncé pour les boutons dans `.machine-info`. La règle
+`.machine-info .btn.petit` existe déjà (ligne ~1356) et ne porte que des marges — c'est l'endroit
+naturel où ajouter la couleur et la bordure.
+
+À vérifier dans Creator après correction, pas seulement en développement : c'est précisément parce
+que le contraste passait sur l'écran de dev que le défaut n'a pas été vu.
+
+---
+
 ## Récapitulatif
 
 | # | Quoi | Où | Redéploiement |
@@ -138,10 +167,17 @@ dans l'écran. Rien n'est écrasé. Ce point demande un appel à Roberto, pas du
 | 1 | Créer `Formats_Feuille` + les 9 lignes | Creator (builder) | non |
 | 2 | `APP_MONTAGE_GRAIN_FIGE` → 0 | Creator (`Taux_Calcul`) | non |
 | 3 | Conflit des formats maxi presses | Appel client | — |
+| 4 | Boutons illisibles (CSS) | Code | **oui** |
 
-Aucun des trois ne touche au code. L'**étape 6** — réinjecter le format retenu dans le temps
-d'impression et donc dans le prix — reste le seul vrai chantier de développement, et elle attend un
-arbitrage client parce qu'elle change des prix.
+Les trois premiers ne touchent pas au code ; le quatrième est quelques lignes de CSS. L'**étape 6**
+— réinjecter le format retenu dans le temps d'impression et donc dans le prix — reste le seul vrai
+chantier de développement, et elle attend un arbitrage client parce qu'elle change des prix.
+
+> **Vérifié en production le 16 novembre** (build `2026-11-05 15:12 UTC`, Creator : 211 matériaux ·
+> 124 taux) : le montage est bien déployé et calcule juste. Pièce 7 × 1,4 po, 40 000 exemplaires →
+> feuille 24 × 48, 3 × 28 = 84 up/feuille, 477 feuilles. Après « Accepter », coût, total, prix
+> unitaire et temps sont **inchangés au cent près** — l'étape 6 confirmée manquante sur le
+> déployé, pas seulement en local.
 
 ---
 
