@@ -192,7 +192,55 @@ pseudo-cellules `X!` survivent bien à l'aller-retour Creator. Rien à corriger 
 
 ---
 
-## 6. Deux incohérences de comptage à trancher au passage
+## 6. Le montage ignore la presse sélectionnée
+
+**Testé dans Creator le 16 novembre.** Presse **Cameo 18 no.116** choisie dans la soumission. Les
+deux lignes s'affichent l'une sous l'autre, et se contredisent :
+
+```
+feuille max 12×8 po · 220 fle/hre · roulement 74,00 $/h
+Montage suggéré — feuille 24 × 48 po : 3 × 28 = 84 up/feuille · 477 feuilles
+                  · roulable sur Viking no.150, One man
+```
+
+Le format recommandé est quatre fois trop grand pour la presse choisie. Le seul indice est la
+liste « roulable sur… », qui ne mentionne pas la 116 — mais il faut lire la fin de la ligne pour
+s'en rendre compte.
+
+**Cause :** `App.tsx` passe à `choisirMontage` **toutes** les presses actives
+(`machinesFamille(s.machinesCalc, "presse")`), et `choisirMontage` écarte un format seulement si
+**aucune** presse ne peut le rouler. La presse sélectionnée dans la soumission n'entre jamais dans
+le calcul.
+
+**Correctif suggéré : avertir, ne pas restreindre.** Si on restreint les formats à la presse
+choisie, la 116 ne proposera plus jamais rien (voir ci-dessous) et personne ne comprendra pourquoi.
+Mieux vaut garder la recommandation et ajouter, quand la presse sélectionnée n'est pas dans
+`candidat.presses`, une mention visible du genre « la presse choisie (Cameo 18 no.116, 12 × 8)
+ne peut pas rouler ce format ».
+
+> À noter : le contrôle de format existant (`controles.ts` §3.2, « la machine accepte la feuille »)
+> ne rattrape pas le cas, parce qu'il teste la feuille **courante** (`Dim. Mrx`, 8 × 9,5 — qui passe
+> sur 12 × 8 en la tournant), pas le format **proposé**.
+
+### Ce que le test montre du conflit des formats maxi
+
+Avec la fiche Creator actuelle de la 116 — **12 × 8** — **aucun des 9 formats permis ne tient sur
+cette presse**. Ni 12 × 12, ni 16 × 12, aucun. La vérification le disait déjà
+(`npm run verif:montage` : « formats des 9 que la fiche Creator du 116 peut rouler : 0 ») ; on le
+voit maintenant en conditions réelles.
+
+Dans la liste de Roberto, la 116 fait **16 × 12** — et le format 16 × 12 n'existe dans les neuf
+qu'à cause d'elle. **Selon la colonne qui fait foi, cette presse a un format utilisable ou aucun.**
+C'est l'argument concret à joindre au dossier (voir `montage-a-completer.md` §3).
+
+### Ce qui marche : presse → cadence → prix
+
+En changeant de presse, le prix bouge : 59 695,90 $ → **62 387,04 $** sur le même job, la Cameo
+étant plus lente que la presse générique. La chaîne presse → cadence → coût fonctionne.
+
+---
+
+## 7. Deux incohérences de comptage à trancher au passage
 
 **La gâche.** `S!G9` compte les feuilles **avec** la gâche (`(E2*I2+E2)/E5`), `montage.ts` compte
 **sans** (`Math.ceil(qte / upParFeuille)`, commentaire « Quantité retenue : celle du job, sans la
@@ -205,7 +253,7 @@ C'est antérieur au montage, mais autant le signaler : le coût matière ne couv
 
 ---
 
-## 7. Ce qui reste hors de portée aujourd'hui
+## 8. Ce qui reste hors de portée aujourd'hui
 
 **Rien ne vérifie que la matière existe dans le format proposé.** Une fiche matériau dans Creator
 porte un nom, une catégorie, un coût au pi², un `format` en **texte libre** et un drapeau actif —
@@ -223,16 +271,18 @@ suite logique.
 
 ---
 
-## 8. Ordre proposé
+## 9. Ordre proposé
 
 1. **Le seuil** (§4) — `feuillesBase` depuis `S!G9`. Petit changement, gros effet : la fonction
    commence enfin à se déclencher quand il faut. Aucun prix ne change.
 2. **L'invalidation** (§3) — un format retenu qui ne correspond plus doit le dire. À faire **avant**
    le point 4, sinon on branche une valeur périmée sur le prix.
-3. **Le comptage** (§6) — aligner `montage.ts` sur la gâche du classeur.
+3. **Le comptage** (§7) — aligner `montage.ts` sur la gâche du classeur.
 4. **L'étape 6** (§2-3) — « Accepter » écrit `S!E5`, `S!E6`, `S!H6` ; « Annuler » restaure.
    **C'est ici que les prix changent, et c'est aussi ce qui débloque le bon de travail** (§5).
-5. **Le CSS des boutons** (`montage-a-completer.md` §4) — tant qu'à redéployer.
+5. **L'avertissement presse** (§6) — dire quand le format proposé ne passe pas sur la presse
+   choisie. Aucun prix ne change.
+6. **Le CSS des boutons** (`montage-a-completer.md` §4) — tant qu'à redéployer.
 
 Après le 4, refaire le test de bout en bout **dans Creator** avec une soumission qui porte une
 vraie ligne fournisseur, pour vérifier que le coût matière suit. Le scénario Exemple ne le montre
@@ -250,7 +300,7 @@ ce sont les branchements.
 
 ---
 
-## 9. À confirmer avec le client avant de déployer le point 3
+## 10. À confirmer avec le client avant de déployer le point 3
 
 Youssef a donné son accord côté BSP. Mais le point 3 **change les prix sortants**, donc Artistic
 doit le savoir avant que ça parte en production : une soumission dont on accepte le montage
