@@ -86,10 +86,27 @@ questions du produit passent **avant** le champ qui choisit le produit.
 
 | Bande | Contenu |
 |---|---|
-| 10 – 90 | bloc pilote : usage, type de produit |
-| 100 – 899 | encadré du produit (un seul visible à la fois) |
-| 1000 – 8999 | sections communes : dimensions, quantité, infographie, installation |
-| 9000 | notes, toujours en dernier |
+| 10 – 90 | bloc pilote : usage, type de produit (propre au widget) |
+| 100 – 299 | communes **amont** : dimensions, quantité |
+| 1000 – 8999 | encadré du produit (un seul visible à la fois) |
+| 9000 – 9199 | communes **aval** : infographie, installation |
+| 9500 | notes, toujours en dernier |
+
+L'ordre amont/aval vient des **4 feuilles produit du client**
+(`Formulaires_soumission_Artistic.docx`, relues le 16 nov. 2026) : chacune demande les
+dimensions en 1 et la quantité en 2, **avant** les questions du produit, puis l'infographie et
+l'installation après. Le handoff disait l'inverse ; les feuilles font foi, puisque c'est ce que
+le personnel remplit aujourd'hui. L'ordre obtenu, vérifié par le test :
+
+```
+autocollants  Numérique > Dimensions > Quantité > Média > Type d'impression > Laminage >
+              Finition > Montage sur substrat > Infographie > Installation > Notes
+```
+
+Deux entorses assumées : « Montage sur substrat » est en 8 sur la feuille (après
+l'infographie) mais reste groupé avec les questions du produit ; et le roll-up demande Modèle
+puis Format avant la quantité, alors que la quantité reste en bande amont — la dédoubler pour
+ce seul produit ajouterait deux lignes qui veulent dire la même chose.
 
 `incoherencesConfig()` **refuse** une configuration où un bloc se retrouve coupé en deux :
 c'est le garde-fou qui rattrape une renumérotation faite dans Creator, plutôt que de la
@@ -138,11 +155,24 @@ champ est conservé — le jour où une deuxième couleur apparaît, la ligne es
 
 ---
 
-## Un effet de bord à arbitrer : 14 blocages sur un formulaire vierge
+## `Num_Usage` : présent dans le handoff, absent des feuilles du client
 
-Un encadré Autocollants vide produit **14 bloquants** (usage, type de produit, unité, largeur,
+Vérifié le 16 nov. 2026 sur la source : **zéro occurrence** de « Usage », et aucune option
+« Intérieur » / « Extérieur » sur les 4 feuilles. Les seules occurrences du mot sont *dans* les
+noms de matière bannière (« Bannière extérieure 18 oz »). Le champ vient donc du handoff seul.
+
+Il est conservé — l'usage int./ext. alimente le bon de travail et le filtrage des matières
+(étape 6) — mais repassé **non bloquant** en attendant la confirmation du client. Deux raisons :
+il double, pour une bannière, l'information déjà portée par la matière choisie, et il peut la
+contredire (usage « Intérieur » + matière « extérieure 18 oz »). Un champ bloquant que le
+client n'a jamais demandé fait échouer des soumissions par ailleurs valides.
+
+## Un effet de bord à arbitrer : 13 blocages sur un formulaire vierge
+
+Un encadré Autocollants vide produit **13 bloquants** (type de produit, unité, largeur,
 hauteur, quantité, infographie, installation, média, faces, couleurs, laminage, montage, plus
-« dimensions manquantes »). C'est le comportement demandé par l'étape 7 — mais c'est exactement
+« dimensions manquantes » — l'usage n'en fait plus partie, voir ci-dessus). C'est le
+comportement demandé par l'étape 7 — mais c'est exactement
 la question ouverte des **règles 2 et 15** de la liste Openmind : *bloque-t-on l'envoi tant
 qu'une info manque, alors que les chargés de projet travaillent souvent avec des infos
 partielles ?*

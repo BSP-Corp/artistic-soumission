@@ -155,11 +155,23 @@ for (const p of produitsActifs()) {
     `${p.code} : le bloc pilote est en premier, les notes en dernier`,
   );
 }
-// l'encadre du produit est groupe, entre le bloc pilote et les sections communes
+// L'ordre attendu vient des 4 feuilles produit du client (relues le 16 nov. 2026) :
+// dimensions puis quantite AVANT les questions du produit, infographie et installation apres.
 const blocsAuto = blocsVisibles("autocollants", {}).map((b) => b.bloc);
+const pos = (b: string) => blocsAuto.indexOf(b);
 console.log(
-  ok(blocsAuto.indexOf("Média / matière adhésive") === 1 && blocsAuto.indexOf("Dimensions") > blocsAuto.indexOf("Montage sur substrat")),
-  "l'encadre du produit est groupe, entre le bloc pilote et les sections communes",
+  ok(pos("Dimensions") === 1 && pos("Quantité") === 2 && pos("Média / matière adhésive") === 3),
+  "dimensions puis quantite viennent avant l'encadre du produit (feuilles du client)",
+);
+console.log(
+  ok(pos("Infographie") > pos("Montage sur substrat") && pos("Installation") > pos("Infographie")),
+  "infographie puis installation viennent apres l'encadre du produit",
+);
+// l'encadre du produit reste d'un seul morceau : aucun bloc commun ne s'y intercale
+const blocsProduit = ["Média / matière adhésive", "Type d'impression", "Laminage", "Finition", "Montage sur substrat"].map(pos);
+console.log(
+  ok(Math.max(...blocsProduit) - Math.min(...blocsProduit) === blocsProduit.length - 1),
+  "l'encadre du produit est contigu (aucune section commune intercalee)",
 );
 
 // le garde-fou attrape-t-il une renumerotation fautive faite dans Creator ?
