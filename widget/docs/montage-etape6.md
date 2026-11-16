@@ -150,7 +150,49 @@ devient chiffrable, et il est énorme (550 → 27 feuilles sur le cas ci-dessus)
 
 ---
 
-## 5. Deux incohérences de comptage à trancher au passage
+## 5. Le bon de travail ne reçoit rien — et c'est le même correctif
+
+**Testé dans Creator le 16 novembre.** Soumission avec « retenu : 24 × 48 » accepté →
+**Valider → Bon de travail** → le bon de travail créé porte :
+
+| Champ du bon de travail | Valeur | Attendu si le montage suivait |
+|---|---|---|
+| Nombre de Up (et INFOGRAPHIE › Nombre Up) | **4** | 84 |
+| Mrx (po.) | **8 × 9,5** | 24 × 48 |
+| Temps Impression | **268 h 12** | ~13 h |
+
+Le pressier monte donc la job exactement comme avant. Recherche de « montage » dans tout
+`src/bt/` : **aucune occurrence**. La donnée voyage bien (`validerVersBonTravail` sérialise toutes
+les entrées, `X!` comprises), mais **aucun écran ne l'affiche et aucune cellule ne la consomme**.
+
+C'était pourtant la demande d'origine de Christian le 27 octobre : que l'atelier sache quelle
+feuille utiliser.
+
+**La bonne nouvelle : le correctif est le même.** `FT!E42 = S!E5` — le bon de travail reprend déjà
+le nombre de up de la soumission. Dès que l'étape 6 écrira dans `S!E5`, le bon de travail suivra
+tout seul. Reste à vérifier que la dimension de feuille du BT (« Mrx (po.) ») est bien reliée à
+`S!E6` / `S!H6` de la même façon ; si oui, il n'y a rien d'autre à faire.
+
+Afficher en plus un libellé explicite sur le bon de travail (« Montage retenu : 24 × 48,
+84 up/feuille ») serait un vrai plus pour l'atelier, mais ce n'est pas indispensable si les trois
+cellules portent déjà les bonnes valeurs.
+
+### Confirmé au passage : « Nbre de Feuilles » est vide sur le bon de travail
+
+Le champ **« Nbre de Feuilles »** du bon de travail (`FT!E43`) est **vide** sur le bon de travail
+créé. C'est la confirmation à l'écran de ce que le §4 déduisait du code : `FT!E44` dépend de
+`E43`, personne ne la remplit, donc le seuil du montage n'a jamais de point de comparaison —
+ni pendant la soumission, ni après.
+
+### Et ce qui marche : la persistance
+
+Vérifié dans Creator, sur une soumission nommée pour être repérée sans ambiguïté : format accepté
+→ **Enregistrer** → **Ouvrir** → réouverture → « retenu : 24 × 48 » **toujours présent**. Les
+pseudo-cellules `X!` survivent bien à l'aller-retour Creator. Rien à corriger de ce côté.
+
+---
+
+## 6. Deux incohérences de comptage à trancher au passage
 
 **La gâche.** `S!G9` compte les feuilles **avec** la gâche (`(E2*I2+E2)/E5`), `montage.ts` compte
 **sans** (`Math.ceil(qte / upParFeuille)`, commentaire « Quantité retenue : celle du job, sans la
@@ -163,7 +205,7 @@ C'est antérieur au montage, mais autant le signaler : le coût matière ne couv
 
 ---
 
-## 6. Ce qui reste hors de portée aujourd'hui
+## 7. Ce qui reste hors de portée aujourd'hui
 
 **Rien ne vérifie que la matière existe dans le format proposé.** Une fiche matériau dans Creator
 porte un nom, une catégorie, un coût au pi², un `format` en **texte libre** et un drapeau actif —
@@ -181,22 +223,34 @@ suite logique.
 
 ---
 
-## 7. Ordre proposé
+## 8. Ordre proposé
 
 1. **Le seuil** (§4) — `feuillesBase` depuis `S!G9`. Petit changement, gros effet : la fonction
    commence enfin à se déclencher quand il faut. Aucun prix ne change.
-2. **Le comptage** (§5) — aligner `montage.ts` sur la gâche du classeur.
-3. **L'étape 6** (§2-3) — « Accepter » écrit `S!E5`, `S!E6`, `S!H6` ; « Annuler » restaure.
-   **C'est ici que les prix changent.**
-4. **Le CSS des boutons** (`montage-a-completer.md` §4) — tant qu'à redéployer.
+2. **L'invalidation** (§3) — un format retenu qui ne correspond plus doit le dire. À faire **avant**
+   le point 4, sinon on branche une valeur périmée sur le prix.
+3. **Le comptage** (§6) — aligner `montage.ts` sur la gâche du classeur.
+4. **L'étape 6** (§2-3) — « Accepter » écrit `S!E5`, `S!E6`, `S!H6` ; « Annuler » restaure.
+   **C'est ici que les prix changent, et c'est aussi ce qui débloque le bon de travail** (§5).
+5. **Le CSS des boutons** (`montage-a-completer.md` §4) — tant qu'à redéployer.
 
-Après le 3, refaire le test de bout en bout **dans Creator** avec une soumission qui porte une
+Après le 4, refaire le test de bout en bout **dans Creator** avec une soumission qui porte une
 vraie ligne fournisseur, pour vérifier que le coût matière suit. Le scénario Exemple ne le montre
-pas (`R41` vide).
+pas (`R41` vide). Et pousser jusqu'au **bon de travail** : « Nombre de Up » et « Mrx (po.) » doivent
+y porter les valeurs du format retenu, pas celles d'origine.
+
+### Ce que les tests du 16 novembre ont déjà validé — ne pas le refaire
+
+Quatre comportements vérifiés dans Creator sur le build `2026-11-05 15:12 UTC` : le bloc reste
+masqué sous le seuil ; une pièce qui ne tient dans aucune feuille ne produit aucune suggestion (et
+les contrôles bloquent le prix, ce qui est le comportement voulu) ; le calcul suit bien les
+dimensions de la pièce (7 × 1,4 → 84 up/feuille ; 4 × 6 → 35) ; et le format retenu survit à
+l'enregistrement et à la réouverture. **Le calcul et la persistance sont sains.** Ce qui manque,
+ce sont les branchements.
 
 ---
 
-## 8. À confirmer avec le client avant de déployer le point 3
+## 9. À confirmer avec le client avant de déployer le point 3
 
 Youssef a donné son accord côté BSP. Mais le point 3 **change les prix sortants**, donc Artistic
 doit le savoir avant que ça parte en production : une soumission dont on accepte le montage
