@@ -1,0 +1,40 @@
+﻿Type_produit,Sauf,Bloc,Champ_technique,Libelle,Type_champ,Options,Ordre,Actif,Requis,Depend_de,Depend_valeurs
+*,,Numérique,Num_Usage,Usage,choix,"Intérieur;Extérieur",10,1,0,,
+*,,Numérique,Num_Type_produit,Type de produit,choix,,20,1,1,,
+*,rollup,Dimensions,Num_Unite,Unité,choix,"Pouces;Millimètres",100,1,1,,
+*,rollup,Dimensions,Num_Largeur,Largeur,decimal,,110,1,1,,
+*,rollup,Dimensions,Num_Hauteur,Hauteur,decimal,,120,1,1,,
+*,,Quantité,Num_Quantite,Quantité totale,decimal,,200,1,1,,
+*,,Quantité,Num_Nb_lots,Nombre de lots,decimal,,210,1,0,,
+*,,Infographie,Num_Infographie,Infographie,choix,"Fichier fourni par le client;Infographie à réaliser par Artistic",9000,1,1,,
+*,rollup,Installation,Num_Installation,Installation,choix,"Non requise;Demandée",9100,1,1,,
+*,rollup,Installation,Num_Install_lieu,Adresse ou lieu,texte,,9110,1,1,Num_Installation,Demandée
+*,rollup,Installation,Num_Install_surface,Type de surface,texte,,9120,1,1,Num_Installation,Demandée
+*,rollup,Installation,Num_Install_qte,Quantité à installer,decimal,,9130,1,1,Num_Installation,Demandée
+*,rollup,Installation,Num_Install_date,Date souhaitée,texte,,9140,1,1,Num_Installation,Demandée
+*,,Notes / précisions,Num_Notes,Notes ou précisions,texte,,9500,1,0,,
+autocollants,,Média / matière adhésive,Auto_Media,Média adhésif,choix,"Permanent;Amovible;Mural;Clair (transparent);Perforé 60/40;Perforé 70/30;Vinyle super adhésif",1000,1,1,,
+autocollants,,Type d'impression,Auto_Impr_face,Faces imprimées,choix,"Recto;Recto verso",1010,1,1,,
+autocollants,,Type d'impression,Auto_Impr_couleur,Couleurs,choix,"4 couleurs process;4 couleurs process + blanc;Blanc seulement",1020,1,1,,
+autocollants,,Laminage,Auto_Laminage,Laminage (obligatoire),choix,"Glacé;Lustré;Mat;Antidérapant",1030,1,1,,
+autocollants,,Finition,Auto_Finition,Finition,multi,"Coupé au format final;Découpé à la forme;Découpe multiple;Kiss-cut;Slit;Lettrage découpé + papier de transfert",1040,1,0,,
+autocollants,,Montage sur substrat,Auto_Montage,Montage sur substrat,choix,"Aucun;Substrat fourni par le client;Substrat fourni par Artistic",1050,1,1,,
+autocollants,,Montage sur substrat,Auto_Substrat_type,Type de substrat,texte,,1060,1,1,Auto_Montage,"Substrat fourni par le client;Substrat fourni par Artistic"
+autocollants,,Montage sur substrat,Auto_Substrat_dim,Dimensions du substrat,texte,,1070,1,1,Auto_Montage,"Substrat fourni par le client;Substrat fourni par Artistic"
+autocollants,,Montage sur substrat,Auto_Substrat_qte,Quantité de substrat,decimal,,1080,1,1,Auto_Montage,"Substrat fourni par le client;Substrat fourni par Artistic"
+panneaux,,Matériel,Pan_Materiel,Matériel,choix,"Coroplast;Foam core;Styrène;Sintra;Dibond;Carton;Polycarbonate;Acrylique",1000,1,1,,
+panneaux,,Matériel,Pan_Epaisseur,Épaisseur,texte,,1010,1,0,,
+panneaux,,Matériel,Pan_Couleur_materiel,Couleur du matériel,texte,,1020,1,0,,
+panneaux,,Type d'impression,Pan_Impr_face,Faces imprimées,choix,"Recto;Recto verso",1030,1,1,,
+panneaux,,Type d'impression,Pan_Impr_couleur,Couleurs,choix,"4 couleurs process;4 couleurs process + blanc;Blanc seulement",1040,1,1,,
+panneaux,,Type d'impression,Pan_Impr_methode,Méthode d'impression,choix,"Impression directe sur le matériel;Vinyle imprimé contrecollé",1050,1,1,,
+panneaux,,Laminage,Pan_Laminage,Laminage,choix,"Aucun;Glacé;Lustré;Mat",1060,1,1,,
+panneaux,,Finition,Pan_Finition,Finition,multi,"Coupé au format final;Découpé à la forme;Coins arrondis;Perçage / œillets;Ruban adhésif double face;Velcro",1070,1,0,,
+bannieres,,Matériel,Ban_Materiel,Matériel,choix,"Bannière extérieure 18 oz renforcée;Bannière intérieure 15 oz lisse;Mesh (filet);Blockout (opaque)",1000,1,1,,
+bannieres,,Type d'impression,Ban_Impr_face,Faces imprimées,choix,"Recto;Recto verso",1010,1,1,,
+bannieres,,Type d'impression,Ban_Impr_couleur,Couleurs,choix,4 couleurs process,1020,1,1,,
+bannieres,,Finition,Ban_Finition,Finition,multi,"Couture + œillets aux 24 po;Couture + œillets aux 12 po;Ourlet en haut;Ourlet en bas;Autre finition",1030,1,0,,
+bannieres,,Finition,Ban_Finition_autre,Préciser l'autre finition,texte,,1040,1,1,Ban_Finition,Autre finition
+rollup,,Modèle,Retr_Modele,Modèle,choix,"Artistic Économique;Artistic Luxe (mécanisme supérieur)",1000,1,1,,
+rollup,,Format,Retr_Format,Format,choix,"33 × 80 po;48 × 80 po",1010,1,1,,
+rollup,,Options,Retr_Lampe_DEL,Lampe DEL,case,,1020,1,0,,

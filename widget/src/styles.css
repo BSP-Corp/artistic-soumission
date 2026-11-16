@@ -1356,6 +1356,17 @@ td.ajout-qte-cell {
 .machine-info .btn.petit {
   margin-left: 2px;
   vertical-align: baseline;
+  /* `.btn.ghost` est faite pour la barre d'outils du haut, sur fond foncé : elle met le texte
+     en blanc. Le bloc montage la réutilise dans une cellule `.machine-info`, qui est sur fond
+     CLAIR — les boutons « Accepter » / « Annuler » s'affichaient donc en blanc sur blanc,
+     c'est-à-dire comme des rectangles vides. Ils fonctionnaient, mais sans libellé lisible.
+     Relevé sur le widget déployé dans Creator le 16 novembre 2026. */
+  color: #2b2b2b;
+  border-color: #b9b9b9;
+}
+.machine-info .btn.petit:hover {
+  border-color: #2b2b2b;
+  background: rgba(0, 0, 0, 0.05);
 }
 .machine-warn {
   color: #b3341f;
@@ -1363,6 +1374,11 @@ td.ajout-qte-cell {
   font-size: 11.5px;
   padding: 5px 8px;
   border-radius: var(--radius-sm);
+}
+/* Montage retenu devenu périmé : il pilote le prix, donc l'avertissement doit se voir dans
+   la ligne d'information sans en casser le flux de texte (pas de bloc, pas de fond plein). */
+.machine-info .perime {
+  color: #b3341f;
 }
 
 /* ── comparatif Zund vs Platine ── */

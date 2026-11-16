@@ -1,0 +1,199 @@
+// ============================================================================
+//  ANALYSE PREVENTIVE D'UNE SOUMISSION  —  AVANT l'envoi au client
+//
+//  Pourquoi cette fonction existe (question 5 d'Openmind, 30 oct. 2026) :
+//
+//    Leur outil part aujourd'hui du passage au statut « Valide ». Or « Valide » est pose
+//    par le bouton « Valider -> Bon de travail », c'est-a-dire quand la job part en
+//    PRODUCTION — donc apres que la proposition a ete envoyee au client et acceptee.
+//    Un outil qui sert a attraper les erreurs AVANT l'envoi arrivait donc trop tard.
+//
+//    D'ou deux moments, et deux fonctions :
+//
+//      avant_envoi  (ICI)                 le charge de projet vient de produire la
+//                                         proposition ; le client NE L'A PAS ENCORE RECUE.
+//                                         C'est le seul moment ou une alerte peut encore
+//                                         eviter une erreur.
+//      validation   (analyserSoumission)  la job part en production, apres acceptation.
+//                                         Alimente l'historique (PUT /history).
+//
+//    Le contrat JSON porte le moment dans `soumission.moment` (v1.3) : la plateforme n'a
+//    pas a le deviner, et peut appliquer des regles differentes aux deux.
+//
+//  CE QU'ELLE N'APPELLE PAS, ET POURQUOI
+//    Pas de PUT /history ici. L'historique est leur base de COMPARAISON entre soumissions
+//    reelles ; y verser des propositions qui ne seront peut-etre jamais acceptees fausserait
+//    toutes les comparaisons a venir. L'historique reste alimente par la validation seule.
+//
+//  A CREER DANS CREATOR : `analyserAvantEnvoi(int idSoumission)`, espace de noms Default,
+//  type de retour void, un argument `idSoumission` de type **int** (Creator ne propose pas
+//  `long` ; analyserSoumission et envoyerSoumission utilisent deja int pour le meme id).
+//
+//  COMMENT ELLE EST DECLENCHEE
+//    Le widget ecrit `Webhook_Statut = "Analyse_demandee"` sur la soumission, puis cette
+//    fonction est lancee a part — tache planifiee, ou bouton de rapport.
+//    ⚠ NE PAS L'APPELER DEPUIS LE WORKFLOW DE SAUVEGARDE : l'analyse dure 8 a 20 s ; dans un
+//    workflow de formulaire elle bloquerait l'utilisateur et se heurterait aux limites
+//    d'execution de Deluge. C'est la meme regle que pour analyserSoumission.
+//
+//  Contraintes Deluge respectees : pas de `while`, pas de `left()`, pas de `.first()`,
+//  `body` sans content-type (il va dans la map d'en-tetes), ecriture par variable
+//  intermediaire (`maj = Form1[...]` puis `maj.Champ = ...`).
+// ============================================================================
+
+void analyserAvantEnvoi(int idSoumission)
+{
+	// ── configuration ───────────────────────────────────────────────────
+	// Identique a analyserSoumission : meme partenaire, meme cle, meme URL de base.
+	// L'en-tete est fixe ici, pas dans Creator : Parametres_Integration n'a que
+	// Nom_Partenaire / URL_Webhook / Jeton_Actif / Jeton_Precedent / Date_Rotation /
+	// Signer_HMAC / Actif / Timeout_Sec / Max_Tentatives / Note. Lire un champ qui
+	// n'existe pas fait ECHOUER la fonction.
+	ENTETE_CLE = "X-Api-Key";
+
+	BASE = "";
+	CLE = "";
+	for each  cfg in Parametres_Integration[Actif == "Oui"]
+	{
+		u = ifnull(cfg.URL_Webhook, "").trim();
+		j = ifnull(cfg.Jeton_Actif, "").trim();
+		if (u != "" && j != "")
+		{
+			BASE = u;
+			CLE = j;
+		}
+	}
+	if (BASE == "" || CLE == "")
+	{
+		info "analyse prealable annulee : Parametres_Integration absent ou incomplet (Actif = Oui ?).";
+		return;
+	}
+	if (BASE.endsWith("/"))
+	{
+		BASE = BASE.subString(0, BASE.length() - 1);
+	}
+	if (BASE.endsWith("/analyses") || BASE.endsWith("/history"))
+	{
+		info "analyse prealable annulee : URL_Webhook doit contenir l'URL DE BASE (ex. http://192.168.250.10/api), pas un endpoint.";
+		return;
+	}
+
+	// ── le contrat ──────────────────────────────────────────────────────
+	corps = "";
+	for each  s in Form1[ID == idSoumission]
+	{
+		corps = ifnull(s.Soumission_JSON, "").toString();
+	}
+	if (corps.trim() == "")
+	{
+		info "analyse prealable annulee : Soumission_JSON vide sur " + idSoumission + ".";
+		return;
+	}
+	// le widget ecrit un jeton de substitution : l'ID Creator n'existe pas a la creation
+	corps = corps.replaceAll("__ID_SOUMISSION__", idSoumission.toString());
+
+	// Garde-fou de coherence. Le widget pose `"moment":"avant_envoi"` quand il demande une
+	// analyse prealable ; si le JSON dit autre chose, c'est que l'enregistrement a ete
+	// ecrase entre-temps par une sauvegarde ordinaire. On corrige au lieu d'envoyer un
+	// payload qui se contredit : leur outil se fie a ce champ pour choisir ses regles.
+	if (!corps.contains("\"moment\":\"avant_envoi\""))
+	{
+		corps = corps.replaceAll("\"moment\":\"validation\"", "\"moment\":\"avant_envoi\"");
+	}
+
+	// Deluge echappe le guillemet par \" (comme Java). On l'isole dans une constante : c'est
+	// le seul caractere delicat de ce fichier.
+	Q = "\"";
+
+	entetes = Map();
+	entetes.put(ENTETE_CLE, CLE);
+
+	// ════════════════════════════════════════════════════════════════════
+	//  POST /analyses — multipart/form-data
+	//  Deluge ne sait pas composer un multipart melant champ texte et fichiers ; on fabrique
+	//  donc le corps a la main et on pose la frontiere dans le Content-Type. Leur doc (§5.1)
+	//  accepte `contract` comme CHAMP SIMPLE : une seule part suffit tant qu'aucun document
+	//  n'accompagne la soumission.
+	// ════════════════════════════════════════════════════════════════════
+	FR = "----ZohoCreator" + zoho.currenttime.toString("yyyyMMddHHmmssSSS");
+	CRLF = "\r\n";
+	multipart = "--" + FR + CRLF;
+	multipart = multipart + "Content-Disposition: form-data; name=" + Q + "contract" + Q + CRLF;
+	multipart = multipart + "Content-Type: application/json" + CRLF + CRLF;
+	multipart = multipart + corps + CRLF;
+	multipart = multipart + "--" + FR + "--" + CRLF;
+
+	entetesMp = Map();
+	entetesMp.putAll(entetes);
+	entetesMp.put("Content-Type", "multipart/form-data; boundary=" + FR);
+
+	codeAn = 0;
+	texteAn = "";
+	try
+	{
+		repA = invokeurl
+		[
+			url :BASE + "/analyses"
+			type :POST
+			headers :entetesMp
+			body :multipart
+			detailed :true
+		];
+		codeAn = ifnull(repA.get("responseCode"), 0);
+		texteAn = ifnull(repA.get("responseText"), "").toString();
+	}
+	catch (ea)
+	{
+		codeAn = 0;
+		texteAn = "exception : " + ea;
+	}
+	extraitAn = texteAn;
+	if (extraitAn.length() > 4000)
+	{
+		extraitAn = extraitAn.subString(0, 4000);
+	}
+	// Evenement distinct de « analyses.create » : dans le journal, les deux moments doivent
+	// rester separables — sinon impossible de dire si une alerte est arrivee a temps.
+	ligneAn = insert into integration_log
+	[
+		Soumission_ID = idSoumission.toString()
+		Direction = "sortant"
+		Evenement = "analyses.create.avant_envoi"
+		Tentative = 1
+		Statut_HTTP = codeAn
+		Duree_ms = 0
+		Reponse = extraitAn
+		Erreur = ""
+		Horodatage = zoho.currenttime
+	];
+
+	// ── resultat : on garde la reponse telle quelle ─────────────────────
+	// On n'interprete PAS les codes de flags : leur doc demande de traiter un code inconnu
+	// comme un flag affichable, pas comme une erreur.
+	statut = "Echec";
+	if (codeAn >= 200 && codeAn < 300)
+	{
+		statut = "Analyse_prealable";
+	}
+	else if (codeAn == 401)
+	{
+		statut = "Cle_refusee";
+	}
+	else if (codeAn == 0)
+	{
+		statut = "Injoignable";
+	}
+
+	extrait = texteAn;
+	if (extrait.length() > 60000)
+	{
+		extrait = extrait.subString(0, 60000);
+	}
+
+	maj = Form1[ID == idSoumission];
+	maj.Webhook_Statut = statut;
+	maj.Reponse_IA = extrait;
+	maj.Soumission_JSON = corps;
+
+	info "Analyse prealable " + idSoumission + " : analyses=" + codeAn + " (" + statut + ").";
+}

@@ -13,7 +13,17 @@
 //   · les temps sont donnés en heures + minutes ET en minutes totales.
 
 import type { CellValue, Moteur } from "@/lib/moteur";
-import { IN, OUT, DECOUPE_HM, XTRA_PLACEHOLDER, CELL_VENDU, cellVendu } from "@/lib/modele";
+import {
+  IN,
+  OUT,
+  DECOUPE_HM,
+  XTRA_PLACEHOLDER,
+  CELL_VENDU,
+  cellVendu,
+  CELL_DATE_COMMANDE,
+  CELL_DATE_EXPEDITION,
+  CELL_NB_FEUILLES_CORRIGE,
+} from "@/lib/modele";
 import {
   CELL_PRESSE,
   CELL_ZUND,
@@ -30,7 +40,19 @@ import {
 //     · decoupe.finition.coins_ronds.quantite devient nullable (opération retirée de l'outil) ;
 //     · impression.faces.* et les interrupteurs restent inchangés.
 //     Le taux horaire passe de 73 à 74 $/h : les montants changent, pas le contrat.
-export const SCHEMA_VERSION = "1.2";
+// 1.3 (5 nov. 2026) — demandes Openmind, questions 1, 2, 3 et 5 :
+//     · soumission.date_requise est RETYPEE texte -> date ISO (null si la saisie n'est pas
+//       une date lisible). Le texte d'origine n'est pas perdu : il part tel quel dans le
+//       nouveau champ soumission.date_requise_texte. C'est le SEUL champ retype de la v1.3 ;
+//       un parseur v1.2 qui tenait a l'ancien comportement lit `_texte`.
+//     · ajouts : soumission.date_commande, soumission.date_expedition_prevue,
+//       soumission.moment (quel moment a produit cet envoi), materiaux[].epaisseur_po et
+//       materiaux[].epaisseur_mil, production.nb_matrices_calcule / _corrige / _source.
+//     · production.nb_matrices change de SENS — voulu, c'est la demande : il porte desormais
+//       la valeur RETENUE (la correction du chef d'atelier quand elle existe, sinon le
+//       calcul). Lire le calcul la ou l'atelier avait corrige declenchait une fausse alerte
+//       sur chaque dossier corrige. Le calcul reste disponible sous nb_matrices_calcule.
+export const SCHEMA_VERSION = "1.3";
 
 export type TypeChamp =
   | "string"
@@ -43,7 +65,8 @@ export type TypeChamp =
   | "string|null"
   | "integer|null"
   | "number|null"
-  | "money|null";
+  | "money|null"
+  | "date|null";
 
 export interface Champ {
   /** chemin JSON, notation pointée ; `[]` marque un élément de tableau */
@@ -62,6 +85,13 @@ export interface MetaSoumission {
   date_soumission: string; // YYYY-MM-DD
   reference_externe?: string | null;
   notes?: string;
+  /** v1.3 — a quel moment du parcours cet envoi a ete produit :
+   *  `avant_envoi`  : le charge de projet vient de produire la proposition, le client NE L'A
+   *                   PAS ENCORE RECUE. C'est le moment ou une alerte peut encore servir.
+   *  `validation`   : la soumission passe en production (bouton « Valider -> Bon de travail »),
+   *                   donc APRES acceptation du client. Alimente l'historique.
+   *  Absent = `validation`, pour que les envois deja en place gardent leur sens. */
+  moment?: "avant_envoi" | "validation";
 }
 
 export interface Ctx {
@@ -72,6 +102,9 @@ export interface Ctx {
    *  `cout` = coût de revient unitaire · `prix` = prix unitaire, facteur appliqué.
    *  Les deux sont exposés séparément dans le contrat : ne jamais les confondre. */
   simuler?: (qte: number) => { cout: number; prix: number; vendu: number; us: number };
+  /** nom exact du materiau -> epaisseur en pouces, depuis l'inventaire Creator (question 3).
+   *  Absent hors Zoho : `materiaux[].epaisseur_po` vaut alors null, jamais 0. */
+  epaisseurPo?: (nom: string) => number | null;
 }
 
 // ── helpers de lecture ──────────────────────────────────────────────────────
@@ -108,6 +141,34 @@ const H = (h: string, min: string) => (c: Ctx) => ({
   minutes: Math.round(num(c.m.val(min)) ?? 0),
   minutes_totales: r2((num(c.m.val(h)) ?? 0) * 60 + (num(c.m.val(min)) ?? 0)),
 });
+/** Date ISO YYYY-MM-DD, ou null. Volontairement STRICT : seules les ecritures non ambigues
+ *  sont acceptees (ISO, « / » tolere, heure ignoree). « 09/10/2026 » est REFUSE — personne ne
+ *  peut dire si c'est le 9 octobre ou le 10 septembre, et une date mal lue vaut moins que pas
+ *  de date du tout. Le texte d'origine reste expose a cote, dans date_requise_texte. */
+const iso = (v: CellValue): string | null => {
+  if (vide(v)) return null;
+  const m = String(v).trim().replace(/\//g, "-").match(/^(\d{4})-(\d{2})-(\d{2})(?:[T ].*)?$/);
+  if (!m) return null;
+  const [, a, mo, j] = m;
+  const d = new Date(Date.UTC(+a, +mo - 1, +j));
+  // rejette 2026-02-31 : Date() la « corrigerait » silencieusement en 3 mars
+  if (d.getUTCFullYear() !== +a || d.getUTCMonth() !== +mo - 1 || d.getUTCDate() !== +j) return null;
+  return `${a}-${mo}-${j}`;
+};
+const D = (cell: string) => (c: Ctx) => iso(brut(c, cell));
+
+// ── nombre de feuilles : calcul, correction, valeur retenue (v1.3) ──────────
+// Les trois partent au contrat ensemble. La plateforme doit pouvoir dire laquelle a servi
+// sans la deviner : lire le calcul la ou l'atelier avait corrige fabrique une fausse alerte
+// sur chaque dossier corrige, et des alertes fausses finissent par ne plus etre lues.
+const nbMatricesCalcule = (c: Ctx) => Math.ceil(num(c.m.val(OUT.nbMrxExact)) ?? 0);
+const nbMatricesCorrige = (c: Ctx) => {
+  const n = num(brut(c, CELL_NB_FEUILLES_CORRIGE));
+  // 0 et les valeurs negatives ne sont pas des corrections : c'est un champ laisse vide
+  return n === null || n <= 0 ? null : Math.round(n);
+};
+const nbMatricesRetenu = (c: Ctx) => nbMatricesCorrige(c) ?? nbMatricesCalcule(c);
+
 const machine = (cell: string) => (c: Ctx) => Sn(cell)(c);
 
 // ── la liste des champs (doc + construction) ────────────────────────────────
@@ -120,7 +181,11 @@ export const CHAMPS: Champ[] = [
   { chemin: "soumission.statut", type: "string", origine: "meta", description: "Brouillon | Valide | En_production | Termine.", get: (c) => c.meta.statut },
   { chemin: "soumission.source", type: "string", origine: "meta", description: "widget (saisie manuelle) | api (créée par la plateforme) | import.", get: (c) => c.meta.source },
   { chemin: "soumission.date_soumission", type: "date", origine: "meta", description: "Date d'enregistrement, format ISO YYYY-MM-DD.", get: (c) => c.meta.date_soumission },
-  { chemin: "soumission.date_requise", type: "string|null", origine: "in", description: "Date requise par le client, telle que saisie (texte libre pour l'instant).", get: Sn(IN.date) },
+  { chemin: "soumission.date_requise", type: "date|null", origine: "in", description: "v1.3 — Date requise par le client, en ISO YYYY-MM-DD. null quand la saisie n'est pas une date lisible (« ASAP », « fin du mois ») : le texte d'origine est alors dans date_requise_texte. RETYPÉ en v1.3 — était du texte libre jusqu'en v1.2.", get: D(IN.date) },
+  { chemin: "soumission.date_requise_texte", type: "string|null", origine: "in", description: "v1.3 — La date requise telle que saisie, sans interprétation. Conserve le comportement v1.2 pour les intégrations qui le préfèrent.", get: Sn(IN.date) },
+  { chemin: "soumission.date_commande", type: "date|null", origine: "in", description: "v1.3 — Date de la commande ferme du client (réception du PO), ISO YYYY-MM-DD. null tant qu'elle n'est pas saisie.", get: D(CELL_DATE_COMMANDE) },
+  { chemin: "soumission.date_expedition_prevue", type: "date|null", origine: "in", description: "v1.3 — Date d'expédition prévue, ISO YYYY-MM-DD. null tant qu'elle n'est pas saisie. C'est la date à comparer à date_requise pour juger d'un délai.", get: D(CELL_DATE_EXPEDITION) },
+  { chemin: "soumission.moment", type: "string", origine: "meta", description: "v1.3 — Moment du parcours qui a produit cet envoi : avant_envoi (proposition produite, client pas encore servi — c'est là qu'une alerte peut encore servir) | validation (passage en production, après acceptation du client).", get: (c) => c.meta.moment ?? "validation" },
   { chemin: "soumission.reference_externe", type: "string|null", origine: "meta", description: "Référence de la plateforme du client (idempotence). null si créée dans Zoho.", get: (c) => c.meta.reference_externe ?? null },
   { chemin: "soumission.notes", type: "string", origine: "meta", description: "Notes libres (champ long).", get: (c) => c.meta.notes ?? "" },
 
@@ -142,8 +207,11 @@ export const CHAMPS: Champ[] = [
   { chemin: "production.nb_up", type: "integer|null", origine: "in", description: "Nombre de pièces par feuille (« Up »).", get: I(IN.nbUp) },
   { chemin: "production.matrice_po.largeur", type: "number|null", origine: "in", description: "Largeur de la matrice (feuille imprimée), en pouces.", get: N(IN.dimMrxX) },
   { chemin: "production.matrice_po.hauteur", type: "number|null", origine: "in", description: "Hauteur de la matrice, en pouces.", get: N(IN.dimMrxY) },
-  { chemin: "production.nb_matrices", type: "integer", origine: "out", description: "Nombre de matrices (feuilles) à produire = quantité × (1 + perte) ÷ up, arrondi au plein supérieur (comme affiché dans le widget).", get: (c) => Math.ceil(num(c.m.val(OUT.nbMrxExact)) ?? 0) },
-  { chemin: "production.nb_matrices_exact", type: "number", origine: "out", description: "Même valeur avant arrondi.", get: M4(OUT.nbMrxExact) },
+  { chemin: "production.nb_matrices", type: "integer", origine: "out", description: "Nombre de feuilles RETENU — c'est la valeur sur laquelle raisonner. v1.3 : vaut nb_matrices_corrige quand le chef d'atelier a corrigé à la main, sinon nb_matrices_calcule. CHANGEMENT DE SENS en v1.3 : jusqu'en v1.2 ce champ portait toujours le calcul.", get: nbMatricesRetenu },
+  { chemin: "production.nb_matrices_calcule", type: "integer", origine: "out", description: "v1.3 — Le calcul seul = quantité × (1 + perte) ÷ up, arrondi au plein supérieur. C'est ce que portait nb_matrices jusqu'en v1.2.", get: nbMatricesCalcule },
+  { chemin: "production.nb_matrices_corrige", type: "integer|null", origine: "in", description: "v1.3 — Correction manuelle du chef d'atelier. null quand personne n'a corrigé : ne jamais lire 0 comme une correction.", get: nbMatricesCorrige },
+  { chemin: "production.nb_matrices_source", type: "string", origine: "out", description: "v1.3 — D'où vient nb_matrices : calcul | correction. Évite d'avoir à comparer les deux champs pour le savoir.", get: (c) => (nbMatricesCorrige(c) === null ? "calcul" : "correction") },
+  { chemin: "production.nb_matrices_exact", type: "number", origine: "out", description: "Le calcul avant arrondi. Non affecté par une correction manuelle.", get: M4(OUT.nbMrxExact) },
   { chemin: "production.surface_matrice_po2", type: "number", origine: "out", description: "Surface d'une matrice en pouces carrés = largeur × hauteur.", get: M(OUT.nbMrx) },
   { chemin: "production.multiprint", type: "boolean", origine: "in", description: "Mode presse MultiPrint (1 à 6 couleurs en ligne).", get: B(IN.multiprint) },
   { chemin: "production.numerique_multiup", type: "boolean", origine: "in", description: "Impression numérique multi-up.", get: B(IN.numeriqueMultiUp) },
@@ -187,6 +255,8 @@ export const CHAMPS: Champ[] = [
   { chemin: "materiaux[].ligne", type: "string", origine: "meta", description: "lexan | vinyle | polyester | alu_foil | divers | adhesif | overlaminating | xtra1..xtra4." },
   { chemin: "materiaux[].nom", type: "string", origine: "in", description: "Nom exact du matériau dans le catalogue (clé de jointure avec l'inventaire)." },
   { chemin: "materiaux[].cout_pi2", type: "money|null", origine: "out", description: "Coût au pied carré retenu (catalogue, ou saisi pour les lignes Xtra)." },
+  { chemin: "materiaux[].epaisseur_po", type: "number|null", origine: "meta", description: "v1.3 — Épaisseur du matériau en POUCES, lue dans l'inventaire Creator (fiche produit, Dim_Epaisseur_po). null si la fiche ne la porte pas — jamais 0." },
+  { chemin: "materiaux[].epaisseur_mil", type: "number|null", origine: "meta", description: "v1.3 — La même épaisseur en mil (= pouces × 1000), l'unité des règles de découpe. 0,020 po = 20 mil. null si l'épaisseur est inconnue." },
   { chemin: "materiaux[].perte_pct", type: "percent", origine: "in", description: "Perte spécifique à la ligne (lignes Xtra uniquement, sinon null)." },
   { chemin: "materiaux[].montant", type: "money", origine: "out", description: "Montant matière de la ligne = surface × coût pi² × (1 + perte) × multiplicateur." },
   { chemin: "materiaux[].temps_debitage_min", type: "number|null", origine: "out", description: "Temps de débitage (guillotine) de la ligne, en minutes." },
@@ -312,10 +382,15 @@ function materiaux(c: Ctx) {
   for (const l of LIGNES_MAT) {
     const nom = S(l.nom)(c);
     if (!nom || (XTRA_PLACEHOLDER as readonly string[]).includes(nom)) continue;
+    // L'epaisseur vient de l'inventaire, pas du classeur : une ligne Xtra tapee a la main
+    // n'en a donc pas, et c'est normal — null, pas 0.
+    const ep = c.epaisseurPo?.(nom) ?? null;
     out.push({
       ligne: l.ligne,
       nom,
       cout_pi2: l.cout ? Mn(l.cout)(c) : r2(N(l.coutManuel!)(c)),
+      epaisseur_po: ep,
+      epaisseur_mil: ep === null ? null : Math.round(ep * 1000 * 100) / 100,
       perte_pct: l.perte ? P(l.perte)(c) : null,
       montant: M(l.mont)(c),
       temps_debitage_min: l.min ? r2(num(c.m.val(l.min))) : null,
@@ -404,6 +479,7 @@ const TYPES_DOC: Record<TypeChamp, string> = {
   money: "montant CAD (nombre, 2 déc.)",
   "money|null": "montant CAD ou null",
   date: "date ISO YYYY-MM-DD",
+  "date|null": "date ISO YYYY-MM-DD ou null",
 };
 
 /** Table Markdown des champs, groupée par section (1er segment du chemin). */
