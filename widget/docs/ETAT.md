@@ -71,11 +71,39 @@ vert. Les deux lancés sur `main` fusionné le 16 novembre au soir.
   T15 (la ligne 99 × 99)              20 min   Soufiane
   APP_MONTAGE_GRAIN_FIGE : 1 → 0          —    Soufiane, APRÈS le déploiement
   T16 (grain libre)                   15 min   Soufiane
+  ─────────────────────────────────────────────────────────────────
+  document fonctionnel + courriel au client    —    Youssef + Claude
 ```
 
 **L'ordre n'est pas négociable sur un point** : le `1` de `Taux_Calcul` ne passe à `0` qu'après
 le déploiement. Avant, il tient le grain fermé pendant que l'ancien build ne sait pas enregistrer
 le sens de pose. Voir `montage-a-completer.md` §2.
+
+---
+
+## Ce qui conclut le chantier : le document au client
+
+Quand la série est au vert, le montage n'est pas livré pour autant. Il reste à **dire à Artistic
+ce qu'ils ont** — un document fonctionnel, pas technique : ce que le montage permet de faire, ce
+qu'il change dans leur façon de chiffrer, ce que l'atelier reçoit maintenant. Avec des captures.
+Puis un courriel qui porte ce document.
+
+Décidé par Youssef le 17 novembre. C'est le vrai point final, et c'est ce que Christian attend
+depuis le 27 octobre.
+
+**Ce qui est déjà en place pour le préparer :** la partie 4 du protocole demande huit captures
+spécifiques pendant la série, prises sur une job plausible et présentable — pas les captures de
+preuve, qui montrent des soumissions de test et des chiffres de contrôle. Elles vont dans
+`captures/client/`.
+
+Ce que le document devra couvrir, dans l'ordre où ça se vit :
+
+1. Le système propose de lui-même quand il y a un gain à prendre — personne n'a à y penser.
+2. Ce qu'il propose : quelle feuille, combien de pièces dessus, combien de feuilles en tout.
+3. Ce qui se passe quand on accepte : le prix et le temps de presse suivent.
+4. Ce que l'atelier reçoit : le bon de travail porte le montage retenu.
+5. Les garde-fous : presse incompatible, format périmé, pièce qui ne tient nulle part.
+6. Ce qui reste à leur main : accepter ou non, c'est une décision du chargé de projet.
 
 ---
 
@@ -94,6 +122,10 @@ couverts. Détail et identifiants dans `montage-a-completer.md` §3.
 **Les écritures ne sont pas faites** : elles changent ce que le calcul considère roulable, et
 l'ordre par rapport à T12 mérite un mot de Youssef. Elles sont prêtes, une par fiche.
 
+### 17 nov. — Le chantier se conclura par un document client *(Youssef)*
+Une fois la série au vert : un document fonctionnel sur ce que le montage permet, illustré, et un
+courriel qui le porte. La partie 4 du protocole demande les huit captures nécessaires.
+
 ### 17 nov. — Déploiement à lancer à la main *(Soufiane)*
 Le build de `main` est prêt et vérifié : `tsc` propre, paquet reconstruit
 (`canevas/dist/canevas.zip`, 17 nov. 15:30), et `verif:montage` au vert — **29 assertions,
@@ -107,6 +139,10 @@ pour la première fois.
 **Conséquence sur l'ordre :** `APP_MONTAGE_GRAIN_FIGE` reste donc à **1** (vérifié ce jour dans
 `Taux_Calcul`, ID …875014). Il ne passera à `0` qu'une fois le nouveau build constaté en ligne
 par le bandeau, pas avant — T16 attend ce moment-là. T1 → T14 attendent le même.
+
+### 17 nov. — L'avancement passe dans le dépôt *(Youssef → `b2e7beb`)*
+Trop de choses circulaient par message pendant que le dépôt n'en savait rien. Ce fichier devient
+la source unique ; les captures vont dans `captures/`.
 
 ### 17 nov. — Feu vert pour le déploiement *(Youssef)*
 Soufiane déploie le build de `main` et écrit lui-même le `0` du grain juste après. Christian sera

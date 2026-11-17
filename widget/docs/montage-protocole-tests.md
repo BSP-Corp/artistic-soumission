@@ -260,6 +260,47 @@ Une fois `APP_MONTAGE_GRAIN_FIGE` passé à **0** :
 
 ---
 
+## Partie 4 — Les captures pour le client
+
+> **Pendant que tu joues la série, prends huit captures de plus.** Elles ne servent pas à prouver
+> un test : elles illustreront le document que Youssef enverra à Artistic quand tout sera validé —
+> un document **fonctionnel**, qui explique ce que le montage permet de faire, pas comment il est
+> codé.
+>
+> Les captures de preuve (T1–T16) et celles-ci ne se ressemblent pas. Une preuve peut montrer un
+> NB.MRX à 11 000 et une soumission appelée « test BSP ». Une illustration client, non.
+
+### Les règles pour ces huit-là
+
+1. **Une job plausible.** Un vrai type de travail d'Artistic, une quantité réaliste, un matériau
+   qui existe. Pas de 99 × 99, pas de 60 × 60, pas de « test ».
+2. **Un nom de soumission présentable** — pas « test BSP 2 ». Si c'est une soumission réelle,
+   masquer le nom du client avant de livrer l'image.
+3. **Le bloc entier visible**, libellés compris, pas un gros plan sur un chiffre.
+4. **Même job d'un bout à l'autre** pour les captures 1 à 5 : le lecteur doit suivre une seule
+   histoire, de la suggestion jusqu'à l'atelier.
+
+### Les huit captures
+
+| # | Ce qu'elle doit montrer | Ce que le document en dira |
+|---|---|---|
+| C1 | Le bloc « Montage suggéré » tel qu'il apparaît | le système propose de lui-même, sans qu'on demande |
+| C2 | Le détail de la suggestion : format de feuille, up par feuille, nombre de feuilles | ce qu'on gagne, en clair |
+| C3 | L'écran **avant** « Accepter » — prix, total, temps bien lisibles | le point de départ |
+| C4 | Le **même** écran **après** « Accepter » | le prix et le temps suivent le montage retenu |
+| C5 | Le bon de travail issu de cette soumission, avec le montage dessus | l'atelier sait quelle feuille utiliser et combien de pièces par feuille |
+| C6 | L'avertissement de presse | le système prévient quand la presse choisie ne peut pas rouler le format |
+| C7 | L'avertissement de format périmé (après avoir changé la pièce) | un montage retenu ne peut pas se périmer en silence |
+| C8 | Une pièce qui ne tient sur aucune feuille, prix bloqués à « à vérifier » | le système refuse de chiffrer ce qu'il ne sait pas monter |
+
+Les déposer dans `captures/client/`, nommées `C1-suggestion.png`, `C2-detail.png`, etc.
+
+**Une note avec, si quelque chose t'a surpris en les prenant.** Ce que tu trouves évident à force
+de le coder ne l'est pas pour Christian, et l'inverse est vrai aussi : si un écran demande une
+explication pour être compris, c'est exactement ce que le document doit dire.
+
+---
+
 ## Récapitulatif à retourner
 
 | # | Test | Validé | Capture |
@@ -282,6 +323,7 @@ Une fois `APP_MONTAGE_GRAIN_FIGE` passé à **0** :
 | T14 | **Bon de travail** | ☐ | ☐ |
 | T15 | Table `Formats_Feuille` | ☐ | ☐ |
 | T16 | Grain libre | ☐ | ☐ |
+| C1–C8 | **Captures client** (partie 4) | — | ☐ |
 
 **Les trois à ne pas sauter** sont T10 (coût matière), T14 (bon de travail) et T6 (le seuil) :
 le premier protège les marges d'Artistic, le deuxième est la raison d'être de la fonction, le
