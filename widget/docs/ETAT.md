@@ -64,7 +64,7 @@ vert. Les deux lancés sur `main` fusionné le 16 novembre au soir.
 ### Le chemin critique jusqu'à la livraison
 
 ```
-  déploiement du build de main        30 min   Soufiane   ← À LANCER À LA MAIN (voir journal)
+  téléversement du paquet dans Creator  30 min   Soufiane   ← À LA MAIN, Paramètres → Widgets
   T1 → T14 avec captures            ≈ 3 h 30   Soufiane
   table Formats_Feuille + CSV             —    Soufiane
   les 7 fiches machines                   —    Soufiane
@@ -110,6 +110,18 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 ## Journal
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
+
+### 17 nov. — Le téléversement est à Soufiane *(Youssef)*
+C'est lui qui téléverse, à la main dans Creator : **Paramètres → Widgets** → widget soumission
+→ remplacer le zip. Le script n'a pas à être forcé ni contourné — il n'est simplement pas le
+chemin.
+
+**Son paquet du 17 nov. 15:30 est bon, inutile de reconstruire.** Rien hors `docs/` n'a changé
+depuis (`ea15357..d9e0383` ne touche que de la documentation), donc le code est identique. S'il
+préfère repartir de `main` à jour, le bandeau portera `2026-11-17 15:47 UTC`.
+
+Quel que soit le paquet retenu, **noter le bandeau obtenu** : c'est le point 2 du protocole, et
+le signal qui autorise le `0` du grain.
 
 ### 17 nov. — Le paquet est construit, le téléversement reste à faire *(BSP)*
 Le script de déploiement de Soufiane est refusé en automatisé, et il n'est pas nécessaire :
