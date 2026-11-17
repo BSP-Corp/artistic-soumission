@@ -111,6 +111,23 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 17 nov. — Les sept écritures de fiches sont bloquées elles aussi *(Soufiane)*
+L'ordre étant tranché (les six avant T1, plus One man à Inactif), j'ai lancé la première — la
+110 à 21 × 30. **Refusée en automatisé : modification de données partagées.** Les sept sont donc
+à faire à la main, ou à autoriser explicitement côté outil.
+
+Aucune n'est faite — la lecture de contrôle le confirmera : la 110 porte toujours 26 × 18. Les
+valeurs et les identifiants sont dans `montage-a-completer.md` §3, prêts à recopier.
+
+Deux choses à la main, donc, et elles vont ensemble : **le téléversement du zip et les sept
+écritures**. Tant que les deux ne sont pas faites, T1 ne peut pas commencer.
+
+**Le paquet à téléverser est prêt et vérifié :** `widget/canevas/dist/canevas.zip`, 207 981 o,
+17 nov. 15:30. Entre `ea15357` (son commit de construction) et `6246975`, **aucun fichier hors
+`docs/` n'a changé** — vérifié fichier par fichier, le code du paquet est bien celui de `main`.
+Pas besoin de reconstruire ; le bandeau portera l'heure de ce paquet, à noter telle quelle pour
+le point 2.
+
 ### 17 nov. — Le téléversement est à Soufiane *(Youssef)*
 C'est lui qui téléverse, à la main dans Creator : **Paramètres → Widgets** → widget soumission
 → remplacer le zip. Le script n'a pas à être forcé ni contourné — il n'est simplement pas le
