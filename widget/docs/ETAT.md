@@ -83,6 +83,17 @@ le sens de pose. Voir `montage-a-completer.md` §2.
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 17 nov. — Les fiches machines relues : trois choses à corriger dans le §3 *(Soufiane)*
+Avant d'écrire les six fiches, je les ai lues par l'API et confrontées au code. **T12 n'est pas
+caduc** : il met la 116 face à une suggestion 24 × 48, et ce format ne tient que sur la Viking
+no.150 — l'avertissement sortira avant comme après. **Le trou, c'est « One man »** (48 × 96 et
+statut Actif, donc prise dans le calcul), pas la DTS dont les champs numériques sont vides et que
+`presseAccepte` écarte. Et le **16 × 12 n'était pas écarté** : les neuf formats sont déjà tous
+couverts. Détail et identifiants dans `montage-a-completer.md` §3.
+
+**Les écritures ne sont pas faites** : elles changent ce que le calcul considère roulable, et
+l'ordre par rapport à T12 mérite un mot de Youssef. Elles sont prêtes, une par fiche.
+
 ### 17 nov. — Déploiement à lancer à la main *(Soufiane)*
 Le build de `main` est prêt et vérifié : `tsc` propre, paquet reconstruit
 (`canevas/dist/canevas.zip`, 17 nov. 15:30), et `verif:montage` au vert — **29 assertions,

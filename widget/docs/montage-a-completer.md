@@ -164,6 +164,63 @@ presse roule le 16 × 12 et l'avertissement ne doit plus sortir pour ce format. 
 presse pour éprouver l'avertissement — la 140 à 24 × 24 face à une suggestion 24 × 48, par
 exemple.
 
+### Vérifié contre les données et le code — 17 novembre
+
+Les fiches ont été relues par l'API et le comportement confronté au code avant de toucher à
+quoi que ce soit. Trois choses écrites ci-dessus ne tiennent pas.
+
+**1. T12 n'est pas caduc.** Le raisonnement ci-dessus porte sur le 16 × 12, mais T12 ne teste pas
+ça : il met la 116 face à la suggestion du scénario, qui est **24 × 48** (pièce 7 × 1,4,
+40 000 ex.). Or le 24 × 48 n'est roulable que par la **Viking no.150**, avant comme après
+correction — la 116 à 16 × 12 ne le roule pas davantage qu'à 12 × 8. **L'avertissement sortira
+donc toujours, et T12 reste valide tel qu'il est écrit.** Inutile de le réécrire.
+
+**2. Le trou du calcul, c'est « One man », pas la DTS.** La DTS a ses champs numériques
+`Largeur_max_po` / `Hauteur_max_po` **vides** — son 48 × 96 n'existe que dans le champ texte
+`Format_max`, que le calcul ne lit pas. Et `presseAccepte` (`lib/montage.ts`) écarte
+explicitement une presse sans format renseigné, au lieu de la croire illimitée. La DTS ne valide
+donc **aucun** format : elle encombre la liste de choix, ce qui est un défaut d'ergonomie, pas de
+prix.
+
+« One man », elle, porte 48 × 96 **dans les champs numériques** et son statut est **Actif**.
+`machinesFamille` ne filtre que sur le statut, donc elle entre dans le calcul et rend
+« roulables » des formats que personne n'imprime aujourd'hui. C'est la fiche décrite plus haut
+comme « la seule des trois dont la fiche est juste » : juste sur les dimensions, mais active à
+tort. **La passer à Inactif tant qu'elle n'est pas remise en service est la seule des trois
+corrections qui change un résultat.**
+
+**3. Le 16 × 12 n'est pas « écarté de tout ».** Il est roulable dès aujourd'hui par la 110, la
+130, la 140, la 150 et la 170. Et les neuf formats permis sont **tous** déjà couverts par au moins
+une presse, avant comme après la liste de Roberto — vérifié format par format. La correction des
+fiches reste nécessaire (les chiffres sont faux), mais elle ne débloque aucun format.
+
+**Ce qu'elle déplace vraiment**, c'est quelles presses roulent quoi — donc l'avertissement de
+T12 — et le fait que la 120, aujourd'hui **Inactif**, est dans la liste de Roberto : sans
+réactivation, son 30 × 28 n'entre pas dans le calcul.
+
+> ⚠ **Un point de fragilité à connaître :** le 24 × 48 — le format que le montage recommande
+> dans tous les scénarios de test — ne tient que sur **une seule presse**, la Viking no.150, dans
+> les deux jeux de données. Si cette fiche est fausse ou la presse indisponible, c'est toute la
+> recommandation phare qui n'a plus de machine.
+
+### Les six fiches à corriger, avec leurs identifiants
+
+| Presse | ID Creator | Aujourd'hui | → Roberto |
+|---|---|---|---|
+| Cameo 30SS no.110 | `4153107000022536120` | 26 × 18 | **21 × 30** |
+| Cameo 18 no.116 | `4153107000022536124` | 12 × 8 | **16 × 12** |
+| Cameo 38SS no.120 | `4153107000022536122` | vides, **Inactif** | **30 × 28** + réactiver |
+| Saturn no.140 | `4153107000022536118` | 25 × 38 | **24 × 24** |
+| Viking no.150 | `4153107000022536116` | 30 × 50 | **44 × 64** |
+| Renegade 170 | `4153107000022536114` | 30 × 40 | **30 × 39** |
+| Svecia no.130 | `4153107000022536112` | 21 × 28 | inchangée ✅ |
+| One man | `4153107000022536056` | 48 × 96, **Actif** | **passer à Inactif** |
+
+Le champ texte `Format_max` est décoratif : aucun calcul ne le lit. Le corriger aussi évite
+qu'il contredise les champs numériques à l'œil.
+
+---
+
 > Le fichier que Christian réclamait le 3 novembre (« Tu as oublié le fichier 😊 ») n'est jamais
 > arrivé et n'est plus attendu : la réponse du 16 novembre tranche sans lui.
 
