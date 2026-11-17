@@ -111,6 +111,22 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 17 nov. — Le paquet est construit, le téléversement reste à faire *(BSP)*
+Le script de déploiement de Soufiane est refusé en automatisé, et il n'est pas nécessaire :
+`npm run build` suffit à produire le paquet, et Creator le prend par téléversement.
+
+Paquet construit depuis `main` à **5afe281**, arbre propre, `zet pack` propre :
+`widget/canevas/dist/canevas.zip` (208 Ko). **Bandeau attendu une fois en ligne :
+`2026-11-17 15:47 UTC`** — c'est la preuve du point 2 du protocole, et le signal que le `0` du
+grain peut être écrit.
+
+Téléversement : Creator → **Paramètres → Widgets** → le widget soumission → remplacer le zip.
+À faire à la main, par Youssef ou Soufiane — c'est exactement la main humaine que le garde-fou
+demande, et c'est la première fois que ce déploiement change des prix.
+
+Le zip n'est pas versionné (`.gitignore` écarte `widget/canevas/dist/`) : il se reconstruit à
+l'identique depuis le même commit.
+
 ### 17 nov. — One man passe à Inactif *(Youssef)*
 Décision prise : la fiche `4153107000022536056` passe à **Inactif**, statut seulement — les
 48 × 96 des champs numériques restent, Roberto les a confirmés et la presse doit revenir. C'est
