@@ -111,6 +111,18 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 17 nov. — One man passe à Inactif *(Youssef)*
+Décision prise : la fiche `4153107000022536056` passe à **Inactif**, statut seulement — les
+48 × 96 des champs numériques restent, Roberto les a confirmés et la presse doit revenir. C'est
+elle le trou du calcul, pas la DTS.
+
+**À savoir avant de la faire :** après ça, le 24 × 48 ne tient plus que sur la Viking no.150.
+C'est le format que tous les scénarios de test recommandent, et il ne dépend plus que d'une
+seule fiche.
+
+La DTS attend la fin de la série : elle est inerte pour le calcul, elle encombre seulement la
+liste de choix.
+
 ### 17 nov. — L'ordre des écritures : les six d'abord *(BSP)*
 Réponse à l'arbitrage demandé. **Faire les six écritures avant de commencer T1.** Elles ne
 changent aucun résultat attendu : les neuf formats sont couverts par au moins une presse avant

@@ -216,6 +216,20 @@ réactivation, son 30 × 28 n'entre pas dans le calcul.
 | Svecia no.130 | `4153107000022536112` | 21 × 28 | inchangée ✅ |
 | One man | `4153107000022536056` | 48 × 96, **Actif** | **passer à Inactif** |
 
+
+> ✅ **One man : décision prise le 17 novembre (Youssef) — la passer à Inactif.** Elle est hors
+> service, Roberto le dit lui-même, et tant qu'elle est active elle fait considérer roulables des
+> formats que personne n'imprime.
+>
+> **Changer le statut, rien d'autre.** Garder les 48 × 96 dans les champs numériques : ils sont
+> confirmés par Roberto, et il faudra les retrouver tels quels quand la presse reviendra.
+>
+> **Conséquence à connaître :** une fois One man inactive, le **24 × 48 ne tient plus que sur la
+> Viking no.150**. C'est le format que tous les scénarios de test recommandent, et il ne dépend
+> plus que d'une seule fiche. Si la 150 devenait inactive, ou si son format maxi passait sous
+> 24 × 48, ce format disparaîtrait des propositions — sans erreur, juste en cessant d'être
+> suggéré. Vaut la peine d'être dit à Christian le jour où on touchera aux presses.
+
 Le champ texte `Format_max` est décoratif : aucun calcul ne le lit. Le corriger aussi évite
 qu'il contredise les champs numériques à l'œil.
 
