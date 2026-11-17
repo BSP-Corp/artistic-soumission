@@ -65,9 +65,9 @@ vert. Les deux lancés sur `main` fusionné le 16 novembre au soir.
 
 ```
   téléversement du paquet dans Creator  30 min   Soufiane   ← À LA MAIN, Paramètres → Widgets
+  les 7 écritures de fiches machines    30 min   Soufiane   ← À LA MAIN, refusées en automatisé
   T1 → T14 avec captures            ≈ 3 h 30   Soufiane
   table Formats_Feuille + CSV             —    Soufiane
-  les 7 fiches machines                   —    Soufiane
   T15 (la ligne 99 × 99)              20 min   Soufiane
   APP_MONTAGE_GRAIN_FIGE : 1 → 0          —    Soufiane, APRÈS le déploiement
   T16 (grain libre)                   15 min   Soufiane
@@ -110,6 +110,13 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 ## Journal
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
+
+### 17 nov. — Le chemin critique portait encore l'ancien ordre *(BSP)*
+Le tableau listait les fiches machines **après** T1 → T14, alors que l'arbitrage du jour met les
+six écritures **avant** T1. Corrigé : téléversement, puis les sept écritures, puis la série. Les
+deux gestes manuels sont maintenant côte à côte en tête du chemin, ce qu'ils sont dans les faits.
+
+`Formats_Feuille` reste où elle était : le protocole ne la lit qu'en T15.
 
 ### 17 nov. — Les sept écritures de fiches sont bloquées elles aussi *(Soufiane)*
 L'ordre étant tranché (les six avant T1, plus One man à Inactif), j'ai lancé la première — la
