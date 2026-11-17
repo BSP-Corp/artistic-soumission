@@ -64,7 +64,7 @@ vert. Les deux lancés sur `main` fusionné le 16 novembre au soir.
 ### Le chemin critique jusqu'à la livraison
 
 ```
-  déploiement du build de main        30 min   Soufiane   ← feu vert donné le 17 nov.
+  déploiement du build de main        30 min   Soufiane   ← À LANCER À LA MAIN (voir journal)
   T1 → T14 avec captures            ≈ 3 h 30   Soufiane
   table Formats_Feuille + CSV             —    Soufiane
   les 7 fiches machines                   —    Soufiane
@@ -82,6 +82,20 @@ le sens de pose. Voir `montage-a-completer.md` §2.
 ## Journal
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
+
+### 17 nov. — Déploiement à lancer à la main *(Soufiane)*
+Le build de `main` est prêt et vérifié : `tsc` propre, paquet reconstruit
+(`canevas/dist/canevas.zip`, 17 nov. 15:30), et `verif:montage` au vert — **29 assertions,
+1 568 cas**, sortie déposée dans `captures/T00-verif-montage.txt` (point 1 du protocole, coché).
+
+**Mais `ops-deployer-montage.js` ne peut pas être lancé depuis l'automatisation** : un déploiement
+en production y est refusé. La commande doit être passée à la main depuis la racine du projet.
+Rien n'est contourné : le garde-fou est là pour ça, et c'est le déploiement qui change des prix
+pour la première fois.
+
+**Conséquence sur l'ordre :** `APP_MONTAGE_GRAIN_FIGE` reste donc à **1** (vérifié ce jour dans
+`Taux_Calcul`, ID …875014). Il ne passera à `0` qu'une fois le nouveau build constaté en ligne
+par le bandeau, pas avant — T16 attend ce moment-là. T1 → T14 attendent le même.
 
 ### 17 nov. — Feu vert pour le déploiement *(Youssef)*
 Soufiane déploie le build de `main` et écrit lui-même le `0` du grain juste après. Christian sera

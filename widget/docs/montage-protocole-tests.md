@@ -264,7 +264,7 @@ Une fois `APP_MONTAGE_GRAIN_FIGE` passé à **0** :
 
 | # | Test | Validé | Capture |
 |---|---|---|---|
-| — | `npm run verif:montage` | ☐ | ☐ |
+| — | `npm run verif:montage` | ☑ | ☑ `captures/T00-verif-montage.txt` |
 | — | Bandeau de build | ☐ | ☐ |
 | T1 | Sous le seuil → masqué | ☐ | ☐ |
 | T2 | Pièce impossible | ☐ | ☐ |
