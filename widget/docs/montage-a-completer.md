@@ -78,10 +78,19 @@ développement. Ne le supprime pas. Il devient simplement inutilisé en producti
 
 ## 2. Corriger `APP_MONTAGE_GRAIN_FIGE` — 1 minute, aucun redéploiement
 
-> ✅ **Réglé depuis, dans le code** : `grainFige` vaut `false` par défaut (`montage.ts`), donc rien
-> à paramétrer. Il reste à vérifier qu'aucun `APP_MONTAGE_GRAIN_FIGE` à `1` ne traîne dans
-> `Taux_Calcul` — il écraserait le défaut et refermerait le grain. La section ci-dessous explique
-> pourquoi ce choix.
+> ⛔ **L'ORDRE COMPTE — ne pas toucher au paramètre avant le déploiement.**
+>
+> Le code sait désormais tourner la pièce, et `grainFige` vaut `false` par défaut
+> (`montage.ts`). Mais le `APP_MONTAGE_GRAIN_FIGE` à **1** présent dans `Taux_Calcul`
+> (ID …875014) **n'est pas un oubli** : il tient le grain fermé tant que l'ancien build est en
+> ligne. Ce build-là ne fait pas voyager le sens de pose avec la soumission
+> (`X!MONTAGETOURNEE`). Y libérer le grain, c'est activer la rotation **sans que l'orientation
+> soit enregistrée nulle part** — l'atelier peut monter la pièce dans le mauvais sens. C'est le
+> trou du 11 novembre, rouvert.
+>
+> **Séquence : déployer le build de `main`, PUIS passer le 1 à 0, PUIS jouer T16.**
+> Relevé par Soufiane le 16 novembre.
+
 
 Le paramètre vaut **1** (pas de rotation de la pièce), repris de l'onglet « Paramètres » du gabarit
 Excel, où Roberto avait coché « Oui ».
@@ -194,7 +203,7 @@ que le contraste passait sur l'écran de dev que le défaut n'a pas été vu.
 | # | Quoi | Où | État au 16 nov. (soir) |
 |---|---|---|---|
 | 1 | Créer `Formats_Feuille` + les 9 lignes | Creator (builder) | CSV d'import prêt, table à créer |
-| 2 | Grain libre | Code | ✅ défaut dans le code — vérifier qu'aucun `APP_MONTAGE_GRAIN_FIGE` à 1 ne traîne |
+| 2 | Grain libre | Code | ✅ défaut dans le code — le `1` de `Taux_Calcul` ne passe à `0` **qu'après** le déploiement |
 | 3 | Fiches machines selon la liste Roberto | Creator (`Fiche_Machine`) | tranché, à saisir |
 | 4 | Boutons illisibles (CSS) | Code | ✅ corrigé, à revoir dans Creator |
 

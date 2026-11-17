@@ -17,7 +17,7 @@
 
 ## Avant de commencer
 
-1. `npm run verif:montage` doit passer — **23 assertions, 1 568 cas**. S'il échoue, rien d'autre
+1. `npm run verif:montage` doit passer — **29 assertions, 1 568 cas**. S'il échoue, rien d'autre
    n'a de sens. *Capture de la sortie.*
 2. Noter le **bandeau du haut** du widget déployé : `build …`, source des prix, source des règles.
    Il doit porter la date de ton nouveau déploiement. *Capture.*
@@ -152,13 +152,19 @@ UNITAIRE ___ · TEMPS ___
 
 Contrôle à la main, avec 40 000 pièces :
 
-| | Surface facturée |
-|---|---|
-| Avant acceptation (8 × 9,5, 10 000 feuilles) | ≈ **5 278 pi²** |
-| **Attendu après** (24 × 48, 476 feuilles) | ≈ **3 810 pi²** — une baisse d'environ 28 % |
-| **Si le bug est présent** (8 × 9,5 conservé, 476 feuilles) | ≈ **251 pi²** — 20× trop bas |
+| | Base matière | Surface facturée |
+|---|---|---|
+| Avant acceptation (8 × 9,5) | 10 000 | ≈ **5 278 pi²** |
+| **Attendu après** (24 × 48) | 476 | ≈ **3 810 pi²** — une baisse d'environ 28 % |
+| **Si le défaut est présent** (8 × 9,5 conservé) | 476 | ≈ **251 pi²** — **15× trop bas** |
 
-Si le coût matière est divisé par vingt, c'est que `S!E6` / `S!H6` n'ont pas été écrites.
+> ⚠️ **Piège de lecture, relevé par Soufiane le 16 novembre.** La colonne « base matière » n'est
+> **pas** le NB.MRX affiché à l'écran. `S!V41` facture sur `E2/E5`, **sans la gâche**, alors que
+> `S!G9` compte les feuilles **avec**. À l'écran on lit donc **11 000** avant et **524** après,
+> pas 10 000 et 476. Les deux comptages sont justes ; qui compare 476 au NB.MRX affiché croira
+> à un échec.
+
+Si le coût matière s'effondre, c'est que `S!E6` / `S!H6` n'ont pas été écrites.
 **C'est le défaut qui sous-facturerait Artistic sans que personne le voie.**
 
 - ☐ Validé — coût matière avant : ______ après : ______ — capture : ______
@@ -236,6 +242,11 @@ toute modification faite dans la table resterait sans effet, **sans aucune erreu
 - ☐ Ligne de test retirée
 
 ### T16 — Le grain libre (`montage-a-completer.md` §2)
+
+> ⛔ **Après le déploiement, jamais avant.** Le `1` de `Taux_Calcul` tient le grain fermé tant
+> que l'ancien build est en ligne : celui-là ne fait pas voyager le sens de pose avec la
+> soumission, donc grain libre = rotation active sans orientation enregistrée. Voir
+> `montage-a-completer.md` §2.
 
 Une fois `APP_MONTAGE_GRAIN_FIGE` passé à **0** :
 
