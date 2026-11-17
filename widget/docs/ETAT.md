@@ -111,6 +111,26 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 17 nov. — L'ordre des écritures : les six d'abord *(BSP)*
+Réponse à l'arbitrage demandé. **Faire les six écritures avant de commencer T1.** Elles ne
+changent aucun résultat attendu : les neuf formats sont couverts par au moins une presse avant
+comme après, et le 24 × 48 reste sur la seule Viking no.150 dans les deux jeux. Aucune capture
+n'aura donc à être refaite, et toute la série sera jouée sur les données qu'Artistic utilisera
+vraiment — captures client comprises.
+
+Les six : 110, 116, 120 (à réactiver), 140, 150, 170. La 130 ne bouge pas.
+
+**Deux fiches restent une décision de Youssef, pas une correction :**
+- **One man** — hors service aujourd'hui, mais active et à 48 × 96 dans les champs numériques,
+  donc elle fait considérer roulables des formats que personne n'imprime. La désactiver est
+  cohérent avec ce que dit Roberto ; ça enlève un choix de la liste des chargés de projet, et
+  elle doit revenir « prochainement ».
+- **DTS** — inerte pour le calcul (champs numériques vides, `presseAccepte` l'écarte), donc
+  aucune urgence. Elle encombre la liste de choix, c'est tout. À traiter après la série.
+
+T12 est remis dans son état d'origine : il oppose bien la 116 au 24 × 48, et vaut avant comme
+après les écritures.
+
 ### 17 nov. — Les fiches machines relues : trois choses à corriger dans le §3 *(Soufiane)*
 Avant d'écrire les six fiches, je les ai lues par l'API et confrontées au code. **T12 n'est pas
 caduc** : il met la 116 face à une suggestion 24 × 48, et ce format ne tient que sur la Viking

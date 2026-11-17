@@ -182,16 +182,17 @@ Après T9, cliquer **Annuler**.
 
 ### T12 — L'avertissement de presse (correctif §6)
 
-Pièce **7 × 1,4**, quantité **40 000** → suggestion attendue **24 × 48**.
+Pièce **7 × 1,4**, quantité **40 000** → suggestion attendue **24 × 48**. Choisir la presse
+**Cameo 18 no.116**.
 
-> ⚠️ **Le choix de presse dépend de l'état des fiches machines.** Roberto a tranché le 16 novembre
-> au soir (« utilise ma liste ») : les fiches sont à corriger, voir `montage-a-completer.md` §3.
+> ✅ **Ce test vaut avant comme après la correction des fiches machines.** J'avais écrit le
+> contraire le 17 novembre ; Soufiane l'a vérifié, c'était faux. Le raisonnement portait sur le
+> 16 × 12, mais ce n'est pas ce que T12 oppose à la 116 : c'est le **24 × 48** de la suggestion.
+> Or le 24 × 48 ne tient que sur la Viking no.150 — la 116 ne le roule pas davantage à 16 × 12
+> qu'à 12 × 8. L'avertissement sort dans les deux cas.
 >
-> - **Fiches pas encore corrigées** → choisir la **Cameo 18 no.116** (12 × 8 à sa fiche).
-> - **Fiches corrigées** → la 116 passe à 16 × 12 et roule ce format : prendre la **140**
->   (24 × 24) à la place, qui ne peut pas rouler du 24 × 48.
->
-> Noter dans la capture quelle presse a été choisie et quel format maxi sa fiche affichait.
+> Noter quand même dans la capture le format maxi que la fiche affichait, pour qu'on sache sur
+> quel jeu de données le test a été joué.
 
 - **Attendu :** le bloc continue de proposer 24 × 48, **et** affiche un avertissement visible :
   la presse choisie ne peut pas rouler ce format.
