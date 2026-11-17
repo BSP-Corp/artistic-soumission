@@ -1,0 +1,124 @@
+# Montage — état du chantier
+
+> **Ce fichier est la source unique de l'avancement.** Il remplace les messages Cliq et les
+> courriels entre nous. Chacun le met à jour **par un commit**, pas par un message : ce qui n'est
+> pas ici n'existe pas, et personne n'a à demander « où on en est ».
+>
+> Mis à jour en dernier : **17 novembre 2026** — BSP.
+
+---
+
+## Comment on travaille (la convention)
+
+Le 17 novembre, on s'est rendu compte qu'on s'échangeait par message des choses qui auraient dû
+être dans le dépôt : un build prêt, des corrections de protocole, une décision client. Résultat,
+chacun devait demander à l'autre où il en était, et personne ne pouvait le savoir seul.
+
+**La règle :** tout ce qui fait avancer le chantier est un commit.
+
+| Ce que tu as | Où ça va |
+|---|---|
+| Un correctif, une trouvaille, une correction de doc | un commit, avec le pourquoi dans le message |
+| « j'ai fini X », « je bloque sur Y » | une ligne dans le **Journal** ci-dessous |
+| Un résultat de test, une capture | `docs/captures/` + la case cochée dans le protocole |
+| Une réponse client (Roberto, Christian) | résumée dans le document concerné, avec la date |
+| Une décision (feu vert, arbitrage de prix) | une ligne dans le **Journal**, signée |
+
+**Ce qui reste légitimement hors du dépôt :** une urgence qui ne peut pas attendre un `git push`,
+et les échanges avec le client. Tout le reste passe par ici.
+
+**Conséquence pratique :** avant de demander quoi que ce soit à l'autre, `git pull` et lire ce
+fichier. Si la réponse n'y est pas, c'est que quelqu'un a oublié de la committer — et c'est ça
+qu'il faut corriger, pas poser la question.
+
+---
+
+## Où on en est
+
+### Le code : tout est livré, rien n'est vérifié
+
+Les sept défauts relevés en production le 16 novembre sont corrigés et fusionnés dans `main`.
+**Aucun n'a été rejoué sur un build déployé.** C'est le seul écart qui reste avant livraison.
+
+| # | Défaut relevé le 16 nov. | Corrigé par | Vérifié en prod |
+|---|---|---|---|
+| 1 | Le seuil lit `FT!E44`, toujours 0 → ne se déclenche jamais | `49b623e` | ☐ T6 |
+| 2 | Le format retenu ne s'invalide pas quand la pièce change | `49b623e` | ☐ T7 |
+| 3 | Accepter ne touche pas au prix (étape 6) | `49b623e` | ☐ T9 |
+| 4 | Écrire `S!E5` seul effondre le coût matière | `49b623e` | ☐ **T10** |
+| 5 | Le bon de travail ne reçoit pas le montage | `49b623e` | ☐ **T14** |
+| 6 | Le montage ignore la presse choisie | `1e788c5` | ☐ T12 |
+| 7 | Les feuilles se comptent sans la gâche | `992ac31` | ☐ T8 |
+| 8 | Boutons « Accepter » / « Annuler » illisibles | `1e788c5` | ☐ T13 |
+
+`npm run verif:montage` : **29 assertions, 1 568 cas, au vert.** `npm run verif:numerique` : au
+vert. Les deux lancés sur `main` fusionné le 16 novembre au soir.
+
+### Les données Creator : deux saisies, aucune faite
+
+| Quoi | Pourquoi ça bloque | État |
+|---|---|---|
+| Table `Formats_Feuille` + import du CSV | sans elle le widget tourne sur le snapshot embarqué, **en silence** | ☐ — CSV prêt dans `creator-import/` |
+| Les 7 fiches machines selon la liste Roberto | sans ça T12 teste la mauvaise chose et le 16 × 12 reste écarté | ☐ — liste dans `montage-a-completer.md` §3 |
+
+### Le chemin critique jusqu'à la livraison
+
+```
+  déploiement du build de main        30 min   Soufiane   ← feu vert donné le 17 nov.
+  T1 → T14 avec captures            ≈ 3 h 30   Soufiane
+  table Formats_Feuille + CSV             —    Soufiane
+  les 7 fiches machines                   —    Soufiane
+  T15 (la ligne 99 × 99)              20 min   Soufiane
+  APP_MONTAGE_GRAIN_FIGE : 1 → 0          —    Soufiane, APRÈS le déploiement
+  T16 (grain libre)                   15 min   Soufiane
+```
+
+**L'ordre n'est pas négociable sur un point** : le `1` de `Taux_Calcul` ne passe à `0` qu'après
+le déploiement. Avant, il tient le grain fermé pendant que l'ancien build ne sait pas enregistrer
+le sens de pose. Voir `montage-a-completer.md` §2.
+
+---
+
+## Journal
+
+Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
+
+### 17 nov. — Feu vert pour le déploiement *(Youssef)*
+Soufiane déploie le build de `main` et écrit lui-même le `0` du grain juste après. Christian sera
+prévenu que les prix sortants peuvent baisser une fois l'étape 6 en ligne — rien ne baisse tout
+seul, il faut qu'un chargé de projet clique « Accepter ».
+
+### 17 nov. — Trois corrections au protocole *(Soufiane → `0d14e1e`)*
+29 assertions et non 23. Facteur d'effondrement 15 et non 20. Et surtout, un piège de lecture sur
+T10 : les nombres de feuilles du tableau sont les bases de facturation matière (`E2/E5`, sans
+gâche), pas le NB.MRX affiché (`S!G9`, avec). Qui compare 476 au NB.MRX croit à un échec sur le
+test qui protège les marges.
+
+### 16 nov. — Roberto tranche les formats maxi *(→ `cc5ea4f`)*
+« Utilise ma liste. » Les fiches Creator sont fausses, pas ses chiffres. Et les trois fiches hors
+liste ne sont pas ce qu'on croyait : la DTS n'est pas une presse, la One man est hors service, la
+« 182 » est probablement la 180. Détail dans `montage-a-completer.md` §3.
+
+### 16 nov. — Les six correctifs, plus un *(Soufiane → fusionnés dans `357862e`)*
+Les six points du 16 novembre, plus le comptage de la gâche qu'il a trouvé en route, plus les CSV
+d'import générés depuis le code.
+
+### 16 nov. — Campagne de tests en production *(Youssef)*
+Sept tests sur le build `2026-11-05 15:12 UTC`. Le calcul est juste, mais il ne pilote rien : le
+montage accepté ne change ni le nombre de up, ni le prix, et n'arrive pas au bon de travail. Sept
+défauts relevés, consignés dans `montage-etape6.md` et `montage-a-completer.md`.
+
+---
+
+## Ce qui reste ouvert
+
+- **La « 182 » est-elle la 180 ?** Roberto le pense. À confirmer avant de renommer la fiche. Ne
+  bloque aucun test.
+- **Une soumission réelle avec une ligne fournisseur** pour T10. À défaut, Soufiane en fabrique
+  une et le signale dans la capture.
+- **Christian n'est pas encore prévenu** de l'effet de l'étape 6 sur les prix.
+
+---
+
+*BSP — tenu à jour par commit. Si cette date est vieille de plus de deux jours pendant un
+chantier actif, c'est que la convention n'est pas respectée.*

@@ -12,6 +12,9 @@
 > `montage-a-completer.md` (§4).
 >
 > BSP — 16 novembre 2026.
+>
+> **Les captures se déposent dans `captures/`, dans le même commit que la case cochée.** Voir
+> `captures/LISEZ-MOI.md`. L'avancement se suit dans `ETAT.md`, pas par message.
 
 ---
 

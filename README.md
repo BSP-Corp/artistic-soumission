@@ -4,6 +4,10 @@ Application qui remplace le classeur Excel de soumission d'Artistic (`FT_Soumiss
 Matériaux Souples Rev.06`) par un widget intégré à Zoho Creator : même disposition,
 mêmes formules, mêmes résultats au cent près.
 
+> **Où on en est, et comment on se tient au courant : [`widget/docs/ETAT.md`](widget/docs/ETAT.md).**
+> L'avancement, les décisions et les blocages vivent dans le dépôt, pas dans des messages.
+> Avant de demander où en est quelque chose : `git pull` et lire ce fichier.
+
 Trois widgets sortent de ce même dépôt :
 
 | Widget | Dossier de pack | À quoi il sert |
