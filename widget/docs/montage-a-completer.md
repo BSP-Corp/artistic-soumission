@@ -123,6 +123,10 @@ faisait en attendant.
 
 ### Les sept presses de sa liste
 
+> **Ces écritures se font à la main, dans l'écran Creator** — les six ci-dessous plus One man.
+> L'écriture automatisée a été refusée (modification de données partagées) et Youssef a tranché
+> le 18 novembre de ne pas lever ce garde-fou. Recopier les valeurs ci-dessous telles quelles.
+
 | Presse | Fiche Creator aujourd'hui | **À corriger pour** |
 |---|---|---|
 | 110 | 26 × 18 | **21 × 30** |

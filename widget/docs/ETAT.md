@@ -111,6 +111,15 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 18 nov. — Les sept écritures se font à la main *(Youssef)*
+Décision : **Soufiane les saisit lui-même dans Creator**, le garde-fou de l'outil n'est pas levé.
+Autoriser l'écriture automatisée sur les données de production d'Artistic pour sept lignes ne
+vaut pas le précédent que ça créerait — et il est de toute façon dans Creator pour téléverser.
+
+Les valeurs et les identifiants sont dans `montage-a-completer.md` §3, prêts à recopier. Compter
+une demi-heure. Les deux gestes manuels se font dans la même séance : **le zip, puis les sept
+écritures**, et T1 part ensuite.
+
 ### 17 nov. — Le chemin critique portait encore l'ancien ordre *(BSP)*
 Le tableau listait les fiches machines **après** T1 → T14, alors que l'arbitrage du jour met les
 six écritures **avant** T1. Corrigé : téléversement, puis les sept écritures, puis la série. Les
