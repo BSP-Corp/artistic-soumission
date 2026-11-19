@@ -65,6 +65,7 @@ vert. Les deux lancés sur `main` fusionné le 16 novembre au soir.
 
 ```
   téléversement du paquet dans Creator  30 min   Soufiane   ← À LA MAIN, Paramètres → Widgets
+  ↳ tout est sur une page : `montage-seance-deploiement.md`
   les 7 écritures de fiches machines    30 min   Soufiane   ← À LA MAIN, refusées en automatisé
   T1 → T14 avec captures            ≈ 3 h 30   Soufiane
   table Formats_Feuille + CSV             —    Soufiane
@@ -110,6 +111,24 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 ## Journal
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
+
+### 19 nov. — Le courriel au client attend le document *(Youssef)*
+Décision : **on n'annonce pas l'avancement à Artistic.** Pas de « on est en train de tester »,
+pas de point d'étape. Le prochain envoi sera **le document fonctionnel lui-même**, et c'est lui
+qui portera l'explication de l'impact sur les prix pour Christian.
+
+La réponse à Roberto est rédigée et **reste en brouillon** dans Gmail, en réponse à son message
+du 16. Elle sera reprise et fondue dans l'envoi final — la question sur la 180 y est déjà, et
+l'avertissement à Christian aussi.
+
+Conséquence : **le chantier n'a plus qu'une seule sortie vers le client**, et elle est derrière
+la série de tests. Rien ne part avant.
+
+### 19 nov. — Une feuille de séance pour débloquer l'heure manuelle *(BSP)*
+Les deux gestes étaient éparpillés sur trois documents. Ils tiennent maintenant sur une page :
+`montage-seance-deploiement.md` — téléversement, les sept écritures avec les noms de champs
+Creator et les identifiants, le contrôle de vérification, l'ordre imposé, et ce qu'il ne faut
+pas toucher. Plus rien à chercher ni à décider en chemin.
 
 ### 19 nov. — Le chantier est à l'arrêt depuis deux jours *(BSP)*
 Dernier mouvement de Soufiane : **17 nov. 16:02**, le commit qui signale le blocage des
@@ -284,7 +303,8 @@ défauts relevés, consignés dans `montage-etape6.md` et `montage-a-completer.m
   bloque aucun test.
 - **Une soumission réelle avec une ligne fournisseur** pour T10. À défaut, Soufiane en fabrique
   une et le signale dans la capture.
-- **Christian n'est pas encore prévenu** de l'effet de l'étape 6 sur les prix.
+- **Christian n'est pas encore prévenu** de l'effet de l'étape 6 sur les prix. Décidé le 19 nov. :
+  ça passera dans le document final, pas dans un point d'étape séparé.
 
 ---
 
