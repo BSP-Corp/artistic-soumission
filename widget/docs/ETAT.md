@@ -111,6 +111,20 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 19 nov. — Le chantier est à l'arrêt depuis deux jours *(BSP)*
+Dernier mouvement de Soufiane : **17 nov. 16:02**, le commit qui signale le blocage des
+écritures. La réponse l'attend dans le dépôt depuis le **18 nov. 06:14**. Depuis, rien : le
+paquet n'est pas téléversé, aucune des sept écritures n'est faite, 35 cases du protocole sur 36
+sont vides, `captures/client/` est vide.
+
+**Ce n'est pas la convention qui faiblit, c'est le chantier qui ne bouge pas.** Le dépôt
+enregistre, il ne réveille personne — une question posée ici attend que son auteur fasse
+`git pull`. Relance envoyée à Soufiane par Cliq, au titre de l'urgence que la convention laisse
+ouverte.
+
+Rappel de ce qui est en jeu : **une heure de travail manuel** bloque la série de tests, les huit
+captures client et le document qu'Artistic attend depuis le 27 octobre.
+
 ### 18 nov. — Les sept écritures se font à la main *(Youssef)*
 Décision : **Soufiane les saisit lui-même dans Creator**, le garde-fou de l'outil n'est pas levé.
 Autoriser l'écriture automatisée sur les données de production d'Artistic pour sept lignes ne
