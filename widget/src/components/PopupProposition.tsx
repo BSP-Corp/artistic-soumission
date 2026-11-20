@@ -296,7 +296,10 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
                     seule fois » qui couvre les paliers sauf un, et le montant sous le dernier.
                     Sans palier, la grille n'a qu'une colonne de prix et la mention saute. */}
                 {paliers.length > 0 && (
-                  <tr className="prop-frais">
+                  // Sans montant saisi, la ligne reste dans l'aperçu pour qu'on pense à la
+                  // remplir, mais ne s'imprime pas : un poste de facturation sans prix sur un
+                  // devis fait désordre.
+                  <tr className={"prop-frais" + (montantFrais > 0 ? "" : " prop-spec-vide")}>
                     <td className="prop-grille-produit">
                       <b>Frais de préparation</b>
                       <div className="prop-grille-spec">
