@@ -114,6 +114,19 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — Le document du montage est validé *(Youssef)*
+Relu à l'écran, captures comprises : **il est bon, tel quel**. Six sections, neuf captures, le
+tableau avant/après de la job FC-940 et l'encadré sur le prix qui corrige dans les deux sens.
+
+**Il part en pièce jointe**, pas dans le corps du courriel. Avec lui, un **exemplaire du nouveau
+document de soumission** : la même job FC-940, pour que Philippe lise une seule histoire — le
+document explique la façade, le PDF la chiffre.
+
+Le PDF de soumission est clos après sept allers-retours sur des PDF réels. Chaque défaut trouvé
+en était un qu'un client aurait vu : un montant qui ne se multipliait pas, des paliers dans le
+désordre, une note interne imprimée, des libellés vides, une ligne de frais sans prix, un numéro
+nu. Build final : `2026-11-20 16:48 UTC`.
+
 ### 20 nov. — Le document client est monté ; il tient à un déploiement *(Youssef + BSP)*
 Le document est écrit, mis en page et rendu en PDF (six sections, les huit captures,
 `docs/Montage_Artistic_document.pdf`, hors dépôt). Le courriel à Philippe Béland est prêt en
