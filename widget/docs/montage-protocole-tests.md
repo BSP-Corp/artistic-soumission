@@ -302,26 +302,68 @@ explication pour être compris, c'est exactement ce que le document doit dire.
 
 ---
 
+### Série jouée le 20 novembre 2026 — notes
+
+Jouée par Claude pour Soufiane, dans Creator, sur le build `2026-11-17 15:30 UTC` (déployé le
+20 nov., slot « Canvas »), **après** les sept écritures de fiches (relues une à une).
+Valeurs relevées à l'écran, pas recalculées.
+
+| Test | Relevé |
+|---|---|
+| T1 | 275 feuilles, aucun bloc. |
+| T2 | aucun bloc ; prix « à vérifier » partout. |
+| T3 | 7 × 1,4 → 24 × 48, 3 × 28 = 84 up · 4 × 6 → 24 × 48, 5 × 7 = 35 up. |
+| T4 | 30 × 28, 1 × 5 = 5 up (roulable sur 120, 150, 170). |
+| T5 | retenu 24 × 48, 84 up, Mrx 24 × 48 conservés. Prix identique au cent près sur deux réouvertures successives (26 724,05 $). **Voir l'écart ci-dessous.** |
+| T6 | bloc affiché, « 523 feuilles de moins que le format courant ». |
+| T7 | « ⚠ le montage retenu (24 × 48) ne correspond plus : ce format donne maintenant 35 up par feuille, plus 84 ». |
+| T8 | 524 feuilles au bloc, 524 sous NB.MRX après acceptation. |
+| T9 | Up 4 → 84 · Mrx 8 × 9,5 → 24 × 48 · NB.MRX 11 000 → 524 · TEMPS 349 h 36 → 68 h 57 · COÛT 55 615,31 → 26 583,96 $. |
+| T10 | R41 = 0,50 $/pi² : ligne Pied² 3 562,50 $ → 2 571,43 $ (−28 %). Pas d'effondrement. |
+| T11 | retour exact : 4 up, 8 × 9,5, COÛT 55 615,31 $. |
+| T12 | Cameo 18 no.116 (16 × 12) : avertissement avant et après acceptation (prix « à vérifier » une fois accepté) ; Viking no.150 : avertissement disparu. |
+| T14 | BT-1019 (soumission `4153107000024137002`) : Nombre Up 84 aux deux endroits, Mrx 24 × 48, Temps Impression 14 h 58 (au lieu de 268 h 12). Le ≈ 13 h annoncé était une estimation ; 14 h 58 est exactement le temps d'impression de la soumission. |
+
+**Écart T5 — vient du scénario Exemple, pas du montage.** Rejouée depuis « Exemple », la
+soumission rouverte coûte 26 724,05 $ au lieu de 26 583,96 $. Cause : `entreesExemple` recopie
+F/S (`S!B4`, `S!F4`) = 2 depuis le classeur, et `normaliserEntrees` les remet à 1 au chargement
+(décision du 13 août). Reproduit hors ligne avec le moteur. Toute soumission partie d'« Exemple »
+porte donc des passes F/S invisibles jusqu'à sa réouverture. Sans effet sur une « Nouvelle
+soumission ». À trancher : normaliser aussi l'Exemple ?
+
+**Vu en passant :**
+- La **Cameo 38SS no.120**, réactivée, apparaît dans « roulable sur » (lu depuis la fiche) mais
+  **pas dans la liste déroulante Presse** du widget.
+- La liste Presse affiche « **Multiprint IST no.180** · 175 fle/h ». La fiche s'appelle
+  « Multiprint IST no.182 » (24 × 44, Actif) et n'est pas dans la feuille de séance.
+- Le widget bon de travail est encore au build `2026-10-20`. T14 passe quand même : il relit la
+  soumission.
+
+**Restent :** T15 (la table `Formats_Feuille` n'existe pas encore dans Creator) et T16 (grain
+toujours à `1`). Captures client C1–C8 : non prises.
+
+---
+
 ## Récapitulatif à retourner
 
 | # | Test | Validé | Capture |
 |---|---|---|---|
 | — | `npm run verif:montage` | ☑ | ☑ `captures/T00-verif-montage.txt` |
-| — | Bandeau de build | ☐ | ☐ |
-| T1 | Sous le seuil → masqué | ☐ | ☐ |
-| T2 | Pièce impossible | ☐ | ☐ |
-| T3 | Suit les dimensions | ☐ | ☐ |
-| T4 | Compare les neuf formats | ☐ | ☐ |
-| T5 | Persistance | ☐ | ☐ |
-| T6 | Seuil sur `S!G9` | ☐ | ☐ |
-| T7 | Invalidation du périmé | ☐ | ☐ |
-| T8 | Comptage de la gâche | ☐ | ☐ |
-| T9 | Le prix suit | ☐ | ☐ |
-| T10 | **Coût matière** | ☐ | ☐ |
-| T11 | Annuler restaure | ☐ | ☐ |
-| T12 | Avertissement presse | ☐ | ☐ |
-| T13 | Boutons lisibles | ☐ | ☐ |
-| T14 | **Bon de travail** | ☐ | ☐ |
+| — | Bandeau de build | ☑ | ☑ `00-bandeau-deploiement-2026-11-20.png` |
+| T1 | Sous le seuil → masqué | ☑ | ☑ `T01-sous-le-seuil.png` |
+| T2 | Pièce impossible | ☑ | ☑ `T02-piece-impossible.png` |
+| T3 | Suit les dimensions | ☑ | ☑ `T03a-7x1,4.png`, `T03b-4x6.png` |
+| T4 | Compare les neuf formats | ☑ | ☑ `T04-neuf-formats.png` |
+| T5 | Persistance | ☑ (voir note) | ☑ `T05a`…`T05d` |
+| T6 | Seuil sur `S!G9` | ☑ | ☑ `T06-seuil.png` |
+| T7 | Invalidation du périmé | ☑ | ☑ `T07-perime.png` |
+| T8 | Comptage de la gâche | ☑ 524 | ☑ `T08-gache.png` |
+| T9 | Le prix suit | ☑ | ☑ `T09a`, `T09b` |
+| T10 | **Coût matière** | ☑ 3 562,50 → 2 571,43 $ | ☑ `T10-…-avant`, `T10-…-apres` |
+| T11 | Annuler restaure | ☑ au cent près | ☑ `T11-annuler.png` |
+| T12 | Avertissement presse | ☑ | ☑ `T12a`, `T12b`, `T12c` |
+| T13 | Boutons lisibles | ☑ | ☑ `T13-boutons-lisibles.png`, `T04` |
+| T14 | **Bon de travail** | ☑ BT-1019 | ☑ `T14a`, `T14b`, `T14c` |
 | T15 | Table `Formats_Feuille` | ☐ | ☐ |
 | T16 | Grain libre | ☐ | ☐ |
 | C1–C8 | **Captures client** (partie 4) | — | ☐ |
