@@ -114,6 +114,30 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — Le document client est monté ; il tient à un déploiement *(Youssef + BSP)*
+Le document est écrit, mis en page et rendu en PDF (six sections, les huit captures,
+`docs/Montage_Artistic_document.pdf`, hors dépôt). Le courriel à Philippe Béland est prêt en
+brouillon, le document en pièce jointe.
+
+**Il ne part pas encore, pour une seule raison : `C4` se contredit.** Dans la même image, le bloc
+annonce « 1 101 feuilles » et `NB.MRX` affiche 1 100 — c'est l'arrondi flottant corrigé par
+`d933e7d`. C'est la capture centrale du document, celle du « après acceptation ». `C2` porte le
+même 1 101.
+
+Donc : **déployer le build, reprendre C2 et C4, régénérer le PDF, envoyer.** Le même déploiement
+porte le nouveau gabarit de soumission, l'adresse de Laval et la normalisation de l'Exemple. Une
+seule mise en ligne règle tout.
+
+**Priorités arrêtées par Youssef :**
+- **Soufiane** — construire et déployer ce build. C'est son seul sujet pour l'instant. Puis
+  reprendre C2 et C4 sur la même job FC-940.
+- **Youssef et BSP** — le PDF et le document client, faits ensemble, sans passer par le dev.
+
+**Ce qu'on doit à Philippe, et rien de plus :** l'avancement. Le montage clos, le PDF clos, la
+maquette en cours avec l'étape atteinte et ce qui reste. **Aucune question** ne lui est posée :
+les décisions ouvertes (numéros de taxes, format du numéro de soumission, pièces multiples, prix
+minimum, taux réels) se règlent **avec Christian**.
+
 ### 20 nov. — Le document client passe au gabarit de Jose, et deux correctifs partent avec *(BSP)*
 Trois choses sont en place dans le source, pas encore déployées.
 
