@@ -188,7 +188,12 @@ export function evaluerFormat(
     upParFeuille,
     // Mêmes feuilles que le classeur : quantité majorée de la gâche, puis arrondi au
     // supérieur (`S!G9 = (E2*I2+E2)/E5`). Une feuille ne se consomme pas par moitié.
-    nbFeuilles: Math.ceil((qte * (1 + regles.perte)) / upParFeuille),
+    //
+    // L'arrondi se fait sur une valeur recadrée à 9 décimales. Sans ça, 25 000 × 1,1 ÷ 25
+    // vaut 1 100,0000000000002 en virgule flottante et `Math.ceil` rend 1 101 : le bloc
+    // annonçait une feuille de plus que `NB.MRX`, qui part du même calcul côté classeur.
+    // Relevé le 20 novembre sur les captures client C2 et C4.
+    nbFeuilles: Math.ceil(Number(((qte * (1 + regles.perte)) / upParFeuille).toFixed(9))),
     pieceTournee: tournee,
     presses: presses.filter((p) => presseAccepte(p, format.largeurPo, format.hauteurPo)).map((p) => p.nom),
   };
