@@ -354,11 +354,17 @@ export function cellContrat(qteCell: string): string {
   return CELL_CONTRAT;
 }
 
-/** Lignes du gabarit de proposition Artistic (S-26635) qui n'ont aucune source dans la fiche
- *  de soumission : le contact du client, le nombre de lots, les épreuves, la finition, la
- *  livraison et les notes. Texte libre, saisi directement dans l'aperçu du document ; ce sont
- *  des pseudo-cellules X!, donc elles voyagent et se sauvegardent avec la soumission comme
- *  `X!CONTRAT` ou `X!VENDU`, et aucune formule ne les lit. */
+/** Lignes du gabarit de soumission client qui n'ont aucune source dans la fiche : le contact
+ *  du client, les épreuves, la finition, la livraison, les notes, et tout ce que le gabarit
+ *  de Josemaria Teixeira (30 oct. 2026) demande en plus — représentant, référence de bon de
+ *  commande, délai, coordonnées du client, frais de préparation, modalités de paiement et
+ *  numéros de taxes. Texte libre, saisi directement dans l'aperçu du document ; ce sont des
+ *  pseudo-cellules X!, donc elles voyagent et se sauvegardent avec la soumission comme
+ *  `X!CONTRAT` ou `X!VENDU`, et aucune formule ne les lit.
+ *
+ *  `paiement` mérite un mot : Christian l'a demandé le 2 novembre, les modalités doivent
+ *  suivre ce qui est convenu avec chaque client (COD, 30/45/60/90 jours) au lieu d'un texte
+ *  figé. Tant que la fiche client ne porte pas ce champ, il se saisit ici. */
 export const CELL_PROP = {
   contact: "X!PROPCONTACT",
   lots: "X!PROPLOTS",
@@ -366,6 +372,18 @@ export const CELL_PROP = {
   finition: "X!PROPFINITION",
   livraison: "X!PROPLIVRAISON",
   notes: "X!PROPNOTES",
+  representant: "X!PROPREPRESENTANT",
+  titreContact: "X!PROPTITRECONTACT",
+  telClient: "X!PROPTELCLIENT",
+  courrielClient: "X!PROPMAILCLIENT",
+  adresseClient: "X!PROPADRCLIENT",
+  refBC: "X!PROPREFBC",
+  delai: "X!PROPDELAI",
+  fraisLibelle: "X!PROPFRAISLIB",
+  fraisMontant: "X!PROPFRAISMNT",
+  paiement: "X!PROPPAIEMENT",
+  noTPS: "X!PROPNOTPS",
+  noTVQ: "X!PROPNOTVQ",
 } as const;
 
 /** Matériaux d'impression, dans l'ordre du bloc matériaux : sert à écrire la ligne
@@ -447,5 +465,10 @@ export function entreesExemple(classeur: Classeur): Record<string, CellValue> {
     const v = classeur[sh].values[ref];
     m[cell] = v === undefined ? "" : v;
   }
-  return m;
+  // Normaliser comme `entreesVierges` (corrigé le 20 nov. 2026). Le classeur porte F/S = 2 ;
+  // sans ce passage, une soumission partie de l'Exemple gardait ces passes, puis les perdait
+  // à sa première réouverture — `normaliserEntrees` s'exécutant au chargement — et son prix
+  // changeait tout seul d'une ouverture à l'autre (≈ 140 $ sur le scénario relevé).
+  // `gen-exemple.ts` et `gen-schema.ts` normalisaient déjà : c'était l'écran l'exception.
+  return normaliserEntrees(m);
 }

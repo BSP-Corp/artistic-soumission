@@ -914,13 +914,13 @@ export default function App() {
           className="btn ghost"
           title={
             prixValide
-              ? "Aperçu du document client : logo, quantités, prix, conditions — téléchargeable en PDF ou envoyable par courriel"
+              ? "Aperçu du document client, deux pages : l'offre et sa grille de quantités, puis les conditions et l'acceptation — téléchargeable en PDF ou envoyable par courriel"
               : "Prix non validé : " + raisonPrix
           }
           disabled={!prixValide}
           onClick={() => setPropositionOuverte(true)}
         >
-          Proposition client
+          Soumission client
         </button>
         <button className="btn ghost" title="Imprime la fiche de soumission complète (usage interne)" onClick={() => window.print()}>
           Imprimer la fiche
