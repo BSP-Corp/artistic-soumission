@@ -114,6 +114,35 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — Le document client passe au gabarit de Jose, et deux correctifs partent avec *(BSP)*
+Trois choses sont en place dans le source, pas encore déployées.
+
+**Le PDF suit maintenant le gabarit du 30 octobre.** Deux pages : l'en-tête SOUMISSION avec
+numéro, date, validité à 30 jours et représentant ; les blocs client et projet ; la grille
+produit × paliers de quantité, prix unitaire et montant par case, palier recommandé encadré ;
+les frais de préparation ; COMMENT CHOISIR et les totaux avec TPS et TVQ. Page 2 : les six blocs
+de conditions et l'acceptation à signer. Les modalités de paiement et les numéros de taxes se
+saisissent — Christian l'a demandé le 2 novembre, les modalités suivent le client.
+
+**L'adresse est corrigée** : `2565, boul. Le Corbusier, Laval (Québec) H7S 2E8`, telle que le
+gabarit la porte. Elle était fausse sur chaque PDF envoyé jusqu'ici, et elle est annoncée à
+Philippe Béland.
+
+**L'arrondi du bloc est réglé** (`d933e7d`), donc **C2 et C4 sont à reprendre** — elles portent
+1 101 feuilles au lieu de 1 100. Et `entreesExemple` normalise ses F/S.
+
+Vérifié à l'écran dans le widget lancé en local : deux pages, aucun débordement, la colonne
+recommandée encadrée, les totaux et les taxes justes. `tsc`, `verif:montage` et
+`verif:numerique` au vert.
+
+**Ce que la grille ne fait pas encore :** plusieurs produits. L'écran n'en porte qu'un, donc la
+grille a une ligne ; les colonnes sont bien les paliers de la soumission. Le reste vient avec la
+refonte.
+
+**Deux questions pour Artistic :** les vrais numéros d'enregistrement TPS et TVQ, et le format
+exact du numéro de soumission (le gabarit montre `S-2026-0000`, le widget porte le code de la
+fiche). À poser à l'appel de la semaine prochaine.
+
 ### 20 nov. — La série est complète ; quatre choses pour le prochain build *(BSP)*
 T1 → T16 au vert, huit captures client prises sur une seule job (FC-940, 25 000 pièces,
 BT-1021). Le chantier n'est plus bloqué par les tests.
