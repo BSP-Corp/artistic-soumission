@@ -26,7 +26,7 @@ const exempleJoli = JSON.stringify(exemple, null, 2);
 
 const nbIn = champs.champs.filter((c) => c.origine === "in").length;
 const nbOut = champs.champs.filter((c) => c.origine === "out").length;
-const DATE = "28 septembre 2026";
+const DATE = "20 novembre 2026";
 
 // ── échappement ─────────────────────────────────────────────────────────────
 const ech = (s) =>
@@ -302,16 +302,25 @@ footer{border-top:1px solid var(--filet);max-width:1080px;margin:0 auto;
 
 <section>
   <h2><span class="num">01</span>Aperçu</h2>
-  <p>Une soumission est chiffrée dans notre outil d'estimation, puis validée par un estimateur. À cet instant, Zoho vous l'envoie en JSON. Vous répondez ; votre réponse est stockée et réaffichée à côté de la soumission.</p>
-  <dl class="specs">
-    <div class="spec"><dt>Déclencheur</dt><dd>Passage au statut <b>Validé</b> dans notre outil</dd></div>
-    <div class="spec"><dt>Méthode</dt><dd class="mono">POST</dd></div>
+  <p>Une soumission est chiffrée dans notre outil d'estimation. À <b>deux moments</b> de son parcours, Zoho l'envoie en JSON à votre API d'analyse. Les deux envois portent le même contrat ; le champ <span class="mono">soumission.moment</span> dit lequel des deux vous recevez.</p>
+  <div class="tablewrap" style="max-height:none">
+  <table>
+    <thead><tr><th>soumission.moment</th><th>Ce qui le déclenche</th><th>Appels</th></tr></thead>
+    <tbody>
+      <tr><td class="chemin">avant_envoi</td><td>Le bouton <b>« Analyser avant envoi »</b> du widget de soumission. Le chargé de projet vient de produire la proposition ; <b>le client ne l'a pas encore reçue</b> et la soumission reste un brouillon. C'est le seul moment où une alerte peut encore éviter une erreur.</td><td class="type">POST /analyses</td></tr>
+      <tr><td class="chemin">validation</td><td>Le bouton « Valider → Bon de travail » : la job part en production, après acceptation du client.</td><td class="type">PUT /history<br>puis POST /analyses</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <dl class="specs" style="margin-top:1.1rem">
+    <div class="spec"><dt>Appel</dt><dd><span class="mono">POST /analyses</span>, en <span class="mono">multipart/form-data</span>, le contrat dans le champ <span class="mono">contract</span></dd></div>
+    <div class="spec"><dt>Authentification</dt><dd>En-tête <span class="mono">X-Api-Key</span> — la clé que vous nous avez remise</dd></div>
     <div class="spec"><dt>Taille réelle</dt><dd>environ 5,6 Ko (JSON compact)</dd></div>
-    <div class="spec"><dt>Rejeu</dt><dd>3 tentatives sur 5xx ou timeout. Jamais sur 4xx.</dd></div>
     <div class="spec"><dt>Idempotence</dt><dd>Clé = <span class="mono">soumission.id</span>, stable dans le temps</dd></div>
-    <div class="spec"><dt>Votre réponse</dt><dd><span class="mono">200</span> ou <span class="mono">202</span>, corps JSON libre</dd></div>
+    <div class="spec"><dt>Votre réponse</dt><dd><span class="mono">2xx</span>, corps JSON conservé tel quel et réaffiché à côté de la soumission</dd></div>
   </dl>
-  <p class="note" style="margin-top:1.1rem">Nous journalisons chaque tentative de notre côté — code HTTP, horodatage, corps de votre réponse. Si vous ne recevez rien, nous pouvons dire en quelques secondes ce qui est parti et ce qui a été répondu.</p>
+  <div class="encart"><b>Pourquoi <span class="mono">avant_envoi</span> n'alimente pas <span class="mono">/history</span>.</b> L'historique est votre base de comparaison entre soumissions réelles. Y verser des propositions qui ne seront peut-être jamais acceptées fausserait les comparaisons. Il reste alimenté par la validation seule.</div>
+  <p class="note" style="margin-top:1.1rem">Votre analyse prend 8 à 20 secondes : aucun des deux boutons n'attend votre réponse. Le bouton pose un drapeau sur la soumission, et une fonction séparée fait l'appel. Nous journalisons chaque appel de notre côté — code HTTP, horodatage, corps de votre réponse.</p>
 </section>
 
 <section>
@@ -330,7 +339,7 @@ footer{border-top:1px solid var(--filet);max-width:1080px;margin:0 auto;
 
 <section>
   <h2><span class="num">03</span>Fichiers à récupérer</h2>
-  <p>Le schéma vous génère vos types et valide chaque envoi reçu ; l'exemple sert de jeu d'essai à votre parseur.</p>
+  <p>Le schéma vous génère vos types et valide chaque envoi reçu ; l'exemple sert de jeu d'essai à votre parseur. Certains logiciels de courriel bloquent ces boutons de téléchargement : les deux fichiers vous sont aussi transmis à part.</p>
   <div class="telech">
     <div class="fichier">
       <span class="nom">soumission.schema.json</span>
@@ -383,42 +392,22 @@ ${lignes}
 </section>
 
 <section>
-  <h2><span class="num">06</span>Authentification</h2>
-  <p>Un jeton secret partagé, transmis hors courriel. Chaque envoi porte en plus une signature du corps, pour que vous puissiez vérifier son intégrité indépendamment du transport.</p>
+  <h2><span class="num">06</span>Authentification et en-têtes</h2>
+  <p>C'est Zoho qui appelle votre API, avec la clé que vous nous avez remise. Elle est stockée dans Zoho et n'est jamais transmise par courriel.</p>
   <div class="codebloc">
-    <div class="codebarre">Requête entrante</div>
-    <pre><code>POST /votre-endpoint HTTP/1.1
+    <div class="codebarre">Requête sortante — les deux moments</div>
+    <pre><code>POST /analyses HTTP/1.1
+X-Api-Key: &lt;CLÉ_REMISE_PAR_OPENMIND&gt;
+Content-Type: multipart/form-data; boundary=&lt;frontière&gt;
+
+--&lt;frontière&gt;
+Content-Disposition: form-data; name="contract"
 Content-Type: application/json
-Authorization: Bearer &lt;JETON_PARTAGÉ&gt;
-X-Zoho-Signature: sha256=&lt;HMAC-SHA256 du corps brut, clé = jeton&gt;
-X-Zoho-Event: soumission.validee
-X-Zoho-Delivery: &lt;identifiant unique par tentative&gt;
-X-API-Version: ${champs.schema_version}</code></pre>
-  </div>
-  <h3>Vérifier la signature</h3>
-  <p>Calculez le HMAC-SHA256 du <b>corps brut reçu</b>, clé = le jeton, encodage hexadécimal. Comparez en temps constant — jamais avec <span class="mono">==</span>, qui fuit la clé par le temps de réponse.</p>
-  <div class="codebloc">
-    <div class="codebarre">Node.js</div>
-    <pre><code>import { createHmac, timingSafeEqual } from "node:crypto";
 
-const attendue = "sha256=" + createHmac("sha256", JETON)
-  .update(corpsBrut, "utf8").digest("hex");
-
-const a = Buffer.from(req.headers["x-zoho-signature"] ?? "");
-const b = Buffer.from(attendue);
-const valide = a.length === b.length &amp;&amp; timingSafeEqual(a, b);</code></pre>
+{ "schema_version": "${champs.schema_version}", "soumission": { "moment": "avant_envoi", ... }, ... }
+--&lt;frontière&gt;--</code></pre>
   </div>
-  <div class="codebloc" style="margin-top:.8rem">
-    <div class="codebarre">C#</div>
-    <pre><code>using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(jeton));
-var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(corpsBrut));
-var attendue = "sha256=" + Convert.ToHexString(hash).ToLowerInvariant();
-
-var valide = CryptographicOperations.FixedTimeEquals(
-    Encoding.UTF8.GetBytes(attendue),
-    Encoding.UTF8.GetBytes(signatureRecue));</code></pre>
-  </div>
-  <div class="encart"><b>Codes de réponse.</b> <span class="mono">200</span> ou <span class="mono">202</span> : reçu, nous n'insistons pas. <span class="mono">4xx</span> : erreur définitive, nous ne réessayons pas — c'est le bon code si le contrat est violé. <span class="mono">5xx</span> ou timeout : nous rejouons 3 fois, puis la soumission est marquée en erreur et rejouable à la main.</div>
+  <div class="encart"><b>Pas d'en-tête <span class="mono">X-Zoho-Event</span>.</b> Les versions précédentes de ce document décrivaient un webhook poussé vers votre serveur, avec <span class="mono">X-Zoho-Event</span> et une signature HMAC. Ce modèle n'est plus utilisé : nous appelons vos routes. Pour distinguer les deux moments, lisez <span class="mono">soumission.moment</span> dans le corps.</div>
 </section>
 
 <section>
@@ -434,14 +423,29 @@ var valide = CryptographicOperations.FixedTimeEquals(
 </section>
 
 <section>
-  <h2><span class="num">08</span>Ce qu'il nous faut</h2>
-  <p>Quatre éléments de votre côté pour brancher le premier envoi réel.</p>
+  <h2><span class="num">08</span>Ce qui reste à régler</h2>
+  <p>Les points ouverts depuis la rencontre du 5 novembre.</p>
   <ul class="demandes">
-    <li><span class="case"></span><div><strong>L'URL de votre environnement de test</strong><span>Nous la configurons chez nous ; aucun redéploiement n'est nécessaire ensuite pour passer en production.</span></div></li>
-    <li><span class="case"></span><div><strong>Le format de votre réponse</strong><span>Si votre analyse renvoie un verdict structuré, décrivez-le : nous l'afficherons tel quel à côté de la soumission, pour l'estimateur.</span></div></li>
-    <li><span class="case"></span><div><strong>Vos limites sur les fichiers joints</strong><span>Nombre et taille maximale. Nous proposons de vous envoyer des liens signés plutôt que les fichiers dans le JSON.</span></div></li>
-    <li><span class="case"></span><div><strong>Vos règles métier</strong><span>Pour répartir : les règles déterministes restent chez nous, l'analyse contextuelle chez vous. Objectif — ne pas développer deux fois la même validation.</span></div></li>
+    <li><span class="case"></span><div><strong>L'accès à votre environnement de test</strong><span>Par le VPN de Groupe Canva, demandé à Christian. Dès qu'il est ouvert, nous faisons un premier envoi réel pour vérifier la communication.</span></div></li>
+    <li><span class="case"></span><div><strong>Le format de votre réponse</strong><span>Pour signaler un champ précis dans le formulaire, il nous faudra la liste des champs visés et un code d'erreur par champ.</span></div></li>
+    <li><span class="case"></span><div><strong>Les fichiers joints</strong><span>Notre proposition suit : des liens temporaires vers les fichiers plutôt que les fichiers dans le JSON.</span></div></li>
+    <li><span class="case"></span><div><strong>Les mises à jour de statut</strong><span>Chaque soumission nouvelle ou modifiée vous sera envoyée avec son statut. Ce sera l'objet d'une prochaine version mineure, annoncée.</span></div></li>
   </ul>
+</section>
+
+<section>
+  <h2><span class="num">09</span>Historique des versions</h2>
+  <div class="tablewrap" style="max-height:none">
+  <table>
+    <thead><tr><th>Version</th><th>Date</th><th>Changements</th></tr></thead>
+    <tbody>
+      <tr><td class="chemin">1.3</td><td class="type">2026-11-05</td><td><b>Réponses aux questions 1, 2, 3 et 5.</b> Ajouts compatibles : <span class="mono">soumission.date_commande</span>, <span class="mono">date_expedition_prevue</span>, <span class="mono">date_requise_texte</span>, <span class="mono">moment</span>, <span class="mono">materiaux[].epaisseur_po</span>, <span class="mono">epaisseur_mil</span>, <span class="mono">production.nb_matrices_calcule</span>, <span class="mono">nb_matrices_corrige</span>, <span class="mono">nb_matrices_source</span>.<br><b>Deux changements à lire avant d'intégrer :</b> (1) <span class="mono">soumission.date_requise</span> passe de texte libre à date ISO, et vaut <span class="mono">null</span> quand la saisie n'est pas une date — le texte d'origine reste dans <span class="mono">date_requise_texte</span> ; (2) <span class="mono">production.nb_matrices</span> porte désormais la valeur <b>retenue</b> (la correction de l'atelier quand elle existe) ; le calcul seul reste dans <span class="mono">nb_matrices_calcule</span>.</td></tr>
+      <tr><td class="chemin">1.2</td><td class="type">2026-09-28</td><td><span class="mono">decoupe.finition.coins_ronds.quantite</span> accepte <span class="mono">null</span> : l'opération a été retirée de l'outil, le champ reste au contrat. Le taux horaire passe de 73 à 74 $/h — une donnée, pas une rupture de contrat.</td></tr>
+      <tr><td class="chemin">1.1</td><td class="type">2026-09-16</td><td>Ajouts compatibles : <span class="mono">prix.prix_vendu_unitaire</span>, <span class="mono">prix.prix_vendu_total</span>, <span class="mono">production.quantites_alternatives[].prix_vendu_unitaire</span> — le prix décidé par le chargé de projet, distinct du prix calculé.</td></tr>
+      <tr><td class="chemin">1.0</td><td class="type">2026-09-10</td><td>Version initiale.</td></tr>
+    </tbody>
+  </table>
+  </div>
 </section>
 
 </main>
