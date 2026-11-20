@@ -2198,6 +2198,7 @@ input.in.date-libre {
   body.mode-proposition .modal-head,
   body.mode-proposition .prop-notes-internes,
   body.mode-proposition .ecran-seul,
+  body.mode-proposition .prop-spec-vide,
   body.mode-proposition .prop-actions {
     display: none;
   }

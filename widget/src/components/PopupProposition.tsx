@@ -141,11 +141,20 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
   const montantFrais = Number(String(libre(CELL_PROP.fraisMontant) ?? "").replace(",", ".")) || 0;
 
   // Les colonnes de la grille sont les paliers de quantité de la soumission. Une ligne sans
-  // quantité n'a rien à faire sur un document client.
-  const paliers = lignes.filter((l) => l.qte > 0);
+  // quantité n'a rien à faire sur un document client, et les paliers se lisent du plus petit
+  // au plus grand : l'encadré « comment choisir » promet que le prix unitaire baisse quand la
+  // quantité monte, l'ordre des colonnes doit le montrer. Les lignes de la soumission, elles,
+  // sont dans l'ordre où le chargé de projet les a saisies.
+  const paliers = lignes.filter((l) => l.qte > 0).sort((a, b) => a.qte - b.qte);
   const retenue = paliers.find((l) => l.active) ?? paliers[0] ?? null;
 
-  const montantRetenu = retenue ? retenue.qte * retenue.unitaire : 0;
+  /** Prix unitaire arrondi au cent, et le montant qui en découle. Le client multiplie : si le
+   *  document affiche 2,51 $ et 62 723,50 $ pour 25 000 pièces, il trouve 26,50 $ d'écart et
+   *  rappelle. Les deux nombres imprimés doivent se vérifier l'un par l'autre. */
+  const auCent = (v: number) => Math.round(v * 100) / 100;
+  const montantLigne = (l: LigneProposition) => auCent(l.unitaire) * l.qte;
+
+  const montantRetenu = retenue ? montantLigne(retenue) : 0;
   const sousTotal = montantRetenu + montantFrais;
   const mtTPS = sousTotal * TPS;
   const mtTVQ = sousTotal * TVQ;
@@ -177,9 +186,13 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
   ].join("\r\n");
   const mailto = `mailto:?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`;
 
-  /** ligne « LIBELLÉ : valeur » du gabarit, valeur lue dans la fiche */
+  /** Ligne « LIBELLÉ : valeur » du gabarit, valeur lue dans la fiche.
+   *
+   *  Une ligne restée vide garde sa place dans l'aperçu — le chargé de projet doit voir ce
+   *  qu'il n'a pas rempli — mais ne s'imprime pas : un libellé suivi de rien, sur le document
+   *  qui part chez le client, donne un devis bâclé. */
   const spec = (label: string, valeur: string) => (
-    <div className="prop-spec">
+    <div className={"prop-spec" + (valeur ? "" : " prop-spec-vide")}>
       <span>{label}</span>
       <b>{valeur}</b>
     </div>
@@ -187,7 +200,7 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
   /** même ligne, mais le gabarit demande une information que la fiche n'a pas :
    *  elle se tape ici et se sauvegarde avec la soumission */
   const specLibre = (label: string, cell: string, apercu: string) => (
-    <div className="prop-spec">
+    <div className={"prop-spec" + (texte(cell) ? "" : " prop-spec-vide")}>
       <span>{label}</span>
       <CelluleTexte cell={cell} value={libre(cell)} onChange={setLibre} className="prop-libre" label={apercu} />
     </div>
@@ -266,9 +279,9 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
                     </td>
                     {paliers.map((l, i) => (
                       <td key={i} className={"ct" + (l.active ? " prop-reco" : "")}>
-                        <div className="prop-unitaire">{nombre2(l.unitaire)} $</div>
+                        <div className="prop-unitaire">{nombre2(auCent(l.unitaire))} $</div>
                         <div className="prop-par">/ unité</div>
-                        <div className="prop-montant">{nombre2(l.qte * l.unitaire)} $</div>
+                        <div className="prop-montant">{nombre2(montantLigne(l))} $</div>
                       </td>
                     ))}
                   </tr>
@@ -367,8 +380,10 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
               </table>
             </div>
 
+            {/* Avertissement interne : il met en garde le chargé de projet dans l'aperçu, il n'a
+                rien à faire sur le document que le client reçoit. */}
             {retenue && retenue.suggere && (
-              <p className="prop-note">
+              <p className="prop-note ecran-seul">
                 Prix calculé par la fiche : aucun prix vendu n'a été saisi pour la quantité recommandée.
               </p>
             )}
