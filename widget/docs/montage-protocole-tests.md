@@ -384,7 +384,7 @@ Ligne retirée, 9 lignes relues.
 | T14 | **Bon de travail** | ☑ BT-1019 | ☑ `T14a`, `T14b`, `T14c` |
 | T15 | Table `Formats_Feuille` | ☑ ligne test lue puis retirée | ☑ `T15-formats-feuille.txt`, `.png` |
 | T16 | Grain libre | ☑ 21 up tournée ≥ 14 figé | ☑ `T16-grain-libre.png`, `T16b-…-accepte.png` |
-| C1–C8 | **Captures client** (partie 4) | — | ☐ |
+| C1–C8 | **Captures client** (partie 4) | — | ☑ `captures/client/`, voir `NOTE.md` |
 
 **Les trois à ne pas sauter** sont T10 (coût matière), T14 (bon de travail) et T6 (le seuil) :
 le premier protège les marges d'Artistic, le deuxième est la raison d'être de la fonction, le
