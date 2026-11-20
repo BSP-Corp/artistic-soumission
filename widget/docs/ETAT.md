@@ -114,6 +114,28 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — Les trois courriels sont partis : le chantier est livré *(Youssef)*
+Vérifié dans les envois, les trois portent bien leurs pièces jointes.
+
+- **Philippe Béland** — l'avancement en trois points, avec le document du montage et un
+  exemplaire du nouveau document de soumission.
+- **Roberto Montanaro** *(Christian en copie)* — ses sept fiches corrigées, One man hors liste,
+  la DTS retirée, le document joint, et les deux choses qui lui restent : confirmer la 180, et
+  dire si l'atelier a besoin du sens de pose sur le papier.
+- **Christian Gingras** — le gabarit de Jose en place, avec un exemplaire, et les deux questions
+  qui manquent au document : les numéros de taxes et le format du numéro de soumission.
+
+**Le chantier du montage est clos.** Du 2 au 20 novembre : du calcul à la livraison, en passant
+par le conflit des formats de presse tranché par Roberto, seize tests sur les données réelles,
+et un document que le client a entre les mains.
+
+**Le gabarit PDF est clos aussi**, refait d'après le modèle du 30 octobre qui dormait depuis le
+2 novembre.
+
+**La demande de 45 minutes a été retirée du courriel sur le gabarit** : un courriel, un sujet.
+Les quatre décisions de la maquette partiront dans leur propre fil, déjà rédigé en brouillon —
+chacune avec ce qu'on demande et pourquoi ça compte.
+
 ### 20 nov. — Le montage est livré à Artistic *(Youssef)*
 **Envoyé à Philippe Béland** : l'avancement en trois points — montage clos, PDF de soumission
 clos, maquette en cours — avec le document du montage et un exemplaire du nouveau document de
@@ -537,14 +559,19 @@ défauts relevés, consignés dans `montage-etape6.md` et `montage-a-completer.m
   bloque aucun test.
 - **Le sens de pose n'arrive pas au bon de travail.** Le build l'enregistre, l'écran l'affiche, le
   BT non (`src/bt/` n'en a aucune trace, et son widget est au build du 20 oct.). À porter dans le
-  build suivant, avec le point ci-dessous.
-- **`entreesExemple` ne normalise pas les F/S.** Une soumission partie de l'Exemple change de prix
-  d'elle-même à sa première réouverture (≈ +140 $ sur le scénario testé). Correction d'une ligne,
-  à faire après la série pour ne pas changer le bandeau sous les captures.
+  build suivant. Roberto a été invité le 20 nov. à dire si son atelier en a besoin sur le papier.
+- ~~**`entreesExemple` ne normalise pas les F/S.**~~ Corrigé et déployé le 20 nov.
+- **Les quatre décisions de la maquette** — pièces multiples, prix minimum et seuils, format des
+  numéros, taux réels. Courriel rédigé, en brouillon, à envoyer à Christian. Elles conditionnent
+  l'échéancier promis à Philippe.
+- **Les numéros d'enregistrement TPS et TVQ**, et le format exact du numéro de soumission.
+  Demandés à Christian le 20 nov.
+- **Les deux feuilles produit manquantes** (Faces graphiques, Affiches) et les machines
+  numériques avec leurs vitesses, pour le chantier numérique.
+- **Les données de test à supprimer** : soumissions d'essai et bons **BT-1019**, **BT-1020**,
+  **BT-1021**.
 - ~~**Une soumission réelle avec une ligne fournisseur** pour T10.~~ Réglé le 20 nov. : T10 joué
   avec R41 = 0,50 $/pi², 3 562,50 → 2 571,43 $.
-- **Christian n'est pas encore prévenu** de l'effet de l'étape 6 sur les prix. Décidé le 19 nov. :
-  ça passera dans le document final, pas dans un point d'étape séparé.
 
 ---
 
