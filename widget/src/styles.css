@@ -1820,6 +1820,11 @@ input.in.date-libre {
   color: var(--ink);
   font-size: 12.5px;
   line-height: 1.45;
+  /* Le bandeau SOUMISSION et la colonne recommandée sont des aplats : sans ça, le navigateur
+     les laisse tomber à l'impression (sa case « graphiques d'arrière-plan » est décochée par
+     défaut) et le document sort amputé de ses repères. */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
   /* la feuille de soumission hérite du `nowrap` des tableaux de l'écran : ici c'est un
      document, le texte se replie. Les quelques endroits qui doivent rester sur une ligne
      (montants, pagination) le redemandent explicitement. */
