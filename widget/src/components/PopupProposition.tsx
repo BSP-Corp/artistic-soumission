@@ -162,6 +162,15 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
 
   const validiteLe = dateValidite(infos.date);
 
+  // Le champ de la fiche s'appelle « S- » à l'écran et ne porte que le chiffre : imprimé seul,
+  // « 00025 » sous le mot SOUMISSION ne ressemble à rien. On remet le préfixe, sauf s'il a été
+  // tapé. Le format complet (le gabarit montre `S-2026-0000`) attend la réponse de Christian.
+  const noAffiche = infos.noSoumission
+    ? /^s\s*-/i.test(infos.noSoumission)
+      ? infos.noSoumission
+      : "S-" + infos.noSoumission
+    : "";
+
   // Description technique du produit, sous son nom : ce que la fiche porte réellement.
   const specProduit = [infos.dimensions, infos.materiau, infos.couleurs, texte(CELL_PROP.finition)]
     .filter(Boolean)
@@ -227,7 +236,7 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
               </div>
               <div className="prop-titre">
                 <div className="prop-banniere">Soumission</div>
-                <div className="prop-no">{infos.noSoumission}</div>
+                <div className="prop-no">{noAffiche ? "N° " + noAffiche : ""}</div>
                 <div className="prop-entete-lignes">
                   {spec("Date", infos.date)}
                   {spec("Valide jusqu'au", validiteLe ? `${validiteLe} (${VALIDITE_JOURS} jours)` : "")}
@@ -407,7 +416,7 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
                 {EMETTEUR.adresse} · {EMETTEUR.contact}
               </div>
               <div className="prop-entete2-droite">
-                <b>Soumission</b> {infos.noSoumission}
+                <b>Soumission</b> {noAffiche}
               </div>
             </div>
 
