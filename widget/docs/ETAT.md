@@ -112,6 +112,47 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — Les deux anomalies de la liste Presse ont la même cause *(BSP, vérifié dans le code)*
+Soufiane signale la **Cameo 38SS no.120** absente de la liste déroulante, et une
+**« Multiprint IST no.180 »** affichée alors que la fiche Creator s'appelle **182**. C'est le même
+mécanisme.
+
+`fusionnerMachines` (`lib/machines.ts`) écarte toute fiche Creator dont la catégorie ne donne pas
+de famille : `familleDepuisCategorie` exige une catégorie commençant par **« Sérigraphie »** pour
+qu'une fiche soit une presse, sinon `continue` — la fiche n'entre jamais dans la liste. Puis, en
+fin de fusion, les machines du **snapshot** que Creator n'a pas fournies sont ajoutées :
+`for (const [cle, s] of parCle) if (!vues.has(cle)) out.push(s)`.
+
+- **La 120** n'est pas dans le snapshot (`machinesCalc.ts` n'a que la 116 et la 110). Écartée par
+  la catégorie, elle disparaît purement et simplement.
+- **La 182** est écartée de la même façon ; le snapshot, lui, porte
+  `{ nom: "Multiprint IST no.180", largeurPo: 24, hauteurPo: 44 }` (ligne 62). Comme `cleMachine`
+  retire les « no.XXX », les deux ont la même clé : le snapshot comble le trou et c'est son nom
+  qui s'affiche.
+
+**À vérifier dans Creator :** le champ `Categorie` des fiches 120 et 182, comparé à une presse qui
+fonctionne (110 ou 150). Corriger la catégorie fait entrer la fiche et masque l'entrée du
+snapshot — les deux anomalies tombent ensemble.
+
+**À noter aussi :** le snapshot est périmé (116 à 12 × 8, 110 à 26 × 18, One man `actif: true`).
+Il ne sert qu'aux machines absentes de Creator et au mode hors Zoho, mais il mérite une remise à
+niveau après la série.
+
+### 20 nov. — Le bon de travail ne porte pas le sens de pose *(BSP, vérifié dans le code)*
+Cherché dans `widget/src/bt/` : **aucune occurrence** de `MONTAGETOURNEE`, `tournee` ou
+`pieceTournee`. Le nouveau build **enregistre** bien l'orientation et l'écran de soumission
+l'affiche (`App.tsx:1184`, « · pièce tournée de 90° »), mais le bon de travail ne la reprend pas —
+et son widget est resté au build `2026-10-20`.
+
+Ce qui demeure, et ce qui tombe, pour la décision sur le grain :
+- **Tombe** — le motif qui tenait le grain à `1` était que l'ancien build *n'enregistrait pas*
+  l'orientation. Le build déployé l'enregistre.
+- **Tombe aussi** — rien ne s'applique sans geste humain : le montage est une *suggestion*, et
+  l'écran affiche « pièce tournée de 90° » au moment d'accepter.
+- **Tombe enfin** — Roberto, le 3 novembre : le sens du grain, *« pas d'importance »*.
+- **Demeure** — l'atelier lit le sens de pose à l'écran, pas sur le bon de travail. À combler,
+  mais ce n'est pas un défaut de prix ni de calcul.
+
 ### 20 nov. — Le montage passe devant le contrat Openmind *(Youssef)*
 Arbitrage rendu. **Le montage est prioritaire sur tout autre chantier** tant qu'il n'est pas
 livré. C'est la livraison qu'Artistic attend, et elle est bloquée depuis le 17 par une heure de
