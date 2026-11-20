@@ -112,6 +112,18 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — Le dépôt est à jour chez Soufiane ; le montage n'a pas avancé *(BSP)*
+Son commit du 20 nov. à 01:42 (contrat HTML Openmind) est construit **directement sur `890f5fa`**.
+Il a donc récupéré la feuille de séance, l'ordre des écritures et la décision sur le courriel
+client — l'information est passée, la convention a fonctionné.
+
+**Mais aucun fichier du montage n'est touché.** Le paquet n'est pas téléversé, les sept fiches
+portent toujours les anciennes valeurs, le protocole reste à 35 cases vides sur 36 et
+`captures/client/` est vide. Dernier mouvement sur le montage : **17 nov. 16:02**.
+
+Ce n'est donc ni un problème d'information ni, selon toute apparence, un problème d'accès : c'est
+un arbitrage de priorité entre deux chantiers. À trancher par Youssef.
+
 ### 19 nov. — Le courriel au client attend le document *(Youssef)*
 Décision : **on n'annonce pas l'avancement à Artistic.** Pas de « on est en train de tester »,
 pas de point d'étape. Le prochain envoi sera **le document fonctionnel lui-même**, et c'est lui
