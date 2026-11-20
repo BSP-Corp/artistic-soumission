@@ -114,6 +114,18 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — Le document client est rédigé, il n'attend que les captures *(BSP)*
+Brouillon complet dans le dossier local de Youssef (`docs/`, hors dépôt) : les six sections
+prévues, avec les chiffres relevés pendant la série — 4 up → 84, 11 000 feuilles → 524,
+55 615,31 $ → 26 583,96 $, et la ligne matière à −28 %.
+
+Les huit emplacements `[C1]` à `[C8]` attendent les captures. Deux sections portent ⏳ : celle
+qui parle de l'orientation, qui dépend de T16.
+
+Ce qui reste à écrire ne dépend donc plus que de Soufiane. Dès que les captures arrivent, le
+document se ferme et le courriel à Roberto et Christian — déjà en brouillon depuis le 19 — est
+repris pour le porter.
+
 ### 20 nov. — Les trois questions tranchées, et l'ordre de clôture *(Youssef)*
 Trois décisions, prises en gardant en vue la seule chose qui reste : le document qu'Artistic
 attend depuis le 27 octobre.
