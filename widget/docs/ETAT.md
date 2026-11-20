@@ -114,6 +114,44 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — La série est complète ; quatre choses pour le prochain build *(BSP)*
+T1 → T16 au vert, huit captures client prises sur une seule job (FC-940, 25 000 pièces,
+BT-1021). Le chantier n'est plus bloqué par les tests.
+
+**Mon diagnostic du 20 nov. sur la 120 était faux.** J'avais conclu au champ `Categorie` ;
+Soufiane a relu les fiches par l'API et par le SDK : la catégorie est bonne sur les quatre
+presses concernées. La vraie cause est un **`chargerAdmin` qui échoue par intermittence**, après
+quoi le widget retombe **en silence** sur `fusionnerMachines(null)` — donc sur le snapshot
+embarqué. L'état React fautif montrait les 23 machines du snapshot.
+
+**C'est plus grave que l'affichage.** Le snapshot est périmé (116 à 12 × 8, 110 à 26 × 18, One man
+`actif: true`, « Multiprint IST no.180 » à 24 × 44). Quand le repli joue, le calcul considère
+roulables des formats qui ne le sont pas, et l'écart se voit dans la suggestion — donc dans le
+prix si elle est acceptée. Rien ne l'annonce : le bandeau indique « Creator » pour les matériaux,
+rien pour les machines.
+
+**Le prochain build, et ce qu'il doit porter :**
+1. **L'arrondi du bloc** — le bloc annonce 1 101 feuilles quand NB.MRX en calcule 1 100
+   (`Math.ceil` sur 1 100,0000000000002). Visible sur **C2 et C4**, deux captures qui partent chez
+   le client. Bloquant pour le document.
+2. **L'adresse du PDF** — Montréal au lieu de Laval (`PopupProposition.tsx:24`). Annoncé à
+   Philippe Béland aujourd'hui.
+3. **Le snapshot des machines** remis aux valeurs de Roberto, et le repli rendu visible (source
+   des machines au bandeau + une relance).
+4. **`entreesExemple`** qui ne normalise pas les F/S.
+
+Le sens de pose au bon de travail reste un cinquième point, plus lourd (widget BT à reconstruire
+et T14 à rejouer). **Le document ne promettra pas que l'atelier voit l'orientation** — C5 ne la
+montre pas.
+
+**Une trouvaille qui change le document :** le prix peut **monter** après acceptation. Le premier
+essai de Soufiane partait d'un point de départ irréaliste (4 up sur 8 × 9,5 pour une pièce de
+9 po) et le coût passait de 34 916 $ à 50 179 $. Les chiffres étaient justes — c'est le « avant »
+qui sous-facturait. Le montage corrige **dans les deux sens**, et c'est un argument, pas une
+gêne.
+
+**À supprimer après l'envoi :** soumissions de test et bons **BT-1019**, **BT-1020**, **BT-1021**.
+
 ### 20 nov. — Le document client est rédigé, il n'attend que les captures *(BSP)*
 Brouillon complet dans le dossier local de Youssef (`docs/`, hors dépôt) : les six sections
 prévues, avec les chiffres relevés pendant la série — 4 up → 84, 11 000 feuilles → 524,
