@@ -1,0 +1,22 @@
+T15 — la table Formats_Feuille est bien lue (20 novembre 2026)
+
+Table créée le 20 nov. : formulaire Formats_Feuille (Nom_format, Largeur_po, Hauteur_po,
+Actif Oui/Non), rapport Formats_Feuille_Report, 9 formats de montage-a-completer.md §1.
+
+Piège rencontré : le rapport, créé avec le formulaire encore vide, n'exposait AUCUNE colonne.
+Le SDK renvoyait les 10 lignes avec leur seul ID ; le widget lisait des largeurs à 0, écartait
+tout et retombait en silence sur le snapshot. Colonnes ajoutées au rapport par l'IDE.
+
+Lecture SDK depuis le widget, après correction :
+  Formats_Feuille_Report : code 3000 · 10 lignes
+  {"Largeur_po":"99.00","Hauteur_po":"99.00","Nom_format":"99 × 99 TEST","Actif":"Oui"}
+
+État du montage dans le widget déployé (7 × 1,4 po, 40 000 pièces), relu dans React :
+  ÉCARTÉ 99 × 99 TEST (99×99) : aucune presse ne peut rouler ce format
+  + les 9 formats du client en candidats (24 × 48 en tête, 84 up)
+
+=> la ligne de test arrive bien jusqu'au calcul. Elle n'est pas proposée parce qu'aucune presse
+   ne roule du 99 × 99 : c'est le comportement voulu, et c'est pourquoi la preuve est l'état
+   interne et non l'écran (qui n'affiche que le meilleur format).
+
+Ligne de test retirée ensuite (ID 4153107000024133022). Relu : 9 lignes restantes.

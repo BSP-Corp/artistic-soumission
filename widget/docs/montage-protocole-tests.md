@@ -339,8 +339,26 @@ soumission ». À trancher : normaliser aussi l'Exemple ?
 - Le widget bon de travail est encore au build `2026-10-20`. T14 passe quand même : il relit la
   soumission.
 
-**Restent :** T15 (la table `Formats_Feuille` n'existe pas encore dans Creator) et T16 (grain
-toujours à `1`). Captures client C1–C8 : non prises.
+**Cameo 120 et « Multiprint 180 » : ce n'était pas la catégorie.** Le champ `Categorie` vaut
+« Serigraphie » sur les 110, 120, 150 et 182, relu par l'API et par le SDK du widget avec
+`field_config: "all"`. L'état React du chargement fautif montrait les 23 machines du **snapshot**
+(« Duplo », « Brausse », pas de Zund M-800) : `chargerAdmin` avait échoué et le widget était
+retombé en silence sur `fusionnerMachines(null)`. Rejouées à la main dans le même widget, les
+cinq lectures réussissent, et cinq rechargements de suite affichent la 120 et la 182. L'échec est
+intermittent et invisible : le bandeau dit « Creator » pour les matériaux, rien pour les
+machines. À prévoir au prochain build : source des machines au bandeau, et une relance.
+
+**T15 — 20 nov.** Table créée (builder + IDE), 9 formats saisis, rapport `Formats_Feuille_Report`.
+Le rapport, né avec le formulaire vide, n'exposait **aucune colonne** : le SDK renvoyait les lignes
+avec leur seul ID, le widget retombait sur le snapshot sans erreur. Colonnes ajoutées par l'IDE.
+Le 99 × 99 arrive ensuite dans le calcul, écarté pour « aucune presse ne peut rouler ce format »
+(l'écran n'affiche que le meilleur format : preuve dans `captures/T15-formats-feuille.txt`).
+Ligne retirée, 9 lignes relues.
+
+**T16 — 20 nov.** `APP_MONTAGE_GRAIN_FIGE` passé à `0` (relu). Pièce 13 × 3, 40 000 : « feuille
+24 × 48 · 7 × 3 = 21 up · 2 096 feuilles · pièce tournée de 90° ». Grain figé, même format (calcul
+`evaluerFormat` hors ligne) : 1 × 14 = 14 up, 3 143 feuilles. Accepté : Nombre de Up 21, Mrx
+24 × 48. Rappel : le bon de travail ne lit pas encore `MONTAGETOURNEE`.
 
 ---
 
@@ -364,8 +382,8 @@ toujours à `1`). Captures client C1–C8 : non prises.
 | T12 | Avertissement presse | ☑ | ☑ `T12a`, `T12b`, `T12c` |
 | T13 | Boutons lisibles | ☑ | ☑ `T13-boutons-lisibles.png`, `T04` |
 | T14 | **Bon de travail** | ☑ BT-1019 | ☑ `T14a`, `T14b`, `T14c` |
-| T15 | Table `Formats_Feuille` | ☐ | ☐ |
-| T16 | Grain libre | ☐ | ☐ |
+| T15 | Table `Formats_Feuille` | ☑ ligne test lue puis retirée | ☑ `T15-formats-feuille.txt`, `.png` |
+| T16 | Grain libre | ☑ 21 up tournée ≥ 14 figé | ☑ `T16-grain-libre.png`, `T16b-…-accepte.png` |
 | C1–C8 | **Captures client** (partie 4) | — | ☐ |
 
 **Les trois à ne pas sauter** sont T10 (coût matière), T14 (bon de travail) et T6 (le seuil) :
