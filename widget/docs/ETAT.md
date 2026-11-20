@@ -64,21 +64,23 @@ vert. Les deux lancés sur `main` fusionné le 16 novembre au soir.
 ### Le chemin critique jusqu'à la livraison
 
 ```
-  téléversement du paquet dans Creator  30 min   Soufiane   ← À LA MAIN, Paramètres → Widgets
-  ↳ tout est sur une page : `montage-seance-deploiement.md`
-  les 7 écritures de fiches machines    30 min   Soufiane   ← À LA MAIN, refusées en automatisé
-  T1 → T14 avec captures            ≈ 3 h 30   Soufiane
-  table Formats_Feuille + CSV             —    Soufiane
-  T15 (la ligne 99 × 99)              20 min   Soufiane
-  APP_MONTAGE_GRAIN_FIGE : 1 → 0          —    Soufiane, APRÈS le déploiement
-  T16 (grain libre)                   15 min   Soufiane
+  ✅ téléversement + les 7 écritures de fiches        fait le 20 nov.
+  ✅ T1 → T14, 25 captures, relevés au protocole      fait le 20 nov. (862ac8e)
   ─────────────────────────────────────────────────────────────────
-  document fonctionnel + courriel au client    —    Youssef + Claude
+  catégorie des fiches 120 et 182             10 min   Soufiane
+  table Formats_Feuille (9 formats) → T15     45 min   Soufiane
+  APP_MONTAGE_GRAIN_FIGE : 1 → 0 → T16        20 min   Soufiane
+  captures client C1 → C8                     45 min   Soufiane
+  ─────────────────────────────────────────────────────────────────
+  document fonctionnel + courriel au client      —     Youssef + Claude
 ```
 
-**L'ordre n'est pas négociable sur un point** : le `1` de `Taux_Calcul` ne passe à `0` qu'après
-le déploiement. Avant, il tient le grain fermé pendant que l'ancien build ne sait pas enregistrer
-le sens de pose. Voir `montage-a-completer.md` §2.
+**L'ordre ne tient plus qu'à deux choses.** Les **captures client se prennent en dernier**, grain
+libre, sinon elles illustrent un comportement qui ne sera plus celui d'Artistic. Et la
+**catégorie des fiches passe en premier** : tant qu'elle n'est pas corrigée, la Cameo 38SS no.120
+que Roberto a fait réactiver reste invisible dans la liste des presses — c'est le genre de trou
+qu'un client repère le premier jour.
+
 
 ---
 
@@ -111,6 +113,41 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 ## Journal
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
+
+### 20 nov. — Les trois questions tranchées, et l'ordre de clôture *(Youssef)*
+Trois décisions, prises en gardant en vue la seule chose qui reste : le document qu'Artistic
+attend depuis le 27 octobre.
+
+**1. Le grain passe à `0` — oui, maintenant.** Les trois motifs qui tenaient le `1` sont tombés :
+le build déployé enregistre l'orientation, l'écran l'affiche (« pièce tournée de 90° ») au moment
+d'accepter, et rien ne s'applique sans ce geste. Roberto a tranché le fond dès le 3 novembre :
+le sens du grain, *« pas d'importance »*. T16 suit immédiatement.
+
+Ce qui reste — le bon de travail ne reprend pas le sens de pose — devient un point de suite, pas
+un verrou : il ne fausse ni un prix ni un calcul, et le document ne promettra pas l'inverse.
+
+**2. La table `Formats_Feuille` — oui, par le builder.** C'est une table neuve, pas une
+modification de données de production : le garde-fou qui a bloqué les fiches ne s'applique pas.
+Les neuf formats sont dans `montage-a-completer.md` §1. T15 suit.
+
+**3. L'Exemple — oui, mais après la série.** Le diagnostic est juste et vérifié :
+`entreesVierges` passe par `normaliserEntrees`, `entreesExemple` non, donc une soumission partie
+de l'Exemple porte des passes F/S invisibles jusqu'à sa première réouverture, où le prix bouge
+tout seul. `gen-exemple.ts` et `gen-schema.ts` normalisent déjà — c'est l'écran qui fait
+exception. **Mais c'est une correction de code**, donc un nouveau build : la faire maintenant
+changerait le bandeau sous les captures en cours. Elle part avec le sens de pose au bon de
+travail, dans le build suivant.
+
+**L'ordre de clôture**, et il compte :
+1. **Catégorie des fiches 120 et 182** — en premier. La 120 que Roberto a fait réactiver est
+   invisible dans la liste des presses tant que ce n'est pas corrigé.
+2. **`Formats_Feuille` → T15.**
+3. **Grain à `0` → T16.**
+4. **Captures client C1 → C8** — en dernier, grain libre, sur une job présentable. Pas la
+   soumission de test : ces images vont chez le client.
+
+La soumission « BSP / test montage 3 » et son BT-1019 restent en place jusqu'à la fin de la
+série — le protocole s'y réfère comme preuve. À supprimer une fois le document écrit.
 
 ### 20 nov. — Les deux anomalies de la liste Presse ont la même cause *(BSP, vérifié dans le code)*
 Soufiane signale la **Cameo 38SS no.120** absente de la liste déroulante, et une
@@ -366,8 +403,14 @@ défauts relevés, consignés dans `montage-etape6.md` et `montage-a-completer.m
 
 - **La « 182 » est-elle la 180 ?** Roberto le pense. À confirmer avant de renommer la fiche. Ne
   bloque aucun test.
-- **Une soumission réelle avec une ligne fournisseur** pour T10. À défaut, Soufiane en fabrique
-  une et le signale dans la capture.
+- **Le sens de pose n'arrive pas au bon de travail.** Le build l'enregistre, l'écran l'affiche, le
+  BT non (`src/bt/` n'en a aucune trace, et son widget est au build du 20 oct.). À porter dans le
+  build suivant, avec le point ci-dessous.
+- **`entreesExemple` ne normalise pas les F/S.** Une soumission partie de l'Exemple change de prix
+  d'elle-même à sa première réouverture (≈ +140 $ sur le scénario testé). Correction d'une ligne,
+  à faire après la série pour ne pas changer le bandeau sous les captures.
+- ~~**Une soumission réelle avec une ligne fournisseur** pour T10.~~ Réglé le 20 nov. : T10 joué
+  avec R41 = 0,50 $/pi², 3 562,50 → 2 571,43 $.
 - **Christian n'est pas encore prévenu** de l'effet de l'étape 6 sur les prix. Décidé le 19 nov. :
   ça passera dans le document final, pas dans un point d'étape séparé.
 
