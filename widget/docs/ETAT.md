@@ -114,6 +114,22 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — Le montage est livré à Artistic *(Youssef)*
+**Envoyé à Philippe Béland** : l'avancement en trois points — montage clos, PDF de soumission
+clos, maquette en cours — avec le document du montage et un exemplaire du nouveau document de
+soumission (la même job FC-940, pour qu'il lise une seule histoire).
+
+Le chantier du montage est **terminé** : du calcul au bon de travail, testé sur les données
+d'Artistic et expliqué au client. Il aura duré du 2 au 20 novembre.
+
+Un courriel à Roberto est prêt en brouillon, avec le même document : ses sept fiches corrigées,
+One man hors liste, la DTS retirée, et les deux choses qui lui restent — confirmer que la 180 est
+bien la « 182 », et dire si l'atelier a besoin de voir le sens de pose sur le papier.
+
+**Ce qui reste ouvert après la livraison :** le sens de pose au bon de travail, le format du
+numéro de soumission, les numéros de taxes, et les quatre décisions de la refonte. Tout cela
+passe par Christian.
+
 ### 20 nov. — Le document du montage est validé *(Youssef)*
 Relu à l'écran, captures comprises : **il est bon, tel quel**. Six sections, neuf captures, le
 tableau avant/après de la job FC-940 et l'encadré sur le prix qui corrige dans les deux sens.
