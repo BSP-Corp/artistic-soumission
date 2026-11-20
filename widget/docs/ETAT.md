@@ -112,6 +112,18 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 20 nov. — Le montage passe devant le contrat Openmind *(Youssef)*
+Arbitrage rendu. **Le montage est prioritaire sur tout autre chantier** tant qu'il n'est pas
+livré. C'est la livraison qu'Artistic attend, et elle est bloquée depuis le 17 par une heure de
+travail manuel.
+
+Ce n'était pas dit en ces termes jusqu'ici : les relances disaient « urgent », pas « avant le
+reste ». C'est dit maintenant.
+
+**Ordre de marche :** la feuille de séance (`montage-seance-deploiement.md`), puis T1 → T16 et
+les captures. Le contrat Openmind reprend après — le travail poussé cette nuit n'est pas perdu,
+il est simplement en attente.
+
 ### 20 nov. — Le dépôt est à jour chez Soufiane ; le montage n'a pas avancé *(BSP)*
 Son commit du 20 nov. à 01:42 (contrat HTML Openmind) est construit **directement sur `890f5fa`**.
 Il a donc récupéré la feuille de séance, l'ordre des écritures et la décision sur le courriel
