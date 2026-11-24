@@ -169,11 +169,13 @@ export default function AppS2() {
   // ── nouvelle soumission ───────────────────────────────────────────────────
   // `useSoumission` démarre sur l'Exemple du classeur : on repart d'une fiche vierge dès que
   // les défauts de Creator sont connus.
+  const autoAdhesif = useRef<string | null>(null);
   function nouvelle() {
     s.reset("vierge");
     for (const c of Object.keys(s.entrees)) if (c.startsWith("X!")) unset(c);
     for (const [c, v] of ecrituresPaliers(paliersDefaut(s.params?.app))) set(c, v);
     set(CELL_ORIGINE_S2, 1);
+    autoAdhesif.current = null;
     setIdSoumission("");
     setMessage("");
   }
@@ -190,7 +192,6 @@ export default function AppS2() {
   // Même règle que l'écran actuel : sans elle, la même fiche n'aurait pas le même prix d'un
   // widget à l'autre.
   const adhesif = useMemo(() => deduireAdhesif(s.entrees), [s.entrees]);
-  const autoAdhesif = useRef<string | null>(null);
   useEffect(() => {
     if (!demarre) return;
     const cible = adhesif?.cellule ?? null;
@@ -593,6 +594,14 @@ export default function AppS2() {
                 <Materiau key={cell} label={label} cell={cell} value={s.saisie(cell)} onChange={set} options={catalogues[champ]} />
               ))}
             </div>
+            <h3>Pose de l'adhésif</h3>
+            <div className="s2-champs">
+              {C("Adhésif laminé", IN.adhesifLamine)}
+              {C("Adhésif registre", IN.adhesifRegistre)}
+            </div>
+            {adhesif && !toNum(s.saisie(adhesif.cellule)) ? (
+              <p className="s2-alerte">L'adhésif choisi demande « {adhesif.libelle} » ({adhesif.indice}), qui n'est pas coché : ce temps n'est pas compris dans le prix.</p>
+            ) : null}
             <Laminage a={acces} />
           </Section>
 
@@ -704,7 +713,11 @@ export default function AppS2() {
             const ok = s.chargerDonnees(sr.donnees);
             let dIci = false;
             try {
-              dIci = Number((JSON.parse(sr.donnees) as Record<string, CellValue>)[CELL_ORIGINE_S2]) === 1;
+              const lues = JSON.parse(sr.donnees) as Record<string, CellValue>;
+              dIci = Number(lues[CELL_ORIGINE_S2]) === 1;
+              // Ouvrir ne doit pas changer le prix : l'adhésif déjà choisi est considéré comme
+              // traité, la case reste telle qu'elle a été enregistrée. (FC-940 gagnait 425 $.)
+              if (ok) autoAdhesif.current = deduireAdhesif(lues)?.cellule ?? null;
             } catch {
               dIci = false;
             }
