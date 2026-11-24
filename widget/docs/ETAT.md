@@ -132,6 +132,24 @@ Christian), sur l'avancement et sur le partage du travail avec Jose, qui monte d
 son côté. Un état du projet leur part aujourd'hui. Rien à préparer, mais le contexte explique
 pourquoi les deux points ci-dessus pressent.
 
+### 24 nov. — Essai de la refonte : la platine n'a qu'une paire au lieu de quatre *(Youssef + Claude)*
+**Relevé en saisissant une job de référence dans `Soumission_essai`.** La section 07 du nouvel écran
+offre **une seule paire** « Platine, matrices » / « Platine, poses ». L'écran actuel en a **quatre**,
+chacune avec sa matrice : `platAdhesifDie` (S!D33), `platCoupeDie` (S!D34), `platKisscutDie` (S!D35)
+et `platEmbossageDie` (S!D36).
+
+La paire du nouvel écran correspond au **kiss-cut**, seul des quatre à porter un nombre de poses
+(S!E35). Pour la job d'essai ça tombe juste — elle ne fait qu'un kiss-cut, 1 matrice, 4 poses. Mais
+**une job qui coupe, adhésive ou embosse à la platine ne peut pas s'exprimer** dans le nouvel écran :
+sa quantité n'a nulle part où aller, et le coût correspondant disparaît sans rien dire.
+
+À trancher avec Soufiane : rendre les quatre lignes saisissables, ou afficher un avertissement quand
+une des trois autres est utilisée dans la soumission rouverte. Le silence est le pire des deux.
+
+**Rappel de modélisation, à ne pas perdre :** `S!D35` (kiss-cut) **exige la valeur 1**. Toute autre
+valeur annule le coût de découpe au lieu de le multiplier — c'est écrit dans `modele.ts` et ça se
+comporte à l'inverse de l'intuition. Les trois autres `Die` sont de vraies quantités.
+
 ### 24 nov. — Le repliage des sections revient, ouvert par défaut *(Youssef)*
 **Youssef demande que chaque section se replie**, en cliquant sur son titre : « l'idée, c'est qu'on
 va pouvoir réduire chaque sous-formulaire… comme ça j'ai seulement les écrans sur lesquels je
