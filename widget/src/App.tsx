@@ -894,6 +894,7 @@ export default function App() {
           className="btn ghost"
           onClick={() => {
             s.reset("vierge");
+            autoAdhesif.current = null;
             setIdSoumission(""); // dossier neuf : le prochain enregistrement crée un enregistrement
             setMessage("");
           }}
@@ -904,6 +905,8 @@ export default function App() {
           className="btn ghost"
           onClick={() => {
             s.reset("exemple");
+            // sans ça l'Exemple perdait l'adhésif laminé que le chargement avait posé
+            autoAdhesif.current = null;
             setIdSoumission("");
             setMessage("");
           }}
@@ -980,6 +983,11 @@ export default function App() {
           chargement={soumissionsChargement}
           onOuvrir={(sr) => {
             const ok = s.chargerDonnees(sr.donnees);
+            // Ouvrir ne doit pas changer le prix. La pose automatique de l'adhésif dépendait de
+            // ce qui était à l'écran AVANT : la même FC-940 valait 62 723,50 $ ouverte
+            // directement et 63 255,37 $ ouverte après « Nouvelle soumission » (24 nov. 2026).
+            // L'adhésif enregistré est considéré comme déjà traité, la case reste telle quelle.
+            if (ok) autoAdhesif.current = deduireAdhesif(JSON.parse(sr.donnees))?.cellule ?? null;
             // on reprend SON identité : réenregistrer met à jour cette soumission-là
             setIdSoumission(ok ? sr.id : "");
             setSoumissionsOuvert(false);
@@ -1342,8 +1350,18 @@ export default function App() {
                     {adhesifDeduit && adhesifDeduit.cellule === c1 && (
                       <tr>
                         <td className="machine-info" colSpan={5}>
-                          activé automatiquement — adhésif en {adhesifDeduit.forme} ({adhesifDeduit.indice}
-                          {adhesifDeduit.source === "nom" ? ", déduit du nom" : ", fiche matériau"}). Décochez pour l'annuler.
+                          {/* le texte suit l'état RÉEL de la case : depuis que l'ouverture ne pose
+                              plus la ligne, « activé » serait faux sur une soumission qui ne l'a pas */}
+                          {toNum(s.saisie(c1)) === 1 ? (
+                            <>
+                              activé automatiquement — adhésif en {adhesifDeduit.forme} ({adhesifDeduit.indice}
+                              {adhesifDeduit.source === "nom" ? ", déduit du nom" : ", fiche matériau"}). Décochez pour l'annuler.
+                            </>
+                          ) : (
+                            <strong role="alert">
+                              ⚠ cet adhésif demande la ligne {label} ; elle n'est pas activée, son coût n'est pas compté.
+                            </strong>
+                          )}
                         </td>
                       </tr>
                     )}
