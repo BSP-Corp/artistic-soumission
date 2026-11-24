@@ -142,12 +142,12 @@ de client reconnu : BSP, tests, démonstrations, Youssef. À confirmer : « YDOU
 (800,99 $). Ciena l'a compté ; IDENCO, CM-LAB, SANIQUIP et l'Agence spatiale n'ont pas d'adhésif. L'écart
 varie avec la soumission, ce n'est pas 425,50 $ partout.
 
-**Données de test :** BT-1019, BT-1020 et les deux brouillons nommés sont supprimés (relu). **BT-1021
-reste** : suppression refusée par le garde-fou de l'outil. Copie des cinq gardée en local.
+**Données de test :** BT-1019, BT-1020, BT-1021 et les deux brouillons nommés sont supprimés (relu).
+Copie des cinq gardée en local.
 
-**`Formats_Feuille` est toujours au menu.** Le générateur de menu propose « Supprimer les éléments »
-sans dire si c'est le menu ou le rapport ; le rapport sert au calcul, donc pas confirmé. À glisser à la
-main dans la section Administration.
+**`Formats_Feuille` est rangé dans la section Administration du menu** (formulaire et rapport déplacés,
+rien de supprimé). Vérifié ensuite : l'écran de production lit toujours ses 9 formats et FC-940 vaut
+toujours 62 723,50 $.
 
 **Refonte, première version** (branche `refonte-soumission`, `409696e`, build `15:45 UTC`, page
 `Soumission_essai`, administrateurs seulement). Décision : avancer sans attendre Christian, avec des
