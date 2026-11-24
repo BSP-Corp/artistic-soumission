@@ -114,6 +114,26 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 24 nov. — Un bug de prix dans l'écran actuel, et la refonte à l'essai *(Soufiane + Claude)*
+**Une même soumission a deux prix selon ce qui était ouvert avant.** FC-940 : 62 723,50 $ ouverte
+directement, **63 255,37 $** ouverte après « Nouvelle soumission » (vérifié en production, build
+`16:48`). La pose automatique de l'adhésif laminé dépend de l'état précédent de l'écran, et le
+bouton « Exemple » la perd. **FC-940 est partie de l'Exemple : il lui manque ce poste, 425,50 $ de
+coût. C'est la job du document et du PDF envoyés à Philippe.** Les relevés T9 du 20 nov. partaient
+eux aussi de l'Exemple. Correctif prêt sur la branche `correctif-adhesif` (`52e2080`), **ni fusionné
+ni déployé** : il touche aux prix affichés, à Youssef de décider.
+
+**La refonte est à l'essai dans Creator**, emplacement `soumission2`, page `Soumission_essai`.
+Aucun des cinq profils n'y a accès (relu) ; seuls les administrateurs la voient. Branche
+`refonte-soumission` (`9cb47ed`). Les dix sections, barre de total fixe, dessin des poses, saisie du
+numérique. Trois soumissions comparées à l'écran actuel dans Creator, deux passes : mêmes prix.
+Manquent : pièces multiples, prix du numérique (aucun taux ni vitesse), sous-traitance et PO, bon
+de travail. L'infographie (heures × 85 $) s'affiche mais n'entre pas dans le prix : à confirmer.
+
+**À savoir :** la table `Formats_Feuille` créée le 20 nov. a ajouté une section du même nom au menu
+de l'application ; personne ne l'avait signalé. Brouillon d'essai `4153107000024164004` à supprimer
+avec les autres.
+
 ### 24 nov. — Trois corrections à ce que j'avais rapporté *(Soufiane + Claude)*
 **La 120 absente n'était pas une panne.** J'avais rapporté un `chargerAdmin` qui échoue par
 intermittence ; l'entrée du 20 nov. « La série est complète » le reprend. C'était faux : quatre
