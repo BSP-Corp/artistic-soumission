@@ -26,7 +26,7 @@ const exempleJoli = JSON.stringify(exemple, null, 2);
 
 const nbIn = champs.champs.filter((c) => c.origine === "in").length;
 const nbOut = champs.champs.filter((c) => c.origine === "out").length;
-const DATE = "20 novembre 2026";
+const DATE = "24 novembre 2026";
 
 // ── échappement ─────────────────────────────────────────────────────────────
 const ech = (s) =>
@@ -426,7 +426,7 @@ Content-Type: application/json
   <h2><span class="num">08</span>Ce qui reste à régler</h2>
   <p>Les points ouverts depuis la rencontre du 5 novembre.</p>
   <ul class="demandes">
-    <li><span class="case"></span><div><strong>L'accès à votre environnement de test</strong><span>Par le VPN de Groupe Canva, demandé à Christian. Dès qu'il est ouvert, nous faisons un premier envoi réel pour vérifier la communication.</span></div></li>
+    <li><span class="case"></span><div><strong>L'accès à votre environnement de test</strong><span>Par le VPN de Groupe Canva, dont l'accès passe par Christian. Dès qu'il est ouvert, nous faisons un premier envoi réel pour vérifier la communication.</span></div></li>
     <li><span class="case"></span><div><strong>Le format de votre réponse</strong><span>Pour signaler un champ précis dans le formulaire, il nous faudra la liste des champs visés et un code d'erreur par champ.</span></div></li>
     <li><span class="case"></span><div><strong>Les fichiers joints</strong><span>Notre proposition suit : des liens temporaires vers les fichiers plutôt que les fichiers dans le JSON.</span></div></li>
     <li><span class="case"></span><div><strong>Les mises à jour de statut</strong><span>Chaque soumission nouvelle ou modifiée vous sera envoyée avec son statut. Ce sera l'objet d'une prochaine version mineure, annoncée.</span></div></li>
