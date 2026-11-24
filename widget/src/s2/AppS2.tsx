@@ -81,6 +81,7 @@ import {
   CELL_ORIGINE_S2,
   avecGache,
   cellulesPaliers,
+  dureeTexte,
   ecrituresPaliers,
   margeReelle,
   palierActif,
@@ -431,7 +432,7 @@ export default function AppS2() {
   const total = s.num(OUT.total);
   const unitaire = s.num(OUT.prixUnitaire);
   const marge = margeReelle(total, cout);
-  const temps = !seri ? "non chiffré" : `${Math.trunc(s.num(OUT.tempsTotalHrs))} h ${String(Math.round(s.num(OUT.tempsTotalMin))).padStart(2, "0")}`;
+  const temps = !seri ? "non chiffré" : dureeTexte(Math.trunc(s.num(OUT.tempsTotalHrs)), s.num(OUT.tempsTotalMin));
   const unitaireUs = s.num(OUT.prixUnitaireUs);
   const presses = machinesFamille(s.machinesCalc, "presse");
   const valeurPresse = String(s.saisie(CELL_PRESSE) ?? "");

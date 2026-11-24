@@ -70,3 +70,9 @@ export function palierActif(entrees: Record<string, CellValue>): string | null {
   if (!(q > 0)) return null;
   return cellulesPaliers(entrees).find((c) => toNum(entrees[c] ?? "") === q) ?? null;
 }
+
+/** « 4 h 00 » : arrondit sur le total des minutes, sinon 3 h 59,7 s'affiche « 3 h 60 ». */
+export function dureeTexte(heures: number, min: number): string {
+  const total = Math.round(heures * 60 + min);
+  return `${Math.floor(total / 60)} h ${String(total % 60).padStart(2, "0")}`;
+}
