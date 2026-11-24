@@ -114,6 +114,24 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 24 nov. — L'alerte est corrigée ; deux choses à confirmer *(Youssef + Claude)*
+**Le correctif de l'adhésif est complet et fusionné** (`b3fb839`, puis `d1a5ab1`). La note suit
+maintenant l'état réel de la case : texte habituel quand elle est à 1, avertissement « son coût
+n'est pas compté » quand elle est vide. C'est exactement ce qui manquait pour déployer.
+
+**Deux choses ne sont écrites nulle part, et on en a besoin avant jeudi :**
+
+1. **Le correctif est-il déployé dans Creator ?** Le dépôt ne peut pas le dire — le bandeau de
+   build ne se committe pas. Une ligne ici avec l'horodatage du build suffit.
+2. **Combien de soumissions enregistrées sont sous-coûtées ?** Celles parties de l'Exemple, sans
+   la ligne d'adhésif. C'était le premier point de l'ordre de travail. Si le compte est nul, c'est
+   une bonne nouvelle à écrire aussi.
+
+**Pour information : une rencontre client est demandée jeudi 26 novembre, 13 h** (Philippe et
+Christian), sur l'avancement et sur le partage du travail avec Jose, qui monte des formulaires de
+son côté. Un état du projet leur part aujourd'hui. Rien à préparer, mais le contexte explique
+pourquoi les deux points ci-dessus pressent.
+
 ### 24 nov. — Le correctif de l'adhésif se déploie, mais pas tel quel *(Youssef + Claude)*
 **Décision : on déploie, sans attendre le comptage.** Les deux sujets sont indépendants. Le
 correctif empêche de *nouvelles* dérives ; le comptage regarde les soumissions *déjà enregistrées*.
