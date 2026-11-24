@@ -159,6 +159,24 @@ la prochaine réédition du document, et ça se dit sans détour si la question 
 n'est pas parti. Tant qu'il dort, le numérique se saisit sans se chiffrer et les pièces multiples
 restent indécidables.
 
+**Ce qui peut avancer sans attendre Christian.** Seules trois choses sont réellement bloquées :
+les **pièces multiples**, le **prix du numérique** (aucun taux, aucune vitesse) et les **deux
+feuilles produit** manquantes. Tout le reste est libre. L'ordre proposé :
+
+1. **Compter les soumissions sous-coûtées en production** (celles parties de l'Exemple, sans
+   l'adhésif laminé). C'est le seul point qui touche de l'argent réel, et il conditionne le
+   déploiement du correctif.
+2. **Masquer `Formats_Feuille` du menu** et **supprimer les données de test** — BT-1019, BT-1020,
+   BT-1021, et les brouillons `4153107000024164004` et `4153107000024164002`. Petit, et ça nettoie
+   ce que le client voit.
+3. **Le bon de travail depuis la refonte.** Rebranchement, aucune dépendance externe.
+4. **La table `Config_Champs_Produit_Numerique`** : monter le mécanisme, sans les taux. C'est
+   l'autonomie promise au client et ça ne demande aucun chiffre — les taux viendront se poser
+   dedans.
+5. **Le PDF deux pages** : porter `PopupProposition.tsx` dans le 2e widget. Le gabarit est déjà
+   validé sur des PDF réels, il n'y a rien à réinventer.
+6. **Sous-traitance et PO (09)** et **certifications (03)**, puis les **validations** de la spec §7.
+
 ### 24 nov. — Un bug de prix dans l'écran actuel, et la refonte à l'essai *(Soufiane + Claude)*
 **Une même soumission a deux prix selon ce qui était ouvert avant.** FC-940 : 62 723,50 $ ouverte
 directement, **63 255,37 $** ouverte après « Nouvelle soumission » (vérifié en production, build
