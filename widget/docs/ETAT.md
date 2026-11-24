@@ -132,6 +132,32 @@ Christian), sur l'avancement et sur le partage du travail avec Jose, qui monte d
 son côté. Un état du projet leur part aujourd'hui. Rien à préparer, mais le contexte explique
 pourquoi les deux points ci-dessus pressent.
 
+### 24 nov. — Le repliage des sections revient, ouvert par défaut *(Youssef)*
+**Youssef demande que chaque section se replie**, en cliquant sur son titre : « l'idée, c'est qu'on
+va pouvoir réduire chaque sous-formulaire… comme ça j'ai seulement les écrans sur lesquels je
+travaille ».
+
+**À noter, parce que le dépôt dit l'inverse.** Le handoff retient du 9 novembre que le client avait
+refusé le repliage : *« on aime mieux tout voir pour être sûr qu'on n'a rien oublié »*, et la
+consigne écrite était « 01 à 08 toujours ouvertes, sans flèche ». Philippe avait toutefois laissé
+une porte : le repliage *« pourrait peut-être servir s'il y a des choses qui étaient optionnelles.
+Mais sinon, on les laisserait ouvertes »*.
+
+**Ce qu'on fait, et qui tient les deux :** toutes les sections deviennent repliables, mais
+**ouvertes par défaut**. On ne perd pas ce que le client voulait protéger — à l'ouverture de
+l'écran, tout est visible, rien ne se cache —, et le chargé de projet qui veut se concentrer replie
+ce dont il n'a pas besoin. Les sections optionnelles (sous-traitance, notes) restent fermées par
+défaut, comme prévu.
+
+Deux détails qui comptent pour que ce soit utile plutôt qu'agaçant :
+- **le titre entier est cliquable**, pas une petite flèche ;
+- une section repliée **montre l'essentiel de ce qu'elle contient** sur sa ligne de titre (le client,
+  le nombre de pièces, la matière retenue), sinon replier revient à cacher et on rouvre tout le
+  temps pour vérifier.
+
+Ce que le repliage ne doit **pas** faire : vider des champs, ni retirer une section des
+vérifications. Replier, c'est masquer, jamais désactiver.
+
 ### 24 nov. — Les trois soumissions sont des essais : le compte réel est zéro *(Youssef)*
 **Youssef confirme : « YDOUAA » et les deux sans nom de client (800,99 $) sont des essais.** Sur les
 51 soumissions enregistrées, **aucune soumission réelle n'était sous-coûtée**. Le défaut de l'adhésif
