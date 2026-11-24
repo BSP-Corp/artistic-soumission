@@ -114,6 +114,119 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 24 nov. — Le correctif de l'adhésif se déploie, mais pas tel quel *(Youssef + Claude)*
+**Décision : on déploie, sans attendre le comptage.** Les deux sujets sont indépendants. Le
+correctif empêche de *nouvelles* dérives ; le comptage regarde les soumissions *déjà enregistrées*.
+Attendre l'un pour faire l'autre ne protège personne, et pendant ce temps la même job continue de
+s'afficher à deux prix selon l'ordre des clics.
+
+**Mais la branche `correctif-adhesif` est incomplète, et telle quelle elle rend l'écran menteur.**
+L'alerte dont parle le commit n'est pas dans le diff : c'est la note qui existe déjà dans `main`,
+`App.tsx` ~1342. Elle s'affiche sur la seule condition `adhesifDeduit.cellule === c1`, **sans
+regarder si la case est cochée**, et son texte est figé :
+
+> activé automatiquement — adhésif en {forme} ({indice}). Décochez pour l'annuler.
+
+Aujourd'hui ce texte est vrai, parce que l'effet venait de poser la ligne. **Après le correctif il
+devient faux** : FC-940 s'ouvre avec la case vide, le coût n'est pas compté, et l'écran affiche
+quand même « activé automatiquement ». Le chargé de projet lit que c'est posé alors que ça ne l'est
+pas. C'est pire que le défaut qu'on corrige, parce que c'est silencieux et affirmatif.
+
+**À faire avant de déployer** — la note se conditionne à l'état réel de la case, deux textes :
+
+- case à 1 → le texte actuel, « activé automatiquement … Décochez pour l'annuler. »
+- case vide → un avertissement : « cet adhésif demande la ligne {label} ; elle n'est pas activée,
+  son coût n'est pas compté. »
+
+C'est une poignée de lignes au même endroit. Sans ça, le correctif retire un filet — la pose
+accidentelle après « Nouvelle » — sans rien mettre à la place.
+
+**Le comptage des soumissions sous-coûtées reste à faire**, en parallèle et sans bloquer le
+déploiement.
+
+### 24 nov. — Réponses à Soufiane : le dépôt est public, et quatre arbitrages *(Youssef + Claude)*
+**Le dépôt est public. C'est vérifié.** `BSP-Corp/artistic-soumission` répond à l'API GitHub sans
+authentification, `"private": false`, et il l'est **depuis sa création le 27 octobre** — 28 jours.
+Aucun identifiant n'y est committé : recherche sur tout l'historique, pas de `.env`, pas de jeton
+Zoho ; la seule clé qui apparaît est le gabarit `<CLÉ_REMISE_PAR_OPENMIND>`. Ce qui est exposé est
+commercial : `classeur.json` — les 1 322 formules, c'est-à-dire le modèle de prix d'Artistic — les
+taux machines, les prix matériaux, les captures avec les prix réels, la spec du client, et ce
+journal avec les noms et le contenu des échanges. **0 fork, 0 étoile, 0 abonné** : aucun signe que
+quelqu'un l'ait repris, mais les clones ne se voient pas sans l'accès admin. **À passer en privé**,
+et c'est une décision de BSP. À savoir : les deux autres dépôts de l'organisation (2point0 Concepts,
+dont un `costanalysis-widget`) sont publics eux aussi. Ce n'est pas un réglage oublié sur celui-ci,
+c'est le défaut de l'organisation.
+
+**L'infographie n'entre pas au coût.** Vérifié dans l'écran actuel : rien ne la chiffre nulle part.
+`lib/numerique.ts:380` ne pose qu'une alerte — « Infographie à réaliser : temps à paramétrer ».
+`bt/modeleFT.ts` n'a que les cases épreuve / courriel / films. Aucune cellule de coût dans
+`modele.ts`. L'ajouter ferait décrocher la refonte de son seul critère de validation — les mêmes
+prix que l'écran actuel — et reviendrait à décider une politique de prix à la place du client.
+**Elle reste affichée, hors total, avec la ligne qui le dit.** Le taux de 85 $/h part avec les
+autres taux dans la question à Christian.
+
+**`Formats_Feuille` : oui, masquer la section du menu.** C'est une table de référence, pas un écran.
+Mais la garder accessible aux administrateurs — Christian doit pouvoir y ajouter un format sans
+passer par nous.
+
+**Le correctif de l'adhésif : recommandation, Youssef tranche.** Le correctif est juste et il est
+petit : 8 lignes, remise à zéro de `autoAdhesif` à l'ouverture, à « Nouvelle » et à « Exemple ». Il
+rend le prix déterministe, ce qui n'est pas négociable pour un outil de soumission. **Mais il ne
+corrige rien rétroactivement** : il fige la soumission à son prix enregistré, donc le plus bas, et
+compte sur l'alerte pour signaler l'adhésif manquant. D'où la question à regarder avant de
+déployer : **toutes les soumissions réelles parties de l'Exemple sont sous-coûtées de 425,50 $** et
+rien ne les rattrapera. Combien y en a-t-il en production ?
+
+**Le document parti chez Philippe : ne pas le renvoyer.** Le poste manque autant au « avant » qu'au
+« après » — la pose automatique dépendait de l'état de l'écran, pas du montage. Le gain annoncé
+tient donc intégralement : le −28 % de T10, le 2,94 → 2,51 $, tout reste exact. L'écart est de
+531,87 $ sur 62 723,50 $, soit 0,85 %, sur une job de démonstration pour un client fictif qui ne
+sera jamais facturée. Idem pour l'ancienne C6 et sa feuille d'écart. Un courriel de correction à
+0,85 % sur un document de démonstration coûte plus de crédibilité qu'il n'en rend. Ça se corrige à
+la prochaine réédition du document, et ça se dit sans détour si la question vient.
+
+**Les quatre réponses de Christian bloquent pour de vrai.** Le brouillon est rédigé depuis le 20 et
+n'est pas parti. Tant qu'il dort, le numérique se saisit sans se chiffrer et les pièces multiples
+restent indécidables.
+
+**Ce qui peut avancer sans attendre Christian.** Seules trois choses sont réellement bloquées :
+les **pièces multiples**, le **prix du numérique** (aucun taux, aucune vitesse) et les **deux
+feuilles produit** manquantes. Tout le reste est libre. L'ordre proposé :
+
+1. **Compter les soumissions sous-coûtées en production** (celles parties de l'Exemple, sans
+   l'adhésif laminé). C'est le seul point qui touche de l'argent réel, et il conditionne le
+   déploiement du correctif.
+2. **Masquer `Formats_Feuille` du menu** et **supprimer les données de test** — BT-1019, BT-1020,
+   BT-1021, et les brouillons `4153107000024164004` et `4153107000024164002`. Petit, et ça nettoie
+   ce que le client voit.
+3. **Le bon de travail depuis la refonte.** Rebranchement, aucune dépendance externe.
+4. **La table `Config_Champs_Produit_Numerique`** : monter le mécanisme, sans les taux. C'est
+   l'autonomie promise au client et ça ne demande aucun chiffre — les taux viendront se poser
+   dedans.
+5. **Le PDF deux pages** : porter `PopupProposition.tsx` dans le 2e widget. Le gabarit est déjà
+   validé sur des PDF réels, il n'y a rien à réinventer.
+6. **Sous-traitance et PO (09)** et **certifications (03)**, puis les **validations** de la spec §7.
+
+### 24 nov. — Un bug de prix dans l'écran actuel, et la refonte à l'essai *(Soufiane + Claude)*
+**Une même soumission a deux prix selon ce qui était ouvert avant.** FC-940 : 62 723,50 $ ouverte
+directement, **63 255,37 $** ouverte après « Nouvelle soumission » (vérifié en production, build
+`16:48`). La pose automatique de l'adhésif laminé dépend de l'état précédent de l'écran, et le
+bouton « Exemple » la perd. **FC-940 est partie de l'Exemple : il lui manque ce poste, 425,50 $ de
+coût. C'est la job du document et du PDF envoyés à Philippe.** Les relevés T9 du 20 nov. partaient
+eux aussi de l'Exemple. Correctif prêt sur la branche `correctif-adhesif` (`52e2080`), **ni fusionné
+ni déployé** : il touche aux prix affichés, à Youssef de décider.
+
+**La refonte est à l'essai dans Creator**, emplacement `soumission2`, page `Soumission_essai`.
+Aucun des cinq profils n'y a accès (relu) ; seuls les administrateurs la voient. Branche
+`refonte-soumission` (`9cb47ed`). Les dix sections, barre de total fixe, dessin des poses, saisie du
+numérique. Trois soumissions comparées à l'écran actuel dans Creator, deux passes : mêmes prix.
+Manquent : pièces multiples, prix du numérique (aucun taux ni vitesse), sous-traitance et PO, bon
+de travail. L'infographie (heures × 85 $) s'affiche mais n'entre pas dans le prix : à confirmer.
+
+**À savoir :** la table `Formats_Feuille` créée le 20 nov. a ajouté une section du même nom au menu
+de l'application ; personne ne l'avait signalé. Brouillon d'essai `4153107000024164004` à supprimer
+avec les autres.
+
 ### 24 nov. — Trois corrections à ce que j'avais rapporté *(Soufiane + Claude)*
 **La 120 absente n'était pas une panne.** J'avais rapporté un `chargerAdmin` qui échoue par
 intermittence ; l'entrée du 20 nov. « La série est complète » le reprend. C'était faux : quatre
