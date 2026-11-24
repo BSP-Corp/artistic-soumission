@@ -1,11 +1,10 @@
-// 2e widget de soumission — phase 0 (docs/refonte-soumission.md §3).
+// 2e widget de soumission (docs/refonte-soumission.md).
 //
 // Même moteur, mêmes cellules, mêmes services que l'écran actuel : seule la présentation
-// change. Les sections sans contenu affichent leur titre, c'est voulu : elles montrent la
-// structure et arrivent aux phases suivantes.
+// change. Seule la sérigraphie se chiffre. Le numérique se saisit et se vérifie, mais il n'a
+// aucun calcul de coût (docs/production-numerique.md) : pas de prix, pas d'enregistrement.
 //
-// Hors phase 0 : certifications, livraison, sous-traitance, numérique, pièces multiples,
-// visuel de disposition, validations, bon de travail.
+// Pas encore là : pièces multiples (décision du client), sous-traitance et PO, bon de travail.
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSoumission, simulerQuantite, CLASSEUR } from "@/hooks/useSoumission";
 import {
@@ -60,6 +59,25 @@ import { PopupVerification } from "@/components/PopupVerification";
 import { PopupProposition, type LigneProposition } from "@/components/PopupProposition";
 import { Champ, Coche, Materiau, Nombre, Texte } from "./champs";
 import {
+  CELL_METHODE,
+  CELL_TYPE_CLIENT,
+  PREFIXE_NUM,
+  Certifications,
+  Coordonnees,
+  Disposition,
+  Fichier,
+  Laminage,
+  Liste,
+  Livraison,
+  Notes,
+  Numerique,
+  Outillage,
+  coordonneesManquantes,
+  controlesNumeriques,
+  lireMethode,
+  type Methode,
+} from "./sections";
+import {
   CELL_ORIGINE_S2,
   avecGache,
   cellulesPaliers,
@@ -98,14 +116,15 @@ function Section({ no, titre, phase, children }: { no: string; titre: string; ph
 }
 
 /** Seules 09 et 10 se replient : elles sont optionnelles. */
-function SectionOptionnelle({ no, titre, phase }: { no: string; titre: string; phase: string }) {
+function SectionOptionnelle({ no, titre, phase, children }: { no: string; titre: string; phase?: string; children?: ReactNode }) {
   return (
     <details className="s2-section">
       <summary>
         <span>{no}</span>
         {titre}
-        <em>{phase}</em>
+        {phase ? <em>{phase}</em> : null}
       </summary>
+      {children ? <div className="s2-corps">{children}</div> : null}
     </details>
   );
 }
@@ -238,6 +257,15 @@ export default function AppS2() {
     });
   }, [paliers, s.entrees, s.params, s.overridesTaux, s.surchargesMach]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ── méthode ───────────────────────────────────────────────────────────────
+  const methode = lireMethode(s.saisie(CELL_METHODE));
+  const seri = methode === "serigraphie";
+  const changerMethode = (m: Methode) => {
+    set(CELL_METHODE, m);
+    if (m !== "numerique") for (const c of Object.keys(s.entrees)) if (c.startsWith(PREFIXE_NUM)) unset(c);
+  };
+  const acces = { saisie: s.saisie, set, unset };
+
   // ── contrôles : le prix reste masqué tant que la fiche est incomplète ─────
   const seuil = s.params?.app?.SEUIL_DOUBLE_CHECK ?? SEUIL_DOUBLE_CHECK_DEFAUT;
   const controles = useMemo(
@@ -252,9 +280,12 @@ export default function AppS2() {
     [s.entrees, s.overridesTaux, s.surchargesMach, s.presseChoisie, s.zundChoisi, s.platineChoisie, s.params, regles, seuil], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const bloquants = controles.filter((c) => c.type !== "info");
-  const prixVisible = demarre && bloquants.length === 0;
+  const prixVisible = demarre && seri && bloquants.length === 0;
+  const aCompleter = methode === "numerique" ? controlesNumeriques(s.entrees).filter((c) => c.type !== "info").length : 0;
   const masque = (v: ReactNode) =>
-    !pret ? "…" : prixVisible ? (
+    !pret ? "…" : !seri ? (
+      <span className="s2-nonchiffre" title="Aucun taux ni vitesse n'est encore disponible pour cette méthode">non chiffré</span>
+    ) : prixVisible ? (
       v
     ) : (
       <button type="button" className="s2-averifier" title={bloquants.map((c) => c.message).join(" · ")} onClick={() => setPopup("verifier")}>
@@ -324,6 +355,11 @@ export default function AppS2() {
 
   // ── enregistrement : toujours « Brouillon », jamais d'envoi ───────────────
   async function enregistrer() {
+    const manque = coordonneesManquantes(s.entrees);
+    if (manque.length) {
+      setMessage("Nouveau client, à compléter avant d'enregistrer : " + manque.join(", ") + ".");
+      return;
+    }
     setOccupe(true);
     setMessage("Enregistrement…");
     try {
@@ -362,7 +398,7 @@ export default function AppS2() {
       if (res.ok && res.id) {
         setIdSoumission(res.id);
         set(CELL_ORIGINE_S2, 1);
-        const d = await majDatesCreator(res.id, { requise: s.saisie(IN.date), commande: "", expedition: "" });
+        const d = await majDatesCreator(res.id, { requise: s.saisie(IN.date), commande: "", expedition: s.saisie("X!DATE_EXP") });
         if (!d.ok) console.warn("majDatesCreator:", d.message);
       }
       setMessage(res.message);
@@ -395,7 +431,7 @@ export default function AppS2() {
   const total = s.num(OUT.total);
   const unitaire = s.num(OUT.prixUnitaire);
   const marge = margeReelle(total, cout);
-  const temps = `${Math.trunc(s.num(OUT.tempsTotalHrs))} h ${String(Math.round(s.num(OUT.tempsTotalMin))).padStart(2, "0")}`;
+  const temps = !seri ? "non chiffré" : `${Math.trunc(s.num(OUT.tempsTotalHrs))} h ${String(Math.round(s.num(OUT.tempsTotalMin))).padStart(2, "0")}`;
   const unitaireUs = s.num(OUT.prixUnitaireUs);
   const presses = machinesFamille(s.machinesCalc, "presse");
   const valeurPresse = String(s.saisie(CELL_PRESSE) ?? "");
@@ -413,7 +449,7 @@ export default function AppS2() {
             {sources.machines || "chargement…"} · build {__BUILD__}
           </p>
         </div>
-        <b className="s2-essai">Version d'essai, phase 0</b>
+        <b className="s2-essai">Version d'essai</b>
       </header>
 
       <nav className="s2-actions" aria-label="Actions">
@@ -434,8 +470,8 @@ export default function AppS2() {
         <button type="button" className="btn" disabled={!prixVisible} title={prixVisible ? "Soumission client, deux pages" : "Le prix n'est pas encore validé"} onClick={() => setPopup("client")}>Imprimer</button>
         <button type="button" className="btn" disabled={!prixVisible} title={prixVisible ? "Ouvre le document, d'où part le courriel" : "Le prix n'est pas encore validé"} onClick={() => setPopup("client")}>Envoyer</button>
         <span className="s2-message" role="status">{message}</span>
-        <button type="button" className="btn" disabled={!pret || occupe} onClick={() => void enregistrer()}>Enregistrer</button>
-        <button type="button" className="btn solid" disabled title="Arrive en phase 3, avec les validations. En attendant, le bon de travail se crée depuis l'écran actuel.">
+        <button type="button" className="btn" disabled={!pret || occupe || !seri} title={seri ? "" : "Une soumission non chiffrée ne s'enregistre pas encore : elle porterait un prix de sérigraphie"} onClick={() => void enregistrer()}>Enregistrer</button>
+        <button type="button" className="btn solid" disabled title="Pas encore branché. En attendant, le bon de travail se crée depuis l'écran actuel.">
           Envoyer vers le bon de travail
         </button>
       </nav>
@@ -451,12 +487,14 @@ export default function AppS2() {
         <div className="s2-gauche">
           <Section no="01" titre="Client">
             <div className="s2-champs">
+              <Liste a={acces} label="Type de client" cell={CELL_TYPE_CLIENT} vide="Client existant" options={["Nouveau client"]} />
               {T("Date", IN.date, { type: "date" })}
               {T("N° client", IN.noClient)}
               {T("Client", IN.client)}
               {T("Contact", CELL_PROP.contact)}
               {T("Représentant·e", CELL_PROP.representant)}
             </div>
+            <Coordonnees a={acces} />
           </Section>
 
           <Section no="02" titre="Pièces et fichier">
@@ -467,9 +505,10 @@ export default function AppS2() {
               {N("Hauteur", IN.dimPceY, { unite: "po" })}
             </div>
             <p className="s2-note">Une seule pièce pour l'instant. Le tableau de 1 à 5 pièces attend la réponse du client : impression séparée ou montage mixte.</p>
+            <Fichier a={acces} taux={s.params?.app?.TAUX_INFOGRAPHIE ?? 85} />
           </Section>
 
-          <Section no="03" titre="Certifications" phase="phase 3" />
+          <Section no="03" titre="Certifications"><Certifications a={acces} /></Section>
 
           <Section no="04" titre="Quantités">
             <table className="s2-table">
@@ -497,10 +536,16 @@ export default function AppS2() {
 
           <Section no="05" titre="Production">
             <div className="s2-methodes" role="radiogroup" aria-label="Méthode">
-              <label><input type="radio" name="methode" checked readOnly /> Sérigraphie</label>
-              <label className="off"><input type="radio" name="methode" disabled /> Numérique <em>phase 1</em></label>
-              <label className="off"><input type="radio" name="methode" disabled /> Découpe numérique seulement <em>phase 1</em></label>
+              {([["serigraphie", "Sérigraphie"], ["numerique", "Numérique"], ["decoupe", "Découpe numérique seulement"]] as [Methode, string][]).map(([m, l]) => (
+                <label key={m}><input type="radio" name="methode" checked={methode === m} onChange={() => changerMethode(m)} /> {l}</label>
+              ))}
             </div>
+            {!seri ? (
+              <p className="s2-alerte">Cette méthode ne se chiffre pas encore : les vitesses et les taux ne sont pas fournis. La saisie n'est pas enregistrable.</p>
+            ) : null}
+            {methode === "numerique" ? <Numerique a={acces} entrees={s.entrees} /> : null}
+            {methode === "decoupe" ? <p className="s2-note">Aucune impression : la découpe se décrit à la section 07.</p> : null}
+            {seri ? (<>
             <h3>Base</h3>
             <div className="s2-champs">
               {N("Couleurs visibles", IN.couleursVisibles)}
@@ -538,17 +583,19 @@ export default function AppS2() {
               {N("Nettoyage add. avant", IN.nettoyage1)}
               {N("Nettoyage add. après", IN.nettoyage2)}
             </div>
+            </>) : null}
           </Section>
 
-          <Section no="06" titre="Matériel et laminage" phase="champs actuels, complété en phase 2">
+          <Section no="06" titre="Matériel et laminage">
             <div className="s2-champs large">
               {MATERIAUX.map(([label, champ, cell]) => (
                 <Materiau key={cell} label={label} cell={cell} value={s.saisie(cell)} onChange={set} options={catalogues[champ]} />
               ))}
             </div>
+            <Laminage a={acces} />
           </Section>
 
-          <Section no="07" titre="Finition et découpe" phase="champs actuels, complété en phase 2">
+          <Section no="07" titre="Finition et découpe">
             <div className="s2-champs">
               {C("Zünd, coupe", IN.zundCoupeC)}
               {C("Zünd, mi-chair", IN.zundKisscutC)}
@@ -556,11 +603,12 @@ export default function AppS2() {
               {N("Platine, poses", IN.platCoupeUp)}
               {N("Guillotine", IN.guillotineQte)}
             </div>
+            <Outillage a={acces} />
           </Section>
 
-          <Section no="08" titre="Livraison" phase="phase 2" />
-          <SectionOptionnelle no="09" titre="Sous-traitance et installation" phase="phase 3" />
-          <SectionOptionnelle no="10" titre="Notes" phase="phase 3" />
+          <Section no="08" titre="Livraison"><Livraison a={acces} /></Section>
+          <SectionOptionnelle no="09" titre="Sous-traitance et installation" phase="à venir" />
+          <SectionOptionnelle no="10" titre="Notes"><Notes a={acces} /></SectionOptionnelle>
         </div>
 
         <aside className="s2-droite">
@@ -586,7 +634,7 @@ export default function AppS2() {
             </div>
           </section>
 
-          <section className="s2-section" aria-label="Calcul des poses">
+          {seri ? <section className="s2-section" aria-label="Calcul des poses">
             <h2>Calcul des poses</h2>
             <div className="s2-corps">
               {!(toNum(s.saisie(IN.dimPceX)) > 0 && toNum(s.saisie(IN.dimPceY)) > 0) ? (
@@ -595,6 +643,13 @@ export default function AppS2() {
                 <p className="s2-alerte">Aucun format de feuille ne peut recevoir cette pièce.</p>
               ) : (
                 <>
+                  <Disposition
+                    c={cible ?? montage.meilleur}
+                    pieceL={toNum(s.saisie(IN.dimPceX))}
+                    pieceH={toNum(s.saisie(IN.dimPceY))}
+                    espace={toNum(s.moteur.val(CELL_ESPACE_UP))}
+                    pourtour={toNum(s.moteur.val(CELL_POURTOUR))}
+                  />
                   <dl className="s2-resume">
                     <dt>Feuille suggérée</dt><dd>{libelleFormat(montage.meilleur.format)} po</dd>
                     <dt>Poses par feuille</dt><dd>{montage.meilleur.upHorizontal} × {montage.meilleur.upVertical} = {montage.meilleur.upParFeuille}{montage.meilleur.pieceTournee ? ", pièce tournée de 90°" : ""}</dd>
@@ -613,7 +668,7 @@ export default function AppS2() {
                 </>
               )}
             </div>
-          </section>
+          </section> : null}
 
           <details className="s2-section">
             <summary>Sommaire <b>{masque(argent(total))}</b></summary>
@@ -636,6 +691,7 @@ export default function AppS2() {
         <span>Coût <b>{masque(argent(cout))}</b></span>
         <span>Unitaire <b>{masque(nombre2(unitaire) + " $")}</b></span>
         <span>Temps <b>{pret ? temps : "…"}</b></span>
+        {aCompleter > 0 ? <span>À compléter <b>{aCompleter}</b></span> : null}
         <span className="total">Total <b aria-live="polite">{masque(argent(total))}</b></span>
       </footer>
 
