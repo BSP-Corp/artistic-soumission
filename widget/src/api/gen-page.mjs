@@ -287,7 +287,7 @@ footer{border-top:1px solid var(--filet);max-width:1080px;margin:0 auto;
     </div>
     <p class="doc-type">Contrat d'échange · Zoho Creator → plateforme d'analyse</p>
     <h1>Soumission Matériaux Souples</h1>
-    <p class="sous">Ce que Zoho enverra à votre API à chaque soumission validée : structure, types, exemple réel et authentification. De quoi faire votre mapping sans attendre notre prochaine rencontre.</p>
+    <p class="sous">Ce que Zoho enverra à votre API, avant l'envoi au client et à la validation : structure, types, exemple réel et authentification. De quoi faire votre mapping sans attendre notre prochaine rencontre.</p>
     <dl class="bloc-titre">
       <div class="bt"><dt>Schéma</dt><dd class="mono">v${champs.schema_version}</dd></div>
       <div class="bt"><dt>Généré le</dt><dd class="mono">${DATE}</dd></div>
@@ -369,7 +369,7 @@ npx ajv-cli validate -s soumission.schema.json -d recu.json --spec=draft2020</co
   <h2><span class="num">04</span>Exemple complet</h2>
   <p>Ce n'est pas une maquette. Ces chiffres sortent de notre moteur de calcul réel sur un travail type : 50 pièces, 4 matériaux, découpe à la platine, un sous-contrat de gravure.</p>
   <details open>
-    <summary>soumission.validee — ${exempleJoli.length.toLocaleString("fr-CA")} caractères indentés</summary>
+    <summary>exemple-soumission.json — ${exempleJoli.length.toLocaleString("fr-CA")} caractères indentés</summary>
     <pre><code>${colorerJSON(exempleJoli)}</code></pre>
   </details>
 </section>
