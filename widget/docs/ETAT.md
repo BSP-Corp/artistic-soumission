@@ -114,6 +114,36 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 24 nov. — Le correctif de l'adhésif se déploie, mais pas tel quel *(Youssef + Claude)*
+**Décision : on déploie, sans attendre le comptage.** Les deux sujets sont indépendants. Le
+correctif empêche de *nouvelles* dérives ; le comptage regarde les soumissions *déjà enregistrées*.
+Attendre l'un pour faire l'autre ne protège personne, et pendant ce temps la même job continue de
+s'afficher à deux prix selon l'ordre des clics.
+
+**Mais la branche `correctif-adhesif` est incomplète, et telle quelle elle rend l'écran menteur.**
+L'alerte dont parle le commit n'est pas dans le diff : c'est la note qui existe déjà dans `main`,
+`App.tsx` ~1342. Elle s'affiche sur la seule condition `adhesifDeduit.cellule === c1`, **sans
+regarder si la case est cochée**, et son texte est figé :
+
+> activé automatiquement — adhésif en {forme} ({indice}). Décochez pour l'annuler.
+
+Aujourd'hui ce texte est vrai, parce que l'effet venait de poser la ligne. **Après le correctif il
+devient faux** : FC-940 s'ouvre avec la case vide, le coût n'est pas compté, et l'écran affiche
+quand même « activé automatiquement ». Le chargé de projet lit que c'est posé alors que ça ne l'est
+pas. C'est pire que le défaut qu'on corrige, parce que c'est silencieux et affirmatif.
+
+**À faire avant de déployer** — la note se conditionne à l'état réel de la case, deux textes :
+
+- case à 1 → le texte actuel, « activé automatiquement … Décochez pour l'annuler. »
+- case vide → un avertissement : « cet adhésif demande la ligne {label} ; elle n'est pas activée,
+  son coût n'est pas compté. »
+
+C'est une poignée de lignes au même endroit. Sans ça, le correctif retire un filet — la pose
+accidentelle après « Nouvelle » — sans rien mettre à la place.
+
+**Le comptage des soumissions sous-coûtées reste à faire**, en parallèle et sans bloquer le
+déploiement.
+
 ### 24 nov. — Réponses à Soufiane : le dépôt est public, et quatre arbitrages *(Youssef + Claude)*
 **Le dépôt est public. C'est vérifié.** `BSP-Corp/artistic-soumission` répond à l'API GitHub sans
 authentification, `"private": false`, et il l'est **depuis sa création le 27 octobre** — 28 jours.
