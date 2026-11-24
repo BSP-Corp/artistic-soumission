@@ -11,6 +11,8 @@
     "build:bt": "tsc -b && vite build --config vite.bt.config.ts",
     "build:bt:vite": "vite build --config vite.bt.config.ts",
     "pack:bt": "vite build --config vite.bt.config.ts && cd bontravail && zet pack",
+    "build:s2": "tsc -b && vite build --config vite.soumission2.config.ts",
+    "pack:s2": "tsc -b && vite build --config vite.soumission2.config.ts && cd soumission2 && zet pack",
     "gen:api": "esbuild src/api/gen-exemple.ts --bundle --platform=node --format=cjs --alias:@=./src --outfile=.gen/gen-api.cjs --log-level=warning && node .gen/gen-api.cjs && esbuild src/api/gen-champs.ts --bundle --platform=node --format=cjs --alias:@=./src --outfile=.gen/gen-champs.cjs --log-level=warning && node .gen/gen-champs.cjs && esbuild src/api/gen-schema.ts --bundle --platform=node --format=cjs --alias:@=./src --outfile=.gen/gen-schema.cjs --log-level=warning && node .gen/gen-schema.cjs && node src/api/gen-page.mjs",
     "gen:page": "node src/api/gen-page.mjs",
     "gen:import": "esbuild src/gen-import-creator.ts --bundle --platform=node --format=cjs --alias:@=./src --outfile=.gen/gen-import.cjs --log-level=warning && node .gen/gen-import.cjs",
