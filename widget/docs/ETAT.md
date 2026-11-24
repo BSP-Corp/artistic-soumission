@@ -114,6 +114,21 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 24 nov. — Trois corrections à ce que j'avais rapporté *(Soufiane + Claude)*
+**La 120 absente n'était pas une panne.** J'avais rapporté un `chargerAdmin` qui échoue par
+intermittence ; l'entrée du 20 nov. « La série est complète » le reprend. C'était faux : quatre
+chargements sur quatre, le widget affiche le snapshot puis Creator 1,0 à 1,2 s plus tard, et le
+script de test lisait trop tôt. Aucun échec observé, donc la relance n'est pas justifiée par ce
+constat. Mettre le snapshot aux valeurs de Roberto reste utile : il est visible une seconde.
+
+**C6 portait aussi 1 101 / 1 100.** J'avais écrit que seules C1 à C4 étaient concernées. Elle est
+refaite. **L'ancienne C6 est dans le document parti chez Philippe** : à Youssef de dire s'il
+le renvoie.
+
+**T5 rejoué et prouvé.** Le 20 nov. le réenregistrement n'avait pas été confirmé. C'est fait, avec
+relecture par l'API (détail au protocole). Le brouillon `4153107000024164002` s'ajoute aux données de
+test à supprimer.
+
 ### 20 nov. — Les trois courriels sont partis : le chantier est livré *(Youssef)*
 Vérifié dans les envois, les trois portent bien leurs pièces jointes.
 

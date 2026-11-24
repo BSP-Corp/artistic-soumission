@@ -314,7 +314,7 @@ Valeurs relevées à l'écran, pas recalculées.
 | T2 | aucun bloc ; prix « à vérifier » partout. |
 | T3 | 7 × 1,4 → 24 × 48, 3 × 28 = 84 up · 4 × 6 → 24 × 48, 5 × 7 = 35 up. |
 | T4 | 30 × 28, 1 × 5 = 5 up (roulable sur 120, 150, 170). |
-| T5 | retenu 24 × 48, 84 up, Mrx 24 × 48 conservés. Prix identique au cent près sur deux réouvertures successives (26 724,05 $). **Voir l'écart ci-dessous.** |
+| T5 | retenu 24 × 48, 84 up, Mrx 24 × 48 conservés. **Le 20 nov., le réenregistrement n'avait pas été confirmé** (message vide) : l'aller-retour n'était pas prouvé. **Rejoué le 24 nov.** sur le build `2026-11-20 16:48 UTC`, voir plus bas. |
 | T6 | bloc affiché, « 523 feuilles de moins que le format courant ». |
 | T7 | « ⚠ le montage retenu (24 × 48) ne correspond plus : ce format donne maintenant 35 up par feuille, plus 84 ». |
 | T8 | 524 feuilles au bloc, 524 sous NB.MRX après acceptation. |
@@ -329,7 +329,7 @@ soumission rouverte coûte 26 724,05 $ au lieu de 26 583,96 $. Cause : `entreesE
 F/S (`S!B4`, `S!F4`) = 2 depuis le classeur, et `normaliserEntrees` les remet à 1 au chargement
 (décision du 13 août). Reproduit hors ligne avec le moteur. Toute soumission partie d'« Exemple »
 porte donc des passes F/S invisibles jusqu'à sa réouverture. Sans effet sur une « Nouvelle
-soumission ». À trancher : normaliser aussi l'Exemple ?
+soumission ». **Corrigé et déployé le 20 nov. (`f970cb0`)**, vérifié en rejouant T5 le 24 nov.
 
 **Vu en passant :**
 - La **Cameo 38SS no.120**, réactivée, apparaît dans « roulable sur » (lu depuis la fiche) mais
@@ -339,14 +339,20 @@ soumission ». À trancher : normaliser aussi l'Exemple ?
 - Le widget bon de travail est encore au build `2026-10-20`. T14 passe quand même : il relit la
   soumission.
 
-**Cameo 120 et « Multiprint 180 » : ce n'était pas la catégorie.** Le champ `Categorie` vaut
-« Serigraphie » sur les 110, 120, 150 et 182, relu par l'API et par le SDK du widget avec
-`field_config: "all"`. L'état React du chargement fautif montrait les 23 machines du **snapshot**
-(« Duplo », « Brausse », pas de Zund M-800) : `chargerAdmin` avait échoué et le widget était
-retombé en silence sur `fusionnerMachines(null)`. Rejouées à la main dans le même widget, les
-cinq lectures réussissent, et cinq rechargements de suite affichent la 120 et la 182. L'échec est
-intermittent et invisible : le bandeau dit « Creator » pour les matériaux, rien pour les
-machines. À prévoir au prochain build : source des machines au bandeau, et une relance.
+**Cameo 120 et « Multiprint 180 » : ni la catégorie, ni une panne (corrigé le 24 nov.).** Le champ
+`Categorie` vaut bien « Serigraphie » sur les 110, 120, 150 et 182. J'avais ensuite conclu que
+`chargerAdmin` échouait par intermittence : **c'était faux**, le 20 nov. je n'avais observé aucun
+échec. Mesuré le 24 nov. sur le build `16:48`, quatre chargements sur quatre : la liste affiche
+d'abord le snapshot, puis Creator 1,0 à 1,2 s après l'apparition de l'écran. Le script de test
+lisait la liste avant la fin du chargement. Reste vrai : pendant cette seconde, l'écran montre des
+presses périmées sans le dire.
+
+**T5 rejoué — 24 nov.** Brouillon « test T5 - 24 nov » (`4153107000024164002`), parti d'« Exemple »
+(F/S normalisés). Confirmation 1 : « Soumission enregistrée ». Page rechargée, rouverte : COÛT
+26 724,05 $, 84 up, 24 × 48, TEMPS 70 h 31, identiques à avant l'enregistrement. Champ Autre passé à
+« passage 2 ». Confirmation 2 : « Soumission mise à jour », même ID. Rechargée, rouverte : mêmes
+chiffres, « passage 2 » présent. Relu par l'API : un seul enregistrement, F/S à 1, montage intact.
+Captures `T05e`, `T05f`, `T05g`.
 
 **T15 — 20 nov.** Table créée (builder + IDE), 9 formats saisis, rapport `Formats_Feuille_Report`.
 Le rapport, né avec le formulaire vide, n'exposait **aucune colonne** : le SDK renvoyait les lignes
@@ -372,7 +378,7 @@ Ligne retirée, 9 lignes relues.
 | T2 | Pièce impossible | ☑ | ☑ `T02-piece-impossible.png` |
 | T3 | Suit les dimensions | ☑ | ☑ `T03a-7x1,4.png`, `T03b-4x6.png` |
 | T4 | Compare les neuf formats | ☑ | ☑ `T04-neuf-formats.png` |
-| T5 | Persistance | ☑ (voir note) | ☑ `T05a`…`T05d` |
+| T5 | Persistance | ☑ rejoué le 24 nov. | ☑ `T05e`, `T05f`, `T05g` |
 | T6 | Seuil sur `S!G9` | ☑ | ☑ `T06-seuil.png` |
 | T7 | Invalidation du périmé | ☑ | ☑ `T07-perime.png` |
 | T8 | Comptage de la gâche | ☑ 524 | ☑ `T08-gache.png` |

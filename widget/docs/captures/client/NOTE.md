@@ -3,7 +3,9 @@
 Prises dans Creator, build `2026-11-17 15:30 UTC`, **grain libre** (`APP_MONTAGE_GRAIN_FIGE = 0`).
 **C1 à C4 refaites sur le build `2026-11-20 16:16 UTC`** (main `5bd3ed5`, arrondi du bloc corrigé) :
 le bloc annonce 1 100 feuilles comme NB.MRX, et le gain est de 3 484 feuilles. Les prix sont identiques
-au cent près à la première prise. C5 à C8 ne montrent pas le nombre de feuilles du bloc et restent valables.
+au cent près à la première prise. **C6 refaite le 24 nov.** sur le build `16:48` : elle montrait elle aussi 1 101 au bloc et 1 100 sous NB.MRX,
+contrairement à ce que j'avais écrit ici. **L'ancienne C6 est dans le document envoyé le 20 nov.**
+C5, C7 et C8 ne sont pas touchées.
 
 ## La job
 
@@ -37,11 +39,8 @@ pièces) qui ne tient sur aucune feuille ; il n'est pas enregistré non plus.
    peut faire monter le prix, et c'est une bonne nouvelle. Ce premier essai a laissé une
    soumission et le bon **BT-1020** (soumission `4153107000024137012`) : ils sont à supprimer
    avec les autres données de test.
-2. ~~**Une feuille d'écart entre le bloc et NB.MRX.**~~ **Corrigé dans le build du 20 nov. 16:16, C1 à C4 refaites.** Le bloc annonce 1 101 feuilles, NB.MRX en
-   affiche 1 100. Or 25 000 × 1,1 ÷ 25 = 1 100 exactement. Le bloc arrondit à l'unité
-   supérieure un résultat en virgule flottante (1 100,0000000000002). C'est un petit défaut
-   réel, visible sur C2 et C4. Il est à corriger avant d'envoyer C2 et C4 au client, ou à
-   recadrer.
+2. **Une feuille d'écart entre le bloc et NB.MRX** (1 101 contre 1 100, arrondi flottant).
+   Corrigé dans le build du 20 nov. 16:16 ; C1 à C4 refaites le 20, C6 le 24.
 3. **Le bon de travail ne dit pas que la pièce est tournée.** C4 affiche « pièce tournée de
    90° », mais C5 n'en dit rien : le widget bon de travail ne lit pas encore
    `MONTAGETOURNEE`. Le document ne doit donc pas promettre que l'atelier voit le sens de
