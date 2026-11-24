@@ -132,6 +132,38 @@ Christian), sur l'avancement et sur le partage du travail avec Jose, qui monte d
 son côté. Un état du projet leur part aujourd'hui. Rien à préparer, mais le contexte explique
 pourquoi les deux points ci-dessus pressent.
 
+### 24 nov. — L'adhésif est déployé, la première version de la refonte est à l'essai *(Soufiane + Claude)*
+**Le correctif de l'adhésif est en production**, build `2026-11-24 15:15 UTC`, avec la note corrigée.
+Relu dans Creator : FC-940 = 62 723,50 $ ouverte directement, après « Nouvelle » et après « Exemple ».
+L'Exemple garde maintenant son adhésif (667,90 $).
+
+**Comptage demandé :** 51 soumissions lues, 28 sans l'adhésif laminé compté. Aucune ne porte un nom
+de client reconnu : BSP, tests, démonstrations, Youssef. À confirmer : « YDOUAA » et deux sans client
+(800,99 $). Ciena l'a compté ; IDENCO, CM-LAB, SANIQUIP et l'Agence spatiale n'ont pas d'adhésif. L'écart
+varie avec la soumission, ce n'est pas 425,50 $ partout.
+
+**Données de test :** BT-1019, BT-1020 et les deux brouillons nommés sont supprimés (relu). **BT-1021
+reste** : suppression refusée par le garde-fou de l'outil. Copie des cinq gardée en local.
+
+**`Formats_Feuille` est toujours au menu.** Le générateur de menu propose « Supprimer les éléments »
+sans dire si c'est le menu ou le rapport ; le rapport sert au calcul, donc pas confirmé. À glisser à la
+main dans la section Administration.
+
+**Refonte, première version** (branche `refonte-soumission`, `409696e`, build `15:45 UTC`, page
+`Soumission_essai`, administrateurs seulement). Décision : avancer sans attendre Christian, avec des
+hypothèses affichées et modifiables. Cinq soumissions au même prix que l'écran actuel dans Creator.
+Ajoutés : 1 à 5 pièces imprimées séparément, grille pièce × palier, sous-traitance (la majoration
+remplace le facteur, 35 %), installation, brouillons de PO (rien dans Books), bon de travail en
+« Brouillon » par pièce, numéro `S-2026-0001`, numérique et découpe au prix **provisoire** (ne s'imprime
+pas), lecture de la table de configuration numérique si elle existe, seuils d'approbation réglables.
+Infographie toujours hors du prix. Corrigé : la note au client reprenait la cellule des notes internes.
+
+**À savoir :** une soumission à plusieurs pièces ouverte dans l'écran actuel n'y montre que la pièce 1 ;
+elle est donc nommée « [Essai] … ». Son `Soumission_JSON` est vide, l'envoi s'annule de lui-même. Le bon
+de travail est testé sur banc local, pas encore créé dans Creator. Reste : table
+`Config_Champs_Produit_Numerique` à créer, recherche client dans le CRM, montage mixte. Brouillon
+d'essai `4153107000024164006`.
+
 ### 24 nov. — Le correctif de l'adhésif se déploie, mais pas tel quel *(Youssef + Claude)*
 **Décision : on déploie, sans attendre le comptage.** Les deux sujets sont indépendants. Le
 correctif empêche de *nouvelles* dérives ; le comptage regarde les soumissions *déjà enregistrées*.
