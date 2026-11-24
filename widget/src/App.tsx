@@ -1350,8 +1350,18 @@ export default function App() {
                     {adhesifDeduit && adhesifDeduit.cellule === c1 && (
                       <tr>
                         <td className="machine-info" colSpan={5}>
-                          activé automatiquement — adhésif en {adhesifDeduit.forme} ({adhesifDeduit.indice}
-                          {adhesifDeduit.source === "nom" ? ", déduit du nom" : ", fiche matériau"}). Décochez pour l'annuler.
+                          {/* le texte suit l'état RÉEL de la case : depuis que l'ouverture ne pose
+                              plus la ligne, « activé » serait faux sur une soumission qui ne l'a pas */}
+                          {toNum(s.saisie(c1)) === 1 ? (
+                            <>
+                              activé automatiquement — adhésif en {adhesifDeduit.forme} ({adhesifDeduit.indice}
+                              {adhesifDeduit.source === "nom" ? ", déduit du nom" : ", fiche matériau"}). Décochez pour l'annuler.
+                            </>
+                          ) : (
+                            <strong role="alert">
+                              ⚠ cet adhésif demande la ligne {label} ; elle n'est pas activée, son coût n'est pas compté.
+                            </strong>
+                          )}
                         </td>
                       </tr>
                     )}
