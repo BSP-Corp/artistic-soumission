@@ -132,6 +132,16 @@ Christian), sur l'avancement et sur le partage du travail avec Jose, qui monte d
 son côté. Un état du projet leur part aujourd'hui. Rien à préparer, mais le contexte explique
 pourquoi les deux points ci-dessus pressent.
 
+### 24 nov. — Les trois soumissions sont des essais : le compte réel est zéro *(Youssef)*
+**Youssef confirme : « YDOUAA » et les deux sans nom de client (800,99 $) sont des essais.** Sur les
+51 soumissions enregistrées, **aucune soumission réelle n'était sous-coûtée**. Le défaut de l'adhésif
+n'a donc jamais touché un prix parti chez un client — il a vécu et il est mort dans nos propres
+données. C'est la réponse à la question ouverte depuis ce matin ; le sujet est clos.
+
+**Une suite, petite :** « YDOUAA » porte **BT-1013 et BT-1014**. Si la soumission est un essai, ces
+deux bons de travail le sont aussi : à supprimer avec les autres données de test, sauf si quelqu'un
+s'en sert encore.
+
 ### 24 nov. — L'adhésif est déployé, la première version de la refonte est à l'essai *(Soufiane + Claude)*
 **Le correctif de l'adhésif est en production**, build `2026-11-24 15:15 UTC`, avec la note corrigée.
 Relu dans Creator : FC-940 = 62 723,50 $ ouverte directement, après « Nouvelle » et après « Exemple ».
