@@ -114,6 +114,51 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 24 nov. — Réponses à Soufiane : le dépôt est public, et quatre arbitrages *(Youssef + Claude)*
+**Le dépôt est public. C'est vérifié.** `BSP-Corp/artistic-soumission` répond à l'API GitHub sans
+authentification, `"private": false`, et il l'est **depuis sa création le 27 octobre** — 28 jours.
+Aucun identifiant n'y est committé : recherche sur tout l'historique, pas de `.env`, pas de jeton
+Zoho ; la seule clé qui apparaît est le gabarit `<CLÉ_REMISE_PAR_OPENMIND>`. Ce qui est exposé est
+commercial : `classeur.json` — les 1 322 formules, c'est-à-dire le modèle de prix d'Artistic — les
+taux machines, les prix matériaux, les captures avec les prix réels, la spec du client, et ce
+journal avec les noms et le contenu des échanges. **0 fork, 0 étoile, 0 abonné** : aucun signe que
+quelqu'un l'ait repris, mais les clones ne se voient pas sans l'accès admin. **À passer en privé**,
+et c'est une décision de BSP. À savoir : les deux autres dépôts de l'organisation (2point0 Concepts,
+dont un `costanalysis-widget`) sont publics eux aussi. Ce n'est pas un réglage oublié sur celui-ci,
+c'est le défaut de l'organisation.
+
+**L'infographie n'entre pas au coût.** Vérifié dans l'écran actuel : rien ne la chiffre nulle part.
+`lib/numerique.ts:380` ne pose qu'une alerte — « Infographie à réaliser : temps à paramétrer ».
+`bt/modeleFT.ts` n'a que les cases épreuve / courriel / films. Aucune cellule de coût dans
+`modele.ts`. L'ajouter ferait décrocher la refonte de son seul critère de validation — les mêmes
+prix que l'écran actuel — et reviendrait à décider une politique de prix à la place du client.
+**Elle reste affichée, hors total, avec la ligne qui le dit.** Le taux de 85 $/h part avec les
+autres taux dans la question à Christian.
+
+**`Formats_Feuille` : oui, masquer la section du menu.** C'est une table de référence, pas un écran.
+Mais la garder accessible aux administrateurs — Christian doit pouvoir y ajouter un format sans
+passer par nous.
+
+**Le correctif de l'adhésif : recommandation, Youssef tranche.** Le correctif est juste et il est
+petit : 8 lignes, remise à zéro de `autoAdhesif` à l'ouverture, à « Nouvelle » et à « Exemple ». Il
+rend le prix déterministe, ce qui n'est pas négociable pour un outil de soumission. **Mais il ne
+corrige rien rétroactivement** : il fige la soumission à son prix enregistré, donc le plus bas, et
+compte sur l'alerte pour signaler l'adhésif manquant. D'où la question à regarder avant de
+déployer : **toutes les soumissions réelles parties de l'Exemple sont sous-coûtées de 425,50 $** et
+rien ne les rattrapera. Combien y en a-t-il en production ?
+
+**Le document parti chez Philippe : ne pas le renvoyer.** Le poste manque autant au « avant » qu'au
+« après » — la pose automatique dépendait de l'état de l'écran, pas du montage. Le gain annoncé
+tient donc intégralement : le −28 % de T10, le 2,94 → 2,51 $, tout reste exact. L'écart est de
+531,87 $ sur 62 723,50 $, soit 0,85 %, sur une job de démonstration pour un client fictif qui ne
+sera jamais facturée. Idem pour l'ancienne C6 et sa feuille d'écart. Un courriel de correction à
+0,85 % sur un document de démonstration coûte plus de crédibilité qu'il n'en rend. Ça se corrige à
+la prochaine réédition du document, et ça se dit sans détour si la question vient.
+
+**Les quatre réponses de Christian bloquent pour de vrai.** Le brouillon est rédigé depuis le 20 et
+n'est pas parti. Tant qu'il dort, le numérique se saisit sans se chiffrer et les pièces multiples
+restent indécidables.
+
 ### 24 nov. — Un bug de prix dans l'écran actuel, et la refonte à l'essai *(Soufiane + Claude)*
 **Une même soumission a deux prix selon ce qui était ouvert avant.** FC-940 : 62 723,50 $ ouverte
 directement, **63 255,37 $** ouverte après « Nouvelle soumission » (vérifié en production, build
