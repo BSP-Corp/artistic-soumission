@@ -8,6 +8,8 @@
 //      feuille, et un up de plus doit la dépasser.
 //   2. Les cellules espace/pourtour lues dans le classeur sont bien 0,25 et 0,5.
 //   3. Les cas de test du handoff du 2 novembre.
+//   4. Les deux orientations (reponse client du 9 novembre : le grain est sans importance),
+//      et le fait qu'autoriser la rotation ne fait JAMAIS moins bien que l'interdire.
 import { Moteur, type Classeur } from "@/lib/moteur";
 import { IN, entreesExemple } from "@/lib/modele";
 import { fusionnerMachines, machinesFamille } from "@/lib/machines";
@@ -92,23 +94,49 @@ console.log(ok(Math.abs(dimH - 8) < 1e-9 && Math.abs(dimV - 7.35) < 1e-9), "la f
 
 // ── 3. cas de test du handoff ────────────────────────────────────────────────
 console.log("\n=== 3. CAS DE TEST DU HANDOFF (2 nov.) ===");
+// `regles` = les regles en vigueur, donc grain LIBRE depuis la reponse du 9 novembre.
+// `reglesFige` garde l'ancien comportement pour pouvoir comparer les deux et prouver que
+// la rotation ne degrade jamais le resultat.
 const regles = reglesMontage({ espace: espaceClasseur, pourtour: pourtourClasseur });
+const reglesFige = { ...regles, grainFige: true };
 const toutesPresses: PresseFormat[] = [{ nom: "(test)", largeurMaxPo: 999, hauteurMaxPo: 999 }];
 const f = (largeurPo: number, hauteurPo: number): FormatFeuille => ({ nom: `${largeurPo} × ${hauteurPo}`, largeurPo, hauteurPo, actif: true });
 
-const c1 = evaluerFormat(f(24, 48), 7, 1.4, 2000, regles, toutesPresses)!;
+const c1 = evaluerFormat(f(24, 48), 7, 1.4, 2000, reglesFige, toutesPresses)!;
 console.log(`piece 7 x 1,4 sur 24 x 48 : ${c1.upHorizontal} x ${c1.upVertical} = ${c1.upParFeuille} up/feuille`);
 console.log(ok(c1.upParFeuille === 84), "attendu 84 up/feuille (3 x 28)");
-console.log(`2000 pieces -> ${c1.nbFeuilles} feuilles`);
-console.log(ok(c1.nbFeuilles === 24), "attendu 24 feuilles");
+// 27 et non 24 : les feuilles se comptent AVEC la gache, comme le classeur
+// (`S!G9 = (E2*I2+E2)/E5`). 2000 x 1,1 = 2200, / 84 = 26,19 -> 27. Compter sans la gache
+// donnait 24, donc un gain affiche faux : les deux cotes de la soustraction ne mesuraient
+// pas la meme chose.
+console.log(`2000 pieces -> ${c1.nbFeuilles} feuilles (gache ${regles.perte * 100} %)`);
+console.log(ok(c1.nbFeuilles === 27), "attendu 27 feuilles, gache comprise");
+const sansGache = evaluerFormat(f(24, 48), 7, 1.4, 2000, { ...reglesFige, perte: 0 }, toutesPresses)!;
+console.log(ok(sansGache.nbFeuilles === 24), "sans gache on retrouve bien 24 : c'est la gache qui fait l'ecart");
+console.log(ok(Math.ceil((2000 * 1.1) / 84) === c1.nbFeuilles), "le compte colle a la formule du classeur (E2*I2+E2)/E5");
+// Sur CE format la rotation ne change rien : 3 x 28 et 14 x 6 donnent tous deux 84. C'est
+// une coincidence arithmetique, pas une regle generale -- d'ou le cas 12 x 24 juste apres.
+const c1r = evaluerFormat(f(24, 48), 7, 1.4, 2000, regles, toutesPresses)!;
+console.log(`   grain libre : ${c1r.upHorizontal} x ${c1r.upVertical} = ${c1r.upParFeuille} up (tournee=${c1r.pieceTournee})`);
+console.log(ok(c1r.upParFeuille === 84), "grain libre donne le meme resultat sur ce format : 84");
 
-const c2 = evaluerFormat(f(12, 24), 7, 1.4, 2000, regles, toutesPresses)!;
-console.log(`\npiece 7 x 1,4 sur 12 x 24 : ${c2.upHorizontal} x ${c2.upVertical} = ${c2.upParFeuille} up/feuille`);
+const c2 = evaluerFormat(f(12, 24), 7, 1.4, 2000, reglesFige, toutesPresses)!;
+console.log(`\npiece 7 x 1,4 sur 12 x 24, grain fige : ${c2.upHorizontal} x ${c2.upVertical} = ${c2.upParFeuille} up/feuille`);
 console.log(`   le handoff annonce 1 x 13 = 13`);
 console.log(`   detail : hauteur (24 - 1 + 0,25) / (1,4 + 0,25) = ${((24 - 1 + 0.25) / 1.65).toFixed(4)} -> ${c2.upVertical}`);
 console.log(`   verification : 14 up occupent ${dimensionMontage(14, 1.4, 0.25, 0.5)} po <= 24 po, donc 14 tiennent`);
 console.log(`                  13 up occupent ${dimensionMontage(13, 1.4, 0.25, 0.5)} po — il reste de la place`);
 console.log(ok(c2.upParFeuille === 14), "le calcul donne 14 : le 13 du handoff est une erreur d'arithmetique");
+
+// Le cas qui justifie la reponse du 9 novembre : meme piece, meme feuille, tournee de 90.
+const c2r = evaluerFormat(f(12, 24), 7, 1.4, 2000, regles, toutesPresses)!;
+console.log(`\npiece 7 x 1,4 sur 12 x 24, grain libre : ${c2r.upHorizontal} x ${c2r.upVertical} = ${c2r.upParFeuille} up/feuille (tournee=${c2r.pieceTournee})`);
+console.log(`   detail : largeur (12 - 1 + 0,25) / (1,4 + 0,25) = ${((12 - 1 + 0.25) / 1.65).toFixed(4)} -> ${c2r.upHorizontal}`);
+console.log(`            hauteur (24 - 1 + 0,25) / (7 + 0,25)   = ${((24 - 1 + 0.25) / 7.25).toFixed(4)} -> ${c2r.upVertical}`);
+console.log(ok(c2r.upParFeuille === 18), "attendu 18 up/feuille (6 x 3) -- la valeur annoncee le 9 novembre");
+console.log(ok(c2r.pieceTournee === true), "le candidat est marque comme tourne : l'atelier doit le savoir");
+console.log(`   ${c2.nbFeuilles} feuilles -> ${c2r.nbFeuilles} feuilles pour 2000 pieces`);
+console.log(ok(c2r.nbFeuilles < c2.nbFeuilles), "la rotation reduit le nombre de feuilles sur ce format");
 
 // ── 4. selection complete ────────────────────────────────────────────────────
 console.log("\n=== 4. SELECTION SUR LES 9 FORMATS PERMIS (piece 7 x 1,4 ; 2000 pieces) ===");
@@ -169,9 +197,8 @@ console.log(
 );
 
 // grain libre : la piece peut tourner
-const grainLibre = { ...regles, grainFige: false };
-const tournee = evaluerFormat(f(24, 12), 11, 3, 100, grainLibre, toutesPresses)!;
-const figee = evaluerFormat(f(24, 12), 11, 3, 100, regles, toutesPresses)!;
+const tournee = evaluerFormat(f(24, 12), 11, 3, 100, regles, toutesPresses)!;
+const figee = evaluerFormat(f(24, 12), 11, 3, 100, reglesFige, toutesPresses)!;
 console.log(
   `\ngrain fige  : ${figee.upHorizontal} x ${figee.upVertical} = ${figee.upParFeuille} up | grain libre : ${tournee.upHorizontal} x ${tournee.upVertical} = ${tournee.upParFeuille} up (tournee=${tournee.pieceTournee})`,
 );

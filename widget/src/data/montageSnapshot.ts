@@ -18,32 +18,41 @@ export const FORMATS_FEUILLE_SNAPSHOT: FormatFeuille[] = [
   { nom: "16 × 12", largeurPo: 16, hauteurPo: 12, actif: true },
 ];
 
-// ── ⚠ CONFLIT DE DONNÉES À TRANCHER (relevé le 3 nov. 2026) ──────────────────
-// Le client a fourni le 2 novembre un « format maxi » par presse. Ces chiffres ne
-// correspondent PAS aux fiches machines déjà en place dans Creator (Fiche_Machine,
-// champs Largeur_max_po / Hauteur_max_po), relevées en direct le 3 novembre :
+// ── ✅ CONFLIT TRANCHÉ (Roberto Montanaro, 16 nov. 2026, 15 h 06) ─────────────
+// Les « format maxi » fournis par le client le 2 novembre ne correspondaient pas aux fiches
+// machines de Creator (Fiche_Machine, Largeur_max_po / Hauteur_max_po). Relancé le 16 novembre,
+// Roberto a répondu : « utilise ma liste ».
 //
-//   presse │ client 2 nov. │ Creator (en place)        │
-//   ───────┼───────────────┼──────────────────────────┤
-//   110    │ 21 × 30       │ 26 × 18                   │ ≠
-//   116    │ 16 × 12       │ 12 × 8                    │ ≠
-//   120    │ 30 × 28       │ vides, fiche INACTIVE     │ ≠
-//   130    │ 21 × 28       │ 21 × 28                   │ = seule concordance
-//   140    │ 24 × 24       │ 25 × 38                   │ ≠
-//   150    │ 44 × 64       │ 30 × 50                   │ ≠
-//   170    │ 30 × 39       │ 30 × 40                   │ ≈ (39 vs 40)
-//   182    │ absente       │ 24 × 44, active           │ absente de la liste client
-//   ───────┴───────────────┴──────────────────────────┘
-//   (« One man » 48 × 96 et « DTS » 48"–96", actives, sont aussi absentes de la liste.)
+// C'est donc SA liste qui fait foi, et les fiches Creator qui sont à corriger — l'inverse de ce
+// qui était fait en attendant. Ce qui reste à saisir dans Creator :
 //
-// La liste client est cohérente avec elle-même : le format 16 × 12 n'est permis QUE parce que
-// la presse 116 ferait 16 × 12. Avec les fiches Creator (116 = 12 × 8), ce format n'est
-// roulable par aucune presse et le calcul l'écarte.
+//   presse │ fiche Creator      │ à corriger pour │
+//   ───────┼────────────────────┼─────────────────┤
+//   110    │ 26 × 18            │ 21 × 30         │
+//   116    │ 12 × 8             │ 16 × 12         │
+//   120    │ vides, INACTIVE    │ 30 × 28 + réactiver │
+//   130    │ 21 × 28            │ inchangée       │
+//   140    │ 25 × 38            │ 24 × 24         │
+//   150    │ 30 × 50            │ 44 × 64         │
+//   170    │ 30 × 40            │ 30 × 39         │
+//   ───────┴────────────────────┴─────────────────┘
 //
-// CE QUI EST FAIT EN ATTENDANT : les fiches Creator font foi (source unique, déjà branchée
-// et déjà affichée dans l'écran « feuille max L×H po »). Rien n'est écrasé. Les valeurs
-// client sont conservées ci-dessous pour la rencontre — elles ne servent à aucun calcul.
-// C'est exactement le point 1 de la section « À reconfirmer » du handoff.
+// Les trois fiches absentes de sa liste, reprises une par une dans sa réponse :
+//   • « One man » — 48 × 96 confirmé, mais presse « réactivée prochainement » : hors service
+//     aujourd'hui, donc à ne pas proposer tant qu'elle n'est pas remise en route.
+//   • « DTS » — ce n'est PAS une presse. Direct To Screen : la machine qui brûle les soies.
+//     Cadre maxi 1200 × 1500 mm (≈ 47 × 59 po), et non le 48 × 96 de sa fiche. À retirer des
+//     presses sélectionnables : à 48 × 96 elle fait croire qu'un format géant est roulable.
+//   • « 182 » — « tu dois sûrement vouloir dire la 180 » : multi-tête 6 couleurs rotative, en
+//     fonction, impression 28 × 38. La fiche porte 24 × 44, qui ne correspond à rien de connu.
+//     Seule inconnue qui reste : confirmer qu'il s'agit bien de la même machine.
+//
+// Le conflit se referme proprement : avec la liste de Roberto, chacun des neuf formats est
+// roulable par au moins une presse. Le 16 × 12 redevient disponible — il n'existait dans les
+// neuf qu'à cause de la 116, et la fiche à 12 × 8 l'écartait de tout.
+//
+// Le code ne change pas : il lit les fiches Creator, qui restent la source unique. Ce sont les
+// fiches qui doivent rattraper la liste ci-dessous. Détail et suivi : docs/montage-a-completer.md §3.
 export const FORMAT_MAX_PRESSE_CLIENT_2NOV: PresseFormat[] = [
   { nom: "110", largeurMaxPo: 21, hauteurMaxPo: 30 },
   { nom: "116", largeurMaxPo: 16, hauteurMaxPo: 12 },

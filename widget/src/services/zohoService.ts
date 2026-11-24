@@ -121,6 +121,10 @@ export interface MateriauCreator {
   coutPi2: number;
   format: string;
   actif: boolean;
+  /** epaisseur en POUCES (Product.Dim_Epaisseur_po). Le mil demande par la plateforme vaut
+   *  pouces x 1000 : la conversion est faite au contrat, jamais stockee en double.
+   *  null quand la fiche ne la porte pas — ne jamais supposer une epaisseur absente. */
+  epaisseurPo: number | null;
   /** dernier cout d'achat (Product.Last_Cost), alimente par la reception d'une commande.
    *  Affiche a titre indicatif dans la soumission : ce n'est PAS lui qui sert au calcul.
    *  Le calcul utilise coutPi2 ($/pi2) ; un prix d'achat est au format d'achat (feuille,
@@ -229,6 +233,7 @@ async function materiauxDepuisProduct(): Promise<MateriauCreator[]> {
         coutPi2: num(r.Mat_Cout_pi2) ?? 0,
         format: String(r.Mat_Format ?? "").trim(),
         actif: String(r.Active) !== "false",
+        epaisseurPo: num(r.Dim_Epaisseur_po),
         dernierCout: num(r.Last_Cost),
         dernierAchat: String(r.Last_Purchase ?? "").trim(),
       }))
@@ -687,6 +692,62 @@ export async function supprimerSoumission(id: string): Promise<{ ok: boolean; me
 
 /** Écrit le JSON contractuel (+ statut) sur une soumission déjà créée.
  *  Fait en 2 temps parce que le contrat contient `soumission.id`, connu seulement après l'insert. */
+/** ISO `YYYY-MM-DD` -> le format de date de l'application Creator, `dd-MMM-yyyy`.
+ *
+ *  Creator n'accepte pas l'ISO sur un champ Date : il attend le format configure pour
+ *  l'application (lu dans les metadonnees du formulaire le 5 nov. 2026 : `dd-MMM-yyyy`).
+ *  Les abreviations de mois de `MMM` sont en anglais, meme sur une interface francaise.
+ *
+ *  ATTENTION — ce format N'A PAS PU ETRE VERIFIE en ecriture reelle : le test exigeait de
+ *  modifier un enregistrement de production. C'est precisement pourquoi `majDatesCreator`
+ *  ci-dessous ecrit A PART, apres l'enregistrement : si le format est refuse, on perd les
+ *  dates dans Creator, jamais la soumission. Les dates restent de toute facon dans
+ *  `Donnees` et dans `Soumission_JSON`, qui sont la source du contrat client.
+ */
+const MOIS_CREATOR = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+export function dateVersCreator(iso: unknown): string {
+  const t = String(iso ?? "").trim();
+  const m = t.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!m) return ""; // « ASAP », vide, ou tout ce qui n'est pas une date : on n'ecrit rien
+  const [, a, mo, j] = m;
+  const i = Number(mo) - 1;
+  if (i < 0 || i > 11) return "";
+  return `${j}-${MOIS_CREATOR[i]}-${a}`;
+}
+
+/** Ecrit les trois dates du dossier dans leurs champs Creator (type Date).
+ *
+ *  Appelee APRES un enregistrement reussi, jamais pendant : un format refuse ferait echouer
+ *  tout le payload, et une soumission perdue pour une date mal formatee serait un mauvais
+ *  marche. Ne leve jamais — renvoie ce qui s'est passe, a l'appelant de le journaliser.
+ */
+export async function majDatesCreator(
+  id: string,
+  dates: { requise?: unknown; commande?: unknown; expedition?: unknown },
+): Promise<{ ok: boolean; message: string; envoye: Record<string, string> }> {
+  const envoye: Record<string, string> = {};
+  const requise = dateVersCreator(dates.requise);
+  const commande = dateVersCreator(dates.commande);
+  const expedition = dateVersCreator(dates.expedition);
+  if (requise) envoye.Date_requise = requise;
+  if (commande) envoye.Date_commande = commande;
+  if (expedition) envoye.Date_expedition_prevue = expedition;
+
+  if (!Object.keys(envoye).length) return { ok: true, message: "aucune date a ecrire", envoye };
+  if (!isZohoEnv()) return { ok: true, message: "mode demo — dates non ecrites (hors Zoho)", envoye };
+  try {
+    const res = await ZOHO.CREATOR.DATA.updateRecordById({
+      report_name: REPORT_SOUMISSIONS,
+      id,
+      payload: { data: envoye },
+    });
+    if (res.code === 3000) return { ok: true, message: "dates enregistrees", envoye };
+    return { ok: false, message: "dates refusees par Creator (code " + res.code + ")", envoye };
+  } catch (e) {
+    return { ok: false, message: "dates refusees : " + String((e as Error)?.message ?? e), envoye };
+  }
+}
+
 export async function majSoumissionJSON(
   id: string,
   champs: { Soumission_JSON?: string; Statut?: string; Webhook_Statut?: string; Reponse_IA?: string },

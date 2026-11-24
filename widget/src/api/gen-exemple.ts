@@ -10,6 +10,7 @@ import { Moteur, type Classeur } from "@/lib/moteur";
 import { TAUX_HORAIRE_CLASSEUR } from "@/lib/methodeCout";
 import { entreesExemple, normaliserEntrees, OUT } from "@/lib/modele";
 import classeurJson from "@/data/classeur.json";
+import { MATERIAUX_LOCAL } from "@/data/materiaux";
 import { construireSoumissionJSON, docChamps, SCHEMA_VERSION, CHAMPS } from "./contratSoumission";
 
 const CLASSEUR = classeurJson as unknown as Classeur;
@@ -28,6 +29,14 @@ entrees["S!R38"] = 85;
 // v1.1 : prix vendu décidé par le chargé de projet (ici arrondi au-dessus du 15,10 $ calculé)
 entrees["X!VENDU"] = 15.5;
 entrees["X!VENDU1"] = 11.75;
+// v1.3 : les dates du dossier et la correction du chef d'atelier. Elles n'entrent dans aucun
+// calcul — l'exemple montre juste ce que la plateforme recevra.
+entrees["X!DATE_CMD"] = "2026-09-11";
+entrees["X!DATE_EXP"] = "2026-09-24";
+// Le scénario d'exemple calcule 14 feuilles (50 pièces, 4 up, 10 % de perte) ; l'atelier en
+// compte 16. L'exemple doit montrer le cas qui pose problème — celui de leur question 2 :
+// production.nb_matrices = 16, nb_matrices_calcule = 14, nb_matrices_source = "correction".
+entrees["X!NBF_CORR"] = 16;
 // même socle que le widget : le cache INV du classeur fige 73 $/h, le taux courant est 74
 const SOCLE = { "INV!CF8": TAUX_HORAIRE_CLASSEUR };
 moteur.setInputs({ ...SOCLE, ...entrees });
@@ -42,6 +51,10 @@ const simuler = (qte: number) => {
   return { cout: qte > 0 ? sim.num(OUT.montant) / qte : 0, prix: unit, vendu: unit, us: sim.num(OUT.prixUnitaireUs) };
 };
 
+const EPAISSEURS = new Map(
+  MATERIAUX_LOCAL.filter((m) => m.epaisseur > 0).map((m) => [m.nom.toLowerCase(), m.epaisseur] as const),
+);
+
 const json = construireSoumissionJSON({
   m: moteur,
   e: entrees,
@@ -52,8 +65,13 @@ const json = construireSoumissionJSON({
     date_soumission: "2026-09-10",
     reference_externe: null,
     notes: "Client demande une épreuve PDF avant production.",
+    moment: "validation",
   },
   simuler,
+  // Hors Zoho l'inventaire Creator n'est pas joignable : l'exemple lit le snapshot embarqué,
+  // qui porte les mêmes épaisseurs. Les valeurs de l'exemple sont donc de vraies épaisseurs
+  // de catalogue, pas des chiffres inventés pour la documentation.
+  epaisseurPo: (nom) => EPAISSEURS.get(nom.toLowerCase()) ?? null,
 });
 
 const outDir = resolve(process.cwd(), "docs/api"); // exécuté depuis widget/
@@ -103,13 +121,25 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
 
 | Version | Date | Changements |
 |---|---|---|
+| \`1.3\` | 2026-11-05 | **Réponses aux questions 1, 2, 3 et 5.** *Ajouts (compatibles)* : \`soumission.date_commande\`, \`soumission.date_expedition_prevue\`, \`soumission.date_requise_texte\`, \`soumission.moment\`, \`materiaux[].epaisseur_po\`, \`materiaux[].epaisseur_mil\`, \`production.nb_matrices_calcule\`, \`production.nb_matrices_corrige\`, \`production.nb_matrices_source\`. *Deux changements à lire avant d'intégrer* : (1) \`soumission.date_requise\` **passe de texte libre à date ISO** et vaut \`null\` quand la saisie n'est pas une date — le texte d'origine part intact dans \`date_requise_texte\` ; (2) \`production.nb_matrices\` **change de sens** : il porte désormais la valeur **retenue** (la correction de l'atelier quand elle existe), le calcul seul restant dans \`nb_matrices_calcule\`. |
 | \`1.2\` | 2026-09-28 | **Élargissement de type (compatible)** : \`decoupe.finition.coins_ronds.quantite\` accepte \`null\` — l'opération « coins ronds » a été retirée de l'outil, le champ reste au contrat et vaut toujours \`null\`. Aucun autre changement de structure. À noter : le **taux horaire passe de 73 à 74 $/h**, donc les montants d'une même fiche changent — c'est une donnée, pas une rupture de contrat. |
 | \`1.1\` | 2026-09-16 | **Ajouts (compatibles)** : \`prix.prix_vendu_unitaire\`, \`prix.prix_vendu_total\`, \`production.quantites_alternatives[].prix_vendu_unitaire\` — le prix **décidé par le chargé de projet**, distinct du prix calculé. Précisions sans changement de type : \`decoupe.zund.*.contour\` et \`decoupe.platine.kiss_cut.nb_die\` valent désormais 0 ou 1 ; \`impression.faces.*\` vaut toujours 1. |
 | \`1.0\` | 2026-09-10 | Version initiale. |
 
 > **Pour votre intégration (v1.1)** : le prix à retenir pour le client est \`prix.prix_vendu_unitaire\`
-> **s'il n'est pas \`null\`**, sinon \`prix.prix_unitaire\`. Aucun champ existant n'a été retiré, renommé ni retypé :
-> un parseur v1.0 continue de fonctionner tel quel.
+> **s'il n'est pas \`null\`**, sinon \`prix.prix_unitaire\`.
+>
+> **Pour votre intégration (v1.3)** — trois points, dans l'ordre d'importance :
+> 1. **Le nombre de feuilles sur lequel raisonner est \`production.nb_matrices\`.** Il vaut
+>    maintenant la correction du chef d'atelier quand il y en a une. \`nb_matrices_source\` vous
+>    dit laquelle a servi (\`calcul\` ou \`correction\`) sans avoir à comparer les champs.
+>    C'était votre question 2 : lire le calcul là où l'atelier avait corrigé produisait une
+>    fausse alerte sur chaque dossier corrigé.
+> 2. **\`soumission.date_requise\` est maintenant une date ISO**, ou \`null\`. Un \`null\` ne veut pas
+>    dire « pas de date demandée » : il veut dire « ce qui a été saisi n'est pas une date »
+>    (\`ASAP\`, \`fin du mois\`). Dans ce cas, \`date_requise_texte\` porte la saisie telle quelle.
+>    Pour comparer un délai, utilisez \`date_requise\` et \`date_expedition_prevue\`.
+> 3. **\`soumission.moment\` vous dit où vous êtes dans le parcours** — voir la section 2 bis.
 
 ---
 
@@ -118,6 +148,37 @@ job d'exemple de l'entreprise (50 pièces, 4 matériaux, découpe platine).
 \`\`\`json
 ${exemple}
 \`\`\`
+
+---
+
+## 2 bis. Quand l'envoi part — les deux moments
+
+C'est la réponse à votre question 5, et c'est le point à lire en premier.
+
+Vous partiez du passage au statut **Valide**. Or dans Zoho, « Valide » est posé par le bouton
+**« Valider → Bon de travail »** : il marque le moment où la job **part en production**, donc
+**après** que la proposition a été envoyée au client et acceptée. Une alerte à ce moment-là
+arrive après la décision qu'elle devait éclairer.
+
+Nous avons donc ouvert **un second moment**, en amont. Les deux envoient le même contrat, au
+même endpoint ; \`soumission.moment\` dit lequel :
+
+| \`soumission.moment\` | Quand | Appels | Ce que vous pouvez encore faire |
+|---|---|---|---|
+| \`avant_envoi\` | Le chargé de projet vient de produire la proposition. **Le client ne l'a pas encore reçue.** Déclenché par le bouton « Analyser avant envoi » du widget. | \`POST /analyses\` seulement | **Tout.** Un oubli signalé ici se corrige avant que le client voie quoi que ce soit. |
+| \`validation\` | La soumission passe en production (« Valider → Bon de travail »), après acceptation du client. | \`PUT /history\` puis \`POST /analyses\` | Alimenter l'historique et la comparaison ; la correction coûte déjà quelque chose. |
+
+**Pourquoi \`avant_envoi\` n'alimente pas \`/history\`** : l'historique est votre base de
+comparaison entre soumissions réelles. Y verser des propositions qui ne seront peut-être
+jamais acceptées fausserait les comparaisons à venir. L'historique reste alimenté par la
+validation seule.
+
+**Vos 8 à 20 secondes sont prises en compte.** Aucun des deux moments n'appelle votre API
+depuis le workflow d'enregistrement : l'utilisateur serait bloqué devant un bouton figé, et
+Deluge coupe de toute façon les exécutions longues. Le widget pose un drapeau
+(\`Webhook_Statut\`), et une fonction séparée fait l'appel.
+
+Dans l'exemple ci-dessus, \`moment\` vaut \`validation\`.
 
 ---
 
@@ -182,7 +243,9 @@ Pagination : \`?page=1&par_page=200\`, réponse \`{ "donnees": [...], "page": 1,
 
 | Point | État |
 |---|---|
-| \`soumission.date_requise\` | texte libre aujourd'hui ; passera en date ISO dès que le format de saisie sera fixé |
+| \`soumission.date_requise\` | **Réglé en v1.3** — date ISO, avec le texte d'origine conservé dans \`date_requise_texte\`. Côté Zoho, le champ du formulaire reste à retyper en Date : tant que ce n'est pas fait, un estimateur peut encore saisir « ASAP », et le contrat renverra alors \`null\`. |
+| Heures par **département** et charge planifiée | N'existent pas dans Zoho (votre question 11). Le temps par **opération** est dans \`ventilation_couts[].temps\`. Les heures par département se construiraient à partir des opérations — c'est un développement ; la charge planifiée supposerait un ordonnancement, qui n'existe pas. |
+| Composition et fiche technique des matériaux | N'existent nulle part dans Zoho (votre question 4a). L'épaisseur, elle, est livrée depuis la v1.3. |
 | \`soumission.notes\` + fichiers joints | champ Notes long prévu ; **fichiers : nombre et taille max à confirmer** (25 fichiers / 50-100 Mo évoqués, vs limites de votre moteur d'analyse) — nous proposons d'envoyer des **URL signées** plutôt que les fichiers eux-mêmes dans le JSON |
 | Réponse de votre API | libre pour l'instant ; si vous renvoyez un verdict structuré (ex. \`{ "alertes": [...] }\`), dites-nous le format et on l'affichera tel quel dans le widget |
 | Règles métier | à répartir Zoho / IA d'après votre liste — les règles déterministes (seuils, champs obligatoires, combinaisons interdites) restent côté Zoho |

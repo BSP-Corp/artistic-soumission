@@ -52,21 +52,40 @@ export interface ReglesMontage {
   pourtour: number;
   /** aucun côté de feuille sous cette dimension — APP_MONTAGE_DIM_MIN */
   dimMin: number;
-  /** grain figé : une seule orientation, pas de rotation 90° — APP_MONTAGE_GRAIN_FIGE */
+  /** grain figé : une seule orientation, pas de rotation 90° — APP_MONTAGE_GRAIN_FIGE.
+   *  Faux depuis le 9 novembre 2026 : le client a répondu que le grain est sans importance,
+   *  donc les deux orientations sont testées et on garde la meilleure. Le drapeau reste —
+   *  si un matériau à grain arrive un jour, il suffit de remettre APP_MONTAGE_GRAIN_FIGE = 1
+   *  dans Taux_Calcul, sans toucher au code. */
   grainFige: boolean;
   /** au-delà de ce nombre de feuilles, on propose un autre format — APP_MONTAGE_SEUIL_FEUILLES */
   seuilFeuilles: number;
+  /** gâche, en fraction (0,1 = 10 %) — S!I2.
+   *
+   *  Le classeur compte les feuilles AVEC la gâche : `S!G9 = (E2*I2+E2)/E5`. Le montage les
+   *  comptait sans. Sur 2 000 pièces à 84 up, ça donnait 24 feuilles annoncées contre 27
+   *  réelles — et surtout un gain affiché faux, puisque les deux côtés de la soustraction ne
+   *  mesuraient pas la même chose. Les deux comptent maintenant pareil. */
+  perte: number;
 }
 
 /** Valeurs par défaut. espace/pourtour sont celles du classeur ; les trois autres sont les
- *  valeurs fournies par le client le 2 novembre 2026. Toutes surchargeables (voir
- *  `reglesMontage`), aucune n'est en dur dans le calcul. */
+ *  valeurs fournies par le client le 2 novembre 2026, `grainFige` corrigée par sa réponse du
+ *  9 novembre. Toutes surchargeables (voir `reglesMontage`), aucune n'est en dur dans le
+ *  calcul. */
 export const REGLES_MONTAGE_DEFAUT: ReglesMontage = {
   espace: 0.25,
   pourtour: 0.5,
   dimMin: 8,
-  grainFige: true,
+  // Le 2 novembre la consigne était « grain figé = Oui » ; le 9, le client a tranché que le
+  // grain est sans importance. Conséquence concrète, pas théorique : une pièce 7 × 1,4 sur
+  // une feuille 12 × 24 passe de 14 up (1 × 14, pièce telle que saisie) à 18 up (6 × 3,
+  // pièce tournée) — 29 % de feuilles en moins sur le même format.
+  grainFige: false,
   seuilFeuilles: 350,
+  // Gâche standard du classeur. Le défaut n'est pas 0 : compter sans gâche sous-estime les
+  // feuilles, donc le seuil se déclenche trop tard et le gain s'annonce trop beau.
+  perte: 0.1,
 };
 
 /** Un format évalué pour une pièce donnée. */
@@ -167,7 +186,14 @@ export function evaluerFormat(
     upHorizontal: upH,
     upVertical: upV,
     upParFeuille,
-    nbFeuilles: Math.ceil(qte / upParFeuille),
+    // Mêmes feuilles que le classeur : quantité majorée de la gâche, puis arrondi au
+    // supérieur (`S!G9 = (E2*I2+E2)/E5`). Une feuille ne se consomme pas par moitié.
+    //
+    // L'arrondi se fait sur une valeur recadrée à 9 décimales. Sans ça, 25 000 × 1,1 ÷ 25
+    // vaut 1 100,0000000000002 en virgule flottante et `Math.ceil` rend 1 101 : le bloc
+    // annonçait une feuille de plus que `NB.MRX`, qui part du même calcul côté classeur.
+    // Relevé le 20 novembre sur les captures client C2 et C4.
+    nbFeuilles: Math.ceil(Number(((qte * (1 + regles.perte)) / upParFeuille).toFixed(9))),
     pieceTournee: tournee,
     presses: presses.filter((p) => presseAccepte(p, format.largeurPo, format.hauteurPo)).map((p) => p.nom),
   };
@@ -249,7 +275,7 @@ export function choisirMontage(
  *  pour les trois autres. Une valeur absente ou aberrante retombe sur le défaut — jamais
  *  sur 0, qui ferait exploser la division. */
 export function reglesMontage(
-  cellules: { espace?: CellValue; pourtour?: CellValue } = {},
+  cellules: { espace?: CellValue; pourtour?: CellValue; perte?: CellValue } = {},
   app: Record<string, number> | undefined = undefined,
 ): ReglesMontage {
   const pos = (v: unknown, repli: number) => {
@@ -266,12 +292,17 @@ export function reglesMontage(
     dimMin: posOuZero(app?.MONTAGE_DIM_MIN, REGLES_MONTAGE_DEFAUT.dimMin),
     grainFige: app?.MONTAGE_GRAIN_FIGE === undefined ? REGLES_MONTAGE_DEFAUT.grainFige : app.MONTAGE_GRAIN_FIGE !== 0,
     seuilFeuilles: pos(app?.MONTAGE_SEUIL_FEUILLES, REGLES_MONTAGE_DEFAUT.seuilFeuilles),
+    // `posOuZero` et non `pos` : une gâche de 0 est une valeur légitime (job sans perte),
+    // alors qu'un espace ou un pourtour de 0 le serait aussi mais qu'une dimension nulle,
+    // elle, ferait exploser la division. Ici 0 ne divise rien, il multiplie.
+    perte: posOuZero(cellules.perte, REGLES_MONTAGE_DEFAUT.perte),
   };
 }
 
-/** Cellules du classeur qui portent l'espace et le pourtour. */
+/** Cellules du classeur qui portent l'espace, le pourtour et la gâche. */
 export const CELL_ESPACE_UP = "FT!AH43";
 export const CELL_POURTOUR = "FT!AH44";
+export const CELL_PERTE = "S!I2";
 
 /** Pseudo-cellule où est rangé le format de montage retenu (« Accepter » dans l'écran).
  *  Comme toutes les pseudo-cellules X!, elle voyage et se sauvegarde avec la soumission et
@@ -279,6 +310,30 @@ export const CELL_POURTOUR = "FT!AH44";
 export const CELL_MONTAGE_FORMAT = "X!MONTAGEFORMAT";
 /** Pseudo-cellule du nombre de up par feuille retenu (information de production). */
 export const CELL_MONTAGE_UP = "X!MONTAGEUP";
+/** Pseudo-cellule : la pièce doit-elle être posée à 90° pour obtenir ce montage ?
+ *
+ *  Tant que le grain était figé, format + up décrivaient entièrement le montage. Depuis que
+ *  les deux orientations sont testées (réponse client du 9 nov. 2026), ils ne suffisent plus :
+ *  une pièce 7 × 1,4 sur une feuille 12 × 24 donne 14 up à plat et 18 up tournée. Sans ce
+ *  drapeau, l'atelier reçoit « 18 up sur du 12 × 24 » et doit redéduire le sens de pose —
+ *  et un montage posé dans le mauvais sens ne tient tout simplement pas sur la feuille. */
+export const CELL_MONTAGE_TOURNEE = "X!MONTAGETOURNEE";
+
+/** Valeurs des trois cellules du moteur AVANT l'acceptation d'un montage, mémorisées pour
+ *  qu'« Annuler » les restaure.
+ *
+ *  « Accepter » n'écrit plus seulement des pseudo-cellules : il pose le montage retenu dans
+ *  `S!E5` (nombre de up) et `S!E6`/`S!H6` (dimensions de la feuille), parce que c'est ce que
+ *  lisent le prix et le bon de travail. « Annuler » doit donc rendre l'état d'origine, et non
+ *  vider ces cellules : une feuille sans dimensions donne une surface nulle, donc un coût
+ *  matière nul. D'où ces trois sauvegardes.
+ *
+ *  Elles ne sont écrites qu'à la PREMIÈRE acceptation : accepter un second montage par-dessus
+ *  un premier ne doit pas mémoriser l'état déjà modifié, sinon « Annuler » ramènerait au
+ *  montage précédent au lieu de l'état d'avant tout montage. */
+export const CELL_AVANT_UP = "X!MONTAGEAVANTUP";
+export const CELL_AVANT_DIM_X = "X!MONTAGEAVANTDIMX";
+export const CELL_AVANT_DIM_Y = "X!MONTAGEAVANTDIMY";
 
 /** Libellé court d'un format, tel qu'affiché et tel que rangé dans X!MONTAGEFORMAT. */
 export function libelleFormat(f: FormatFeuille): string {

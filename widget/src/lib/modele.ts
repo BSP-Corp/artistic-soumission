@@ -303,6 +303,29 @@ export const VERROUS_MATERIAUX = [
   { cle: "encre", drapeau: IN.sansEncre, verrou: "C!Q63", libelle: "encre", question: "Aucune encre n'est comptée (pas de couleur visible). Vous acceptez de ne pas mettre d'encre ?", conseil: "Renseignez les couleurs visibles ou une encre HPPL / texture." },
 ] as const;
 
+/** Dates du dossier (contrat v1.3 — questions 1 et 13 d'Openmind).
+ *
+ *  `IN.date` (FT!Y5) est la date requise du classeur : du texte libre, où l'on trouve
+ *  aussi bien « 2026-09-26 » que « ASAP » ou « fin du mois ». Elle reste la source de
+ *  saisie, et le contrat l'expose maintenant DEUX fois : telle quelle (`date_requise_texte`)
+ *  et normalisée en ISO (`date_requise`) quand elle est lisible comme date.
+ *
+ *  Les deux autres dates n'existent nulle part dans le classeur : pseudo-cellules, comme
+ *  `X!VENDU`. Elles sont sauvegardées avec la soumission et n'entrent dans aucun calcul —
+ *  aucune formule du classeur ne les lit, elles ne peuvent donc pas déplacer un prix. */
+export const CELL_DATE_COMMANDE = "X!DATE_CMD";
+export const CELL_DATE_EXPEDITION = "X!DATE_EXP";
+
+/** Nombre de feuilles corrigé à la main par le chef d'atelier (contrat v1.3 — question 2
+ *  et règle 4 d'Openmind). Vide par défaut. Quand il est renseigné, c'est LUI que le
+ *  contrat expose comme valeur retenue ; le calcul reste envoyé à côté, pour que la
+ *  plateforme sache toujours laquelle a servi.
+ *
+ *  Pseudo-cellule, donc hors du moteur : corriger le nombre de feuilles ne doit PAS
+ *  recalculer le prix. La correction dit ce que l'atelier produira, pas ce qui a été vendu —
+ *  rebrancher l'une sur l'autre changerait un prix déjà donné au client. */
+export const CELL_NB_FEUILLES_CORRIGE = "X!NBF_CORR";
+
 /** Prix vendu manuel (v1.1) : décidé par le chargé de projet, jamais recalculé.
  *  Une pseudo-cellule par quantité : `X!VENDU` pour la quantité principale (S!E2),
  *  `X!VENDU1` / `X!VENDU2` pour S!J9 / S!J10, `X!VENDUn` pour la ligne ajoutée X!QTEn. */
@@ -331,11 +354,17 @@ export function cellContrat(qteCell: string): string {
   return CELL_CONTRAT;
 }
 
-/** Lignes du gabarit de proposition Artistic (S-26635) qui n'ont aucune source dans la fiche
- *  de soumission : le contact du client, le nombre de lots, les épreuves, la finition, la
- *  livraison et les notes. Texte libre, saisi directement dans l'aperçu du document ; ce sont
- *  des pseudo-cellules X!, donc elles voyagent et se sauvegardent avec la soumission comme
- *  `X!CONTRAT` ou `X!VENDU`, et aucune formule ne les lit. */
+/** Lignes du gabarit de soumission client qui n'ont aucune source dans la fiche : le contact
+ *  du client, les épreuves, la finition, la livraison, les notes, et tout ce que le gabarit
+ *  de Josemaria Teixeira (30 oct. 2026) demande en plus — représentant, référence de bon de
+ *  commande, délai, coordonnées du client, frais de préparation, modalités de paiement et
+ *  numéros de taxes. Texte libre, saisi directement dans l'aperçu du document ; ce sont des
+ *  pseudo-cellules X!, donc elles voyagent et se sauvegardent avec la soumission comme
+ *  `X!CONTRAT` ou `X!VENDU`, et aucune formule ne les lit.
+ *
+ *  `paiement` mérite un mot : Christian l'a demandé le 2 novembre, les modalités doivent
+ *  suivre ce qui est convenu avec chaque client (COD, 30/45/60/90 jours) au lieu d'un texte
+ *  figé. Tant que la fiche client ne porte pas ce champ, il se saisit ici. */
 export const CELL_PROP = {
   contact: "X!PROPCONTACT",
   lots: "X!PROPLOTS",
@@ -343,6 +372,18 @@ export const CELL_PROP = {
   finition: "X!PROPFINITION",
   livraison: "X!PROPLIVRAISON",
   notes: "X!PROPNOTES",
+  representant: "X!PROPREPRESENTANT",
+  titreContact: "X!PROPTITRECONTACT",
+  telClient: "X!PROPTELCLIENT",
+  courrielClient: "X!PROPMAILCLIENT",
+  adresseClient: "X!PROPADRCLIENT",
+  refBC: "X!PROPREFBC",
+  delai: "X!PROPDELAI",
+  fraisLibelle: "X!PROPFRAISLIB",
+  fraisMontant: "X!PROPFRAISMNT",
+  paiement: "X!PROPPAIEMENT",
+  noTPS: "X!PROPNOTPS",
+  noTVQ: "X!PROPNOTVQ",
 } as const;
 
 /** Matériaux d'impression, dans l'ordre du bloc matériaux : sert à écrire la ligne
@@ -424,5 +465,10 @@ export function entreesExemple(classeur: Classeur): Record<string, CellValue> {
     const v = classeur[sh].values[ref];
     m[cell] = v === undefined ? "" : v;
   }
-  return m;
+  // Normaliser comme `entreesVierges` (corrigé le 20 nov. 2026). Le classeur porte F/S = 2 ;
+  // sans ce passage, une soumission partie de l'Exemple gardait ces passes, puis les perdait
+  // à sa première réouverture — `normaliserEntrees` s'exécutant au chargement — et son prix
+  // changeait tout seul d'une ouverture à l'autre (≈ 140 $ sur le scénario relevé).
+  // `gen-exemple.ts` et `gen-schema.ts` normalisaient déjà : c'était l'écran l'exception.
+  return normaliserEntrees(m);
 }

@@ -1,0 +1,111 @@
+# Sortie de 'npm run verif:montage'
+# Depot : main @ b2e7beb | 2026-11-17 15:31    
+# Point 1 du protocole. Sortie texte plutot qu'image : verifiable et rejouable.
+
+
+> canevas-soumission@0.1.0 verif:montage
+> esbuild src/verif-montage.ts --bundle --platform=node --format=cjs --alias:@=./src --outfile=.gen/verif-montage.cjs --log-level=warning && node .gen/verif-montage.cjs
+
+=== 1. INVERSION DE FT!AF39 — aller-retour ===
+formule directe  : dim = piece*N + espace*(N-1) + 2*pourtour
+formule inversee : N = plancher((dim - 2*pourtour + espace) / (piece + espace))
+cas testes : 1568 | incoherents : 0
+OK    N est bien le maximum qui tient dans la feuille
+
+=== 2. CELLULES DU CLASSEUR ===
+FT!AH43 (espace entre up)      : 0.25
+FT!AH44 (pourtour de la feuille): 0.5
+OK    espace = 0,25 po
+OK    pourtour = 0,5 po/cote
+FT!AF39 attendu 8     -> 8
+FT!AI39 attendu 7,35  -> 7.35
+OK    la formule directe reproduit le cache Excel
+
+=== 3. CAS DE TEST DU HANDOFF (2 nov.) ===
+piece 7 x 1,4 sur 24 x 48 : 3 x 28 = 84 up/feuille
+OK    attendu 84 up/feuille (3 x 28)
+2000 pieces -> 27 feuilles (gache 10 %)
+OK    attendu 27 feuilles, gache comprise
+OK    sans gache on retrouve bien 24 : c'est la gache qui fait l'ecart
+OK    le compte colle a la formule du classeur (E2*I2+E2)/E5
+   grain libre : 3 x 28 = 84 up (tournee=false)
+OK    grain libre donne le meme resultat sur ce format : 84
+
+piece 7 x 1,4 sur 12 x 24, grain fige : 1 x 14 = 14 up/feuille
+   le handoff annonce 1 x 13 = 13
+   detail : hauteur (24 - 1 + 0,25) / (1,4 + 0,25) = 14.0909 -> 14
+   verification : 14 up occupent 23.849999999999998 po <= 24 po, donc 14 tiennent
+                  13 up occupent 22.2 po — il reste de la place
+OK    le calcul donne 14 : le 13 du handoff est une erreur d'arithmetique
+
+piece 7 x 1,4 sur 12 x 24, grain libre : 6 x 3 = 18 up/feuille (tournee=true)
+   detail : largeur (12 - 1 + 0,25) / (1,4 + 0,25) = 6.8182 -> 6
+            hauteur (24 - 1 + 0,25) / (7 + 0,25)   = 3.2069 -> 3
+OK    attendu 18 up/feuille (6 x 3) -- la valeur annoncee le 9 novembre
+OK    le candidat est marque comme tourne : l'atelier doit le savoir
+   158 feuilles -> 123 feuilles pour 2000 pieces
+OK    la rotation reduit le nombre de feuilles sur ce format
+
+=== 4. SELECTION SUR LES 9 FORMATS PERMIS (piece 7 x 1,4 ; 2000 pieces) ===
+--- avec les formats maxi du CLIENT (2 nov.) ---
+   24 × 48    84 up/f    27 feuilles   presses: 150
+   30 × 28    64 up/f    35 feuilles   presses: 120, 150, 170
+   24 × 36    63 up/f    35 feuilles   presses: 150, 170
+   21 × 30    48 up/f    46 feuilles   presses: 110, 150, 170
+   24 × 24    42 up/f    53 feuilles   presses: 120, 140, 150, 170
+   21 × 28    36 up/f    62 feuilles   presses: 110, 120, 130, 150, 170
+   12 × 24    18 up/f   123 feuilles   presses: 110, 120, 130, 140, 150, 170
+   16 × 12    12 up/f   184 feuilles   presses: 110, 116, 120, 130, 140, 150, 170
+   12 × 12     6 up/f   367 feuilles   presses: 110, 116, 120, 130, 140, 150, 170
+   => retenu : 24 × 48 (84 up/f, 27 feuilles)
+OK    retenu = 24 × 48 (le plus grand format gagne sur une piece allongee)
+
+--- avec les fiches machines CREATOR (relevees le 3 nov.) ---
+   24 × 48    84 up/f    27 feuilles   presses: 2
+   30 × 28    64 up/f    35 feuilles   presses: 3
+   24 × 36    63 up/f    35 feuilles   presses: 5
+   21 × 30    48 up/f    46 feuilles   presses: 5
+   24 × 24    42 up/f    53 feuilles   presses: 5
+   21 × 28    36 up/f    62 feuilles   presses: 6
+   12 × 24    18 up/f   123 feuilles   presses: 6
+   16 × 12    12 up/f   184 feuilles   presses: 7
+   12 × 12     6 up/f   367 feuilles   presses: 7
+   => retenu : 24 × 48 (27 feuilles)
+   formats des 9 que la fiche Creator du 116 (12 x 8) peut rouler : 0
+OK    presse 116 : sa fiche Creator ne lui permet aucun des 9 formats — c'est le conflit a trancher
+OK    avec le format maxi annonce par le client (16 x 12), le 116 roule bien le format 16 x 12
+
+=== 5. GARDE-FOUS ===
+OK    quantite 0 -> aucune suggestion, pas de division par zero
+OK    dimensions manquantes -> aucune suggestion
+OK    piece plus grande que toute feuille -> aucune suggestion
+OK    un format a 6 po de cote est ecarte par la dimension minimale (8 po)
+
+grain fige  : 2 x 3 = 6 up | grain libre : 7 x 1 = 7 up (tournee=true)
+OK    grain libre ne fait jamais moins bien que grain fige
+
+=== 6. SEUIL DE DECLENCHEMENT ===
+seuil retenu : 350 feuilles
+30000 pieces sur 12 x 24 (format courant) : 1834 feuilles
+   -> recommande 24 × 48 : 393 feuilles
+   -> seuilAtteint=true, gain=1441 feuilles
+2000 pieces sur 12 x 24 : base 143 feuilles -> seuilAtteint=false, gain=116
+OK    un job de 143 feuilles ne declenche rien (sous le seuil de 350)
+OK    un job de 1834 feuilles declenche
+OK    le gain annonce est positif
+OK    gain = feuilles du format courant - feuilles du format recommande
+
+=== 7. INTEGRATION (scenario Exemple, comme l'ecran) ===
+piece 7 x 1.4 po | quantite 50 | FT!E44 (feuilles classeur) = 0
+presses avec format maxi renseigne : 7/7
+=> meilleur 30 × 28 : 64 up/f, 1 feuilles | seuilAtteint=false
+OK    le scenario Exemple produit une suggestion calculable
+OK    a 50 pieces le bloc reste masque (sous le seuil) -- comportement voulu
+
+a 40000 pieces : 24 × 48, 524 feuilles | seuilAtteint=true
+OK    le bloc s'affiche au-dela du seuil
+OK    le format retenu est roulable : Viking no.150
+
+=== DEFAUTS === {"espace":0.25,"pourtour":0.5,"dimMin":8,"grainFige":false,"seuilFeuilles":350,"perte":0.1}
+
+>>> TOUT PASSE

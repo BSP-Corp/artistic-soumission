@@ -5,7 +5,7 @@
 import { useEffect, useMemo, useRef, useState, Fragment, type ReactNode } from "react";
 import { useSoumission, simulerQuantite, CLASSEUR } from "@/hooks/useSoumission";
 import { tauxApplicable, LIBELLE_NIVEAU, type TauxRetenu } from "@/services/tauxChangeService";
-import { IN, OUT, DECOUPE_HM, CATALOGUES, listeCatalogue, cellVendu, CELL_VENDU, cellContrat, CELL_TAUX_INV, CELLS_MATERIAU_IMPR, XTRA_PLACEHOLDER } from "@/lib/modele";
+import { IN, OUT, DECOUPE_HM, CATALOGUES, listeCatalogue, cellVendu, CELL_VENDU, cellContrat, CELL_TAUX_INV, CELLS_MATERIAU_IMPR, XTRA_PLACEHOLDER, CELL_DATE_COMMANDE, CELL_DATE_EXPEDITION, CELL_NB_FEUILLES_CORRIGE } from "@/lib/modele";
 import { controlesSoumission, controlesPrix, SEUIL_DOUBLE_CHECK_DEFAUT } from "@/lib/controles";
 import { REGLES_DEFAUT, fusionnerRegles, type RegleMateriau } from "@/lib/reglesMateriaux";
 import { deduireAdhesif } from "@/lib/adhesif";
@@ -32,8 +32,13 @@ import {
   libelleFormat,
   CELL_ESPACE_UP,
   CELL_POURTOUR,
+  CELL_PERTE,
   CELL_MONTAGE_FORMAT,
+  CELL_MONTAGE_TOURNEE,
   CELL_MONTAGE_UP,
+  CELL_AVANT_UP,
+  CELL_AVANT_DIM_X,
+  CELL_AVANT_DIM_Y,
   type PresseFormat,
 } from "@/lib/montage";
 import { FORMATS_FEUILLE_SNAPSHOT } from "@/data/montageSnapshot";
@@ -60,6 +65,7 @@ import {
   type TransportParams,
   type Amortissements,
   type Machine,
+  majDatesCreator,
 } from "@/services/zohoService";
 import { creerBonTravail } from "@/services/bonTravailService";
 import { construireSoumissionJSON } from "@/api/contratSoumission";
@@ -320,7 +326,7 @@ export default function App() {
   // conflit de données documenté dans data/montageSnapshot.ts.
   const montage = useMemo(() => {
     const regles = reglesMontage(
-      { espace: s.moteur.val(CELL_ESPACE_UP), pourtour: s.moteur.val(CELL_POURTOUR) },
+      { espace: s.moteur.val(CELL_ESPACE_UP), pourtour: s.moteur.val(CELL_POURTOUR), perte: s.moteur.val(CELL_PERTE) },
       s.params?.app,
     );
     const presses: PresseFormat[] = machinesFamille(s.machinesCalc, "presse").map((m) => ({
@@ -328,7 +334,14 @@ export default function App() {
       largeurMaxPo: m.largeurPo,
       hauteurMaxPo: m.hauteurPo,
     }));
-    const feuillesFT = s.num("FT!E44");
+    // Le seuil doit comparer la SITUATION ACTUELLE au seuil, pas la solution optimale.
+    // `FT!E44` ne pouvait pas servir de base : `= IF(E43=0, 0, E39/E42/E43)`, et `E43` est une
+    // saisie de la feuille bon de travail, vide pendant une soumission — donc toujours 0.
+    // Faute de base, le seuil se mesurait sur le meilleur format : une job de 2 000 pièces à
+    // 4 up (550 feuilles, bien au-delà du seuil de 350) restait masquée parce que la solution
+    // optimale n'en fait que 27. C'était inversé. `S!G9` est le nombre de feuilles du montage
+    // courant, toujours renseigné, et c'est lui que l'écran affiche sous NB.MRX.
+    const feuillesCourantes = s.num(OUT.nbMrxExact);
     return choisirMontage(
       s.params?.formats ?? FORMATS_FEUILLE_SNAPSHOT,
       presses,
@@ -336,19 +349,89 @@ export default function App() {
       toNum(s.saisie(IN.dimPceY)),
       toNum(s.saisie(IN.quantite)),
       regles,
-      feuillesFT > 0 ? feuillesFT : null,
+      feuillesCourantes > 0 ? feuillesCourantes : null,
     );
   }, [s.entrees, s.params, s.machinesCalc, version]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const montageRetenu = String(s.saisie(CELL_MONTAGE_FORMAT) ?? "").trim();
+  const montageUpRetenu = toNum(s.saisie(CELL_MONTAGE_UP));
+
+  /** Le montage accepté correspond-il encore à la pièce et à la quantité saisies ?
+   *
+   *  Tant qu'aucune formule ne lisait le montage retenu, un format périmé était sans
+   *  conséquence. Depuis qu'« Accepter » écrit S!E5/E6/H6, c'est un générateur de prix faux :
+   *  on accepte 24 × 48 à 84 up, on change la pièce pour du 4 × 6 qui n'en permet que 35, et
+   *  le prix reste calculé sur 84 up — 2,4 fois trop peu de feuilles, silencieusement.
+   *
+   *  On ne l'efface pas tout seul : c'est une décision du chargé de projet, elle doit être
+   *  reprise explicitement, pas disparaître. On le dit, et il réaccepte. */
+  const montagePerime = useMemo(() => {
+    if (!montageRetenu) return null;
+    const encore = montage.candidats.find((c) => libelleFormat(c.format) === montageRetenu);
+    if (!encore) return "la pièce ne tient plus sur ce format";
+    if (encore.upParFeuille !== montageUpRetenu)
+      return `ce format donne maintenant ${encore.upParFeuille} up par feuille, plus ${montageUpRetenu}`;
+    return null;
+  }, [montageRetenu, montageUpRetenu, montage]);
+
+  /** La presse choisie dans la soumission peut-elle rouler ce format ?
+   *
+   *  `choisirMontage` reçoit TOUTES les presses actives et n'écarte un format que si AUCUNE ne
+   *  peut le rouler : la presse choisie n'entre donc pas dans le calcul. On avertit, on ne
+   *  restreint pas — limiter les formats à la presse choisie ferait que la Cameo 18 no.116
+   *  (12 × 8 à sa fiche) ne proposerait plus jamais rien, sans que personne comprenne pourquoi.
+   *  Et le conflit des formats maxi n'est pas tranché, donc la fiche peut être fausse.
+   *
+   *  Le contrôle de format existant (`controles.ts` §3.2) ne rattrape pas le cas tant que rien
+   *  n'est accepté : il teste la feuille COURANTE, pas le format proposé. */
+  const presseIncompatible = useMemo(() => {
+    if (!presse) return null;
+    const cible = montageRetenu
+      ? montage.candidats.find((c) => libelleFormat(c.format) === montageRetenu)
+      : montage.meilleur;
+    if (!cible || cible.presses.includes(presse.nom)) return null;
+    return `${presse.nom} (${presse.largeurPo} × ${presse.hauteurPo} po)`;
+  }, [presse, montage, montageRetenu]);
+
   const accepterMontage = () => {
     if (!montage.meilleur) return;
-    s.set(CELL_MONTAGE_FORMAT, libelleFormat(montage.meilleur.format));
-    s.set(CELL_MONTAGE_UP, montage.meilleur.upParFeuille);
+    const m = montage.meilleur;
+    // Mémoriser l'état d'origine AVANT la première écriture seulement (voir CELL_AVANT_UP) :
+    // réaccepter par-dessus un montage existant ne doit pas écraser la sauvegarde.
+    if (!montageRetenu) {
+      s.set(CELL_AVANT_UP, s.saisie(IN.nbUp));
+      s.set(CELL_AVANT_DIM_X, s.saisie(IN.dimMrxX));
+      s.set(CELL_AVANT_DIM_Y, s.saisie(IN.dimMrxY));
+    }
+    s.set(CELL_MONTAGE_FORMAT, libelleFormat(m.format));
+    s.set(CELL_MONTAGE_UP, m.upParFeuille);
+    // Le sens de pose fait partie du montage retenu : depuis que la piece peut tourner,
+    // format + up ne le decrivent plus entierement (7 x 1,4 sur 12 x 24 : 14 up a plat,
+    // 18 up tournee). Un montage pose dans le mauvais sens ne tient pas sur la feuille.
+    s.set(CELL_MONTAGE_TOURNEE, m.pieceTournee ? 1 : 0);
+    // LES TROIS ENSEMBLE, jamais S!E5 seul. Le coût matière se calcule sur la surface de la
+    // feuille : `S!V41 = ((E6*H6/144) * (E2/E5)) * (...)`. Passer les up de 4 à 84 sans
+    // toucher E6/H6 ferait croire au classeur qu'il consomme 27 feuilles aux ANCIENNES
+    // dimensions (8 × 9,5) au lieu de 27 feuilles de 24 × 48 : coût matière 20 fois trop bas.
+    // Invisible sur le scénario Exemple (R41 vide), bien réel dès qu'il y a une ligne
+    // fournisseur. Écrire E5 seul est donc plus dangereux que de ne rien écrire.
+    s.set(IN.nbUp, m.upParFeuille);
+    s.set(IN.dimMrxX, m.format.largeurPo);
+    s.set(IN.dimMrxY, m.format.hauteurPo);
   };
+
   const annulerMontage = () => {
+    // Restaurer, pas effacer : le classeur avait un nombre de up et des dimensions de feuille
+    // avant le montage. Les vider donnerait une surface nulle, donc un coût matière nul.
+    s.set(IN.nbUp, s.saisie(CELL_AVANT_UP));
+    s.set(IN.dimMrxX, s.saisie(CELL_AVANT_DIM_X));
+    s.set(IN.dimMrxY, s.saisie(CELL_AVANT_DIM_Y));
+    s.set(CELL_AVANT_UP, "");
+    s.set(CELL_AVANT_DIM_X, "");
+    s.set(CELL_AVANT_DIM_Y, "");
     s.set(CELL_MONTAGE_FORMAT, "");
     s.set(CELL_MONTAGE_UP, "");
+    s.set(CELL_MONTAGE_TOURNEE, "");
   };
 
   // comparatif découpe Zund vs Platine : le VRAI moteur tourne deux fois (lib/comparatifMoteur.ts).
@@ -356,6 +439,13 @@ export default function App() {
   // Une cinquantaine de recalculs (~5 ms chacun) : on attend une pause de saisie plutôt que
   // de recalculer à chaque frappe.
   const matriceJob = toNum(s.saisie(CELL_MATRICE));
+  // Correction manuelle du nombre de feuilles : null tant que personne n'a corrigé.
+  // 0 n'est pas une correction, c'est un champ vide — le lire autrement enverrait « 0 feuille »
+  // à la plateforme d'analyse.
+  const nbFeuillesCorrige = (() => {
+    const n = toNum(s.saisie(CELL_NB_FEUILLES_CORRIGE));
+    return n > 0 ? Math.round(n) : null;
+  })();
   const embossageActif = toNum(s.saisie(IN.platEmbossageDie)) > 0;
   const [comparatif, setComparatif] = useState<ComparatifMoteur | null>(null);
   useEffect(() => {
@@ -539,7 +629,7 @@ export default function App() {
 
   /** JSON contractuel envoyé à la plateforme du client (voir docs/api/CONTRAT-SOUMISSION.md).
    *  `id` n'est connu qu'après l'insert → passé en paramètre. */
-  function contratJSON(id: string, statut: string) {
+  function contratJSON(id: string, statut: string, moment: "avant_envoi" | "validation" = "validation") {
     return construireSoumissionJSON({
       m: s.moteur,
       e: s.entrees,
@@ -550,12 +640,19 @@ export default function App() {
         date_soumission: new Date().toISOString().slice(0, 10),
         reference_externe: null,
         notes: "",
+        moment,
       },
       simuler: (qte) => simulerQuantite(s.entrees, qte, s.params, { ...s.overridesTaux, ...s.surchargesMach }),
+      // L'épaisseur vient de l'inventaire Creator, pas du formulaire (question 3) : hors Zoho
+      // la table est vide et le contrat expose null — jamais une épaisseur inventée.
+      epaisseurPo: (nom) => s.params?.epaisseurParNom[nom.toLowerCase()] ?? null,
     });
   }
 
-  async function enregistrer(statut: "Brouillon" | "Valide" = "Brouillon") {
+  async function enregistrer(
+    statut: "Brouillon" | "Valide" = "Brouillon",
+    moment: "avant_envoi" | "validation" = "validation",
+  ) {
     setMessage("Enregistrement…");
     // Une soumission déjà enregistrée pendant cette session est MISE À JOUR, pas recréée :
     // « Enregistrer » puis « Valider » fabriquaient deux enregistrements pour le même travail
@@ -564,9 +661,13 @@ export default function App() {
     // À la création, l'ID Creator n'existe pas encore : on met un jeton de substitution que le
     // workflow Deluge remplace par le vrai ID avant l'envoi, puis réécrit dans Soumission_JSON.
     const dossier = {
-      soumission_json: JSON.stringify(contratJSON(idSoumission || ID_SUBSTITUTION, statut)),
+      soumission_json: JSON.stringify(contratJSON(idSoumission || ID_SUBSTITUTION, statut, moment)),
       statut,
-      webhook_statut: statut === "Valide" ? "En_attente" : "",
+      // « Analyse_demandee » est le drapeau que relève analyserAvantEnvoi (voir
+      // docs/api/deluge/analyser_avant_envoi.ds). L'appel dure 8 à 20 s : il ne part JAMAIS
+      // d'ici, sinon l'utilisateur attendrait devant un bouton figé.
+      webhook_statut:
+        moment === "avant_envoi" ? "Analyse_demandee" : statut === "Valide" ? "En_attente" : "",
       client: String(s.saisie(IN.client) ?? ""),
       no_client: String(s.saisie(IN.noClient) ?? ""),
       modele: String(s.saisie(IN.modele) ?? ""),
@@ -580,12 +681,46 @@ export default function App() {
     };
     const res = idSoumission ? await majSoumission(idSoumission, dossier) : await sauvegarderSoumission(dossier);
     if (res.ok && res.id) setIdSoumission(res.id);
+
+    // Les trois dates vont dans leurs champs Creator (type Date) APRES coup, pas dans le
+    // payload principal : le format attendu par Creator (dd-MMM-yyyy) n'a pas pu etre verifie
+    // en ecriture reelle, et un champ refuse fait echouer TOUT le payload. Une date mal
+    // formatee ne doit jamais coûter la soumission. Elles restent de toute facon dans
+    // Donnees et dans Soumission_JSON, qui alimentent le contrat client.
+    const idPourDates = res.id ?? idSoumission;
+    if (res.ok && idPourDates) {
+      const d = await majDatesCreator(idPourDates, {
+        requise: s.saisie(IN.date),
+        commande: s.saisie(CELL_DATE_COMMANDE),
+        expedition: s.saisie(CELL_DATE_EXPEDITION),
+      });
+      if (!d.ok) console.warn("majDatesCreator:", d.message, d.envoye);
+    }
     setMessage(
       res.ok && idSoumission && statut === "Valide"
         ? res.message + " Envoi vers la plateforme : utilisez « Renvoyer à la plateforme » sur la soumission."
         : res.message,
     );
     return res;
+  }
+
+  /** Analyse préventive — question 5 d'Openmind.
+   *
+   *  Leur outil partait du passage à « Valide ». Or « Valide » est posé par le bouton
+   *  « Valider → Bon de travail », donc quand la job part en PRODUCTION : le client a déjà
+   *  reçu et accepté la proposition, et une alerte à ce moment-là arrive trop tard pour ce
+   *  à quoi elle sert. Ce bouton ouvre le second moment : la proposition est prête, le
+   *  client ne l'a pas encore reçue.
+   *
+   *  La soumission reste un BROUILLON : demander un avis n'est pas s'engager. */
+  async function demanderAnalysePrealable() {
+    setMessage("Analyse préalable demandée…");
+    const res = await enregistrer("Brouillon", "avant_envoi");
+    setMessage(
+      res.ok
+        ? "Analyse préalable demandée. La plateforme répond en 8 à 20 s — la réponse revient dans la soumission."
+        : res.message,
+    );
   }
 
   /** Valide la soumission : l'enregistre puis ouvre un bon de travail (feuille FT) pré-rempli.
@@ -779,13 +914,13 @@ export default function App() {
           className="btn ghost"
           title={
             prixValide
-              ? "Aperçu du document client : logo, quantités, prix, conditions — téléchargeable en PDF ou envoyable par courriel"
+              ? "Aperçu du document client, deux pages : l'offre et sa grille de quantités, puis les conditions et l'acceptation — téléchargeable en PDF ou envoyable par courriel"
               : "Prix non validé : " + raisonPrix
           }
           disabled={!prixValide}
           onClick={() => setPropositionOuverte(true)}
         >
-          Proposition client
+          Soumission client
         </button>
         <button className="btn ghost" title="Imprime la fiche de soumission complète (usage interne)" onClick={() => window.print()}>
           Imprimer la fiche
@@ -799,6 +934,13 @@ export default function App() {
         </button>
         <button className="btn solid" onClick={() => void enregistrer()}>
           Enregistrer
+        </button>
+        <button
+          className="btn ghost"
+          title="Envoie la soumission à la plateforme d'analyse AVANT de la proposer au client. Reste un brouillon : rien n'est engagé."
+          onClick={() => void demanderAnalysePrealable()}
+        >
+          Analyser avant envoi
         </button>
         <button
           className="btn solid"
@@ -941,6 +1083,31 @@ export default function App() {
                     <Va cell={OUT.nbMrxExact} label="Nb. matrices (arrondi au plein)">{Math.ceil(s.num(OUT.nbMrxExact))}</Va>
                   </td>
                 </tr>
+                {/* Correction du chef d'atelier (contrat v1.3, question 2 d'Openmind).
+                    Vide par défaut. Elle ne recalcule RIEN : elle dit ce que l'atelier
+                    produira, pas ce qui a été vendu. Le prix reste celui du calcul. */}
+                <tr>
+                  <td className="lb" title="Correction manuelle du chef d'atelier. Vide = on garde le calcul. Ne change aucun prix.">
+                    Nb. feuilles corrigé
+                  </td>
+                  <td className="ct">{N(CELL_NB_FEUILLES_CORRIGE, 52, "Nb de feuilles corrigé par le chef d'atelier (vide = calcul)")}</td>
+                  {/* cellules vides : sans elles la case du nombre s'etirait sur toute la
+                      largeur de la carte, le 16 collé au bord droit */}
+                  <td colSpan={4} />
+                </tr>
+                {/* La note va sur SA PROPRE ligne, pleine largeur, comme la ligne d'info de la
+                    presse juste en dessous. Logée à côté de la saisie dans les colonnes
+                    étroites du gabarit Excel, elle élargissait la table à 482 px pour une
+                    carte de 458 : la fin du message (« le prix ne change pas ») se faisait
+                    rogner silencieusement, sur tous les écrans — ce n'était pas un défaut de
+                    capture, les utilisateurs ne voyaient pas la phrase entière. */}
+                <tr>
+                  <td className="machine-info" colSpan={6}>
+                    {nbFeuillesCorrige === null
+                      ? "vide — le calcul fait foi"
+                      : `retenu : ${nbFeuillesCorrige} au lieu de ${Math.ceil(s.num(OUT.nbMrxExact))} · le prix ne change pas`}
+                  </td>
+                </tr>
                 {/* Le sélecteur de presse et sa ligne d'info occupent toute la largeur du bloc :
                     logés dans les colonnes étroites du gabarit Excel (68 px), ils débordaient la
                     carte et se faisaient rogner silencieusement (.carte overflow). */}
@@ -987,27 +1154,53 @@ export default function App() {
                 )}
                 {avertFormat("feuille-presse", 6)}
                 {/* ── Montage suggéré (imposition) ──────────────────────────────────────
-                    N'apparaît qu'au-delà du seuil de feuilles (APP_MONTAGE_SEUIL_FEUILLES,
-                    350 par défaut) : sur un petit job, la question ne se pose pas. Le format
-                    accepté est rangé dans X!MONTAGEFORMAT — il voyage avec la soumission et
-                    AUCUNE formule du classeur ne le lit pour l'instant. */}
-                {montage.seuilAtteint && montage.meilleur && (
+                    La SUGGESTION n'apparaît qu'au-delà du seuil de feuilles
+                    (APP_MONTAGE_SEUIL_FEUILLES, 350 par défaut) : sur un petit job, la
+                    question ne se pose pas. Mais dès qu'un montage est ACCEPTÉ, la ligne
+                    reste visible même sous le seuil — « Accepter » écrit désormais S!E5, S!E6
+                    et S!H6, donc le montage pilote le prix. Le masquer reviendrait à laisser
+                    un montage invisible décider du prix, sans moyen de l'annuler : il suffit
+                    de baisser la quantité après avoir accepté pour tomber dans ce cas.
+                    Le format retenu est aussi rangé dans X!MONTAGEFORMAT, les up dans
+                    X!MONTAGEUP et le sens de pose dans X!MONTAGETOURNEE, pour le bon de
+                    travail et la relecture d'une soumission. */}
+                {((montage.seuilAtteint && montage.meilleur) || montageRetenu) && (
                   <tr>
                     <td className="machine-info" colSpan={6}>
-                      <b>Montage suggéré</b> — feuille {libelleFormat(montage.meilleur.format)} po :{" "}
-                      {montage.meilleur.upHorizontal} × {montage.meilleur.upVertical} ={" "}
-                      <b>{montage.meilleur.upParFeuille} up/feuille</b> ·{" "}
-                      <b>{montage.meilleur.nbFeuilles.toLocaleString("fr-CA")} feuilles</b>
-                      {montage.gainFeuilles !== null && montage.gainFeuilles > 0
-                        ? ` · ${montage.gainFeuilles.toLocaleString("fr-CA")} feuilles de moins que le format courant`
-                        : montage.feuillesBase === null
-                          ? " · pas de format courant saisi : aucun gain chiffré"
-                          : ""}
-                      {montage.meilleur.presses.length > 0
-                        ? ` · roulable sur ${montage.meilleur.presses.join(", ")}`
-                        : ""}
-                      {montage.meilleur.pieceTournee ? " · pièce tournée de 90°" : ""}
-                      {montageRetenu ? (
+                      {montage.meilleur && (
+                        <>
+                          <b>Montage suggéré</b> — feuille {libelleFormat(montage.meilleur.format)} po :{" "}
+                          {montage.meilleur.upHorizontal} × {montage.meilleur.upVertical} ={" "}
+                          <b>{montage.meilleur.upParFeuille} up/feuille</b> ·{" "}
+                          <b>{montage.meilleur.nbFeuilles.toLocaleString("fr-CA")} feuilles</b>
+                          {montage.gainFeuilles !== null && montage.gainFeuilles > 0
+                            ? ` · ${montage.gainFeuilles.toLocaleString("fr-CA")} feuilles de moins que le format courant`
+                            : montage.feuillesBase === null
+                              ? " · pas de format courant saisi : aucun gain chiffré"
+                              : ""}
+                          {montage.meilleur.presses.length > 0
+                            ? ` · roulable sur ${montage.meilleur.presses.join(", ")}`
+                            : ""}
+                          {montage.meilleur.pieceTournee ? " · pièce tournée de 90°" : ""}
+                        </>
+                      )}
+                      {montagePerime ? (
+                        <>
+                          {" "}
+                          — <b className="perime">⚠ le montage retenu ({montageRetenu}) ne correspond plus : {montagePerime}</b>.{" "}
+                          Le prix est encore calculé sur l'ancien montage.{" "}
+                          {montage.meilleur && (
+                            <>
+                              <button type="button" className="btn ghost petit" onClick={accepterMontage}>
+                                Reprendre la suggestion
+                              </button>{" "}
+                            </>
+                          )}
+                          <button type="button" className="btn ghost petit" onClick={annulerMontage}>
+                            Revenir au montage d'origine
+                          </button>
+                        </>
+                      ) : montageRetenu ? (
                         <>
                           {" "}
                           — <b>retenu : {montageRetenu}</b>{" "}
@@ -1023,10 +1216,23 @@ export default function App() {
                           </button>
                         </>
                       )}
+                      {presseIncompatible && (
+                        <>
+                          <br />
+                          <b className="perime">
+                            ⚠ la presse choisie — {presseIncompatible} — ne peut pas rouler ce format
+                          </b>
+                          .{" "}
+                          {montageRetenu
+                            ? "Le prix porte ce montage, mais l'atelier ne pourra pas le monter sur cette presse."
+                            : "Changer de presse, ou accepter en sachant que la job partira sur une autre."}
+                        </>
+                      )}
                       <br />
                       <span className="hint">
-                        Suggestion seulement : le prix et le temps d'impression ne sont pas encore
-                        recalculés sur ce format (étape 6 du handoff, à câbler).
+                        {montageRetenu
+                          ? "Montage accepté : le nombre de up et les dimensions de feuille du calcul portent ce format, donc le prix et le bon de travail le suivent. « Annuler » restaure les valeurs d'origine."
+                          : "« Accepter » pose ce format dans le calcul : nombre de up et dimensions de feuille, donc le prix et le bon de travail suivent."}
                       </span>
                     </td>
                   </tr>
@@ -1520,6 +1726,32 @@ export default function App() {
                       <td className="lb">Date</td>
                       <td colSpan={4}>
                         <CelluleDate cell={IN.date} value={s.saisie(IN.date)} onChange={s.set} label="Date de la soumission" />
+                      </td>
+                    </tr>
+                    {/* Dates du dossier (contrat v1.3) : elles n'entrent dans AUCUN calcul —
+                        aucune formule du classeur ne les lit. Elles servent à la plateforme
+                        d'analyse, qui compare la date requise à l'expédition prévue pour dire
+                        si un délai tient debout. */}
+                    <tr>
+                      <td className="lb">Commande</td>
+                      <td colSpan={4}>
+                        <CelluleDate
+                          cell={CELL_DATE_COMMANDE}
+                          value={s.saisie(CELL_DATE_COMMANDE)}
+                          onChange={s.set}
+                          label="Date de la commande ferme (réception du PO client)"
+                        />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td className="lb">Exp. prévue</td>
+                      <td colSpan={4}>
+                        <CelluleDate
+                          cell={CELL_DATE_EXPEDITION}
+                          value={s.saisie(CELL_DATE_EXPEDITION)}
+                          onChange={s.set}
+                          label="Date d'expédition prévue"
+                        />
                       </td>
                     </tr>
                   </tbody>

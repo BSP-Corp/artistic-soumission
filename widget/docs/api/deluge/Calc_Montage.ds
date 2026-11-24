@@ -4,10 +4,11 @@
 //
 //  Signature à déclarer dans le builder :
 //     decimal pieceW, decimal pieceH, int qty, decimal espace, decimal pourtour,
-//     decimal dimMin, boolean grainFige, int seuilFeuilles, int feuillesBase
+//     decimal dimMin, boolean grainFige, int seuilFeuilles, int feuillesBase,
+//     decimal perte
 //
-//  Retour : { format, up_par_feuille, up_h, up_v, nb_feuilles, presses,
-//             gain_feuilles, seuil_atteint, ecartes }
+//  Retour : { format, up_par_feuille, up_h, up_v, piece_tournee, nb_feuilles,
+//             presses, gain_feuilles, seuil_atteint, ecartes }
 //
 //  ⚠ CE N'EST PAS LA SOURCE DE VÉRITÉ. Le widget calcule le montage en local
 //  (widget/src/lib/montage.ts) parce que la suggestion doit suivre la saisie au
@@ -29,6 +30,14 @@
 //  5. Le seuil de déclenchement (350) ne figurait pas dans la fonction. Ajouté.
 //  6. Division : `qty / upBest` sur deux entiers peut renvoyer un décimal selon le
 //     contexte. Le plafond est calculé explicitement.
+//  7. `piece_tournee` : le pseudo-code ne renvoyait pas si la pièce avait dû être
+//     posée à 90°. Sans grain figé (réponse client du 9 nov. 2026) ce n'est plus un
+//     détail : l'atelier doit savoir dans quel sens monter la pièce, sinon le nombre
+//     de up annoncé est intenable sur la table.
+//  8. `perte` (gâche, S!I2) : nouveau paramètre. Le pseudo-code comptait les feuilles
+//     sur la quantité nue, alors que le classeur les compte avec la gâche
+//     (`S!G9 = (E2*I2+E2)/E5`). Les deux doivent compter la même chose, sinon le gain
+//     affiché soustrait deux mesures différentes. 2000 pièces à 84 up : 27, pas 24.
 // ============================================================================
 
 resultat = Map();
@@ -42,6 +51,7 @@ bestFormat = "";
 bestUp = 0;
 bestUpH = 0;
 bestUpV = 0;
+bestTournee = false;
 bestFeuilles = 0;
 bestSurface = 0.0;
 bestPresses = "";
@@ -52,6 +62,7 @@ if (pieceW <= 0 || pieceH <= 0 || qty <= 0)
 {
 	resultat.put("format", "");
 	resultat.put("up_par_feuille", 0);
+	resultat.put("piece_tournee", false);
 	resultat.put("nb_feuilles", 0);
 	resultat.put("seuil_atteint", false);
 	resultat.put("ecartes", "dimensions ou quantité manquantes");
@@ -104,6 +115,7 @@ for each f in Formats_Feuille[Actif == 1]
 		upV = 0;
 	}
 	// grain libre : la pièce peut aussi être posée à 90°, on garde le meilleur des deux
+	tournee = false;
 	if (grainFige == false)
 	{
 		rotH = ((fw - marge + espace) / pas_v).floor();
@@ -120,6 +132,7 @@ for each f in Formats_Feuille[Actif == 1]
 		{
 			upH = rotH;
 			upV = rotV;
+			tournee = true;
 		}
 	}
 	upBest = upH * upV;
@@ -128,9 +141,13 @@ for each f in Formats_Feuille[Actif == 1]
 		ecartes.add(nomF + " : la pièce n'y tient pas");
 		continue;
 	}
-	// plafond explicite de qty / upBest
-	feuilles = (qty / upBest).floor();
-	if ((feuilles * upBest) < qty)
+	// Feuilles AVEC la gâche, comme le classeur : S!G9 = (E2*I2+E2)/E5. Compter sans la
+	// gâche sous-estimait les feuilles (24 au lieu de 27 sur 2000 pièces à 84 up), donc le
+	// seuil se déclenchait trop tard et le gain s'annonçait trop beau.
+	qteGache = qty * (1 + perte);
+	// plafond explicite de qteGache / upBest
+	feuilles = (qteGache / upBest).floor();
+	if ((feuilles * upBest) < qteGache)
 	{
 		feuilles = feuilles + 1;
 	}
@@ -155,6 +172,7 @@ for each f in Formats_Feuille[Actif == 1]
 		bestUp = upBest;
 		bestUpH = upH;
 		bestUpV = upV;
+		bestTournee = tournee;
 		bestFeuilles = feuilles;
 		bestSurface = surfaceF;
 		bestPresses = listePresses.toString(", ");
@@ -177,6 +195,7 @@ resultat.put("format", bestFormat);
 resultat.put("up_par_feuille", bestUp);
 resultat.put("up_h", bestUpH);
 resultat.put("up_v", bestUpV);
+resultat.put("piece_tournee", bestTournee);
 resultat.put("nb_feuilles", bestFeuilles);
 resultat.put("presses", bestPresses);
 resultat.put("gain_feuilles", gain);

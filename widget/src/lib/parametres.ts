@@ -24,6 +24,11 @@ export interface ParamsAppliques {
   achatParNom: Record<string, { cout: number; date: string }>;
   /** nom (minuscules) → coût pi² — tous les matériaux Creator, y compris les nouveaux */
   prixParNom: Record<string, number>;
+  /** nom (minuscules) → épaisseur en pouces. Alimente `materiaux[].epaisseur_po` du contrat
+   *  (demande Openmind, question 3) : la donnée existe déjà dans l'inventaire, on l'expose
+   *  plutôt que d'ajouter un champ au formulaire. Un matériau sans épaisseur est absent de
+   *  la table — jamais 0, qui se lirait comme une épaisseur nulle. */
+  epaisseurParNom: Record<string, number>;
   /** catégorie → noms de matériaux actifs (pour les listes déroulantes) */
   categories: Record<string, string[]>;
   nbMateriaux: number;
@@ -39,6 +44,7 @@ export function construireParams(p: ParametresCreator): ParamsAppliques {
   const defauts: Record<string, CellValue> = {};
   const app: Record<string, number> = {};
   const prixParNom: Record<string, number> = {};
+  const epaisseurParNom: Record<string, number> = {};
   const achatParNom: Record<string, { cout: number; date: string }> = {};
   const categories: Record<string, string[]> = {};
 
@@ -46,6 +52,7 @@ export function construireParams(p: ParametresCreator): ParamsAppliques {
     if (!m.actif) continue;
     const cle = m.nom.toLowerCase();
     if (m.coutPi2 > 0) prixParNom[cle] = m.coutPi2;
+    if (m.epaisseurPo !== null && m.epaisseurPo > 0) epaisseurParNom[cle] = m.epaisseurPo;
     if (m.dernierCout !== null && m.dernierCout > 0)
       achatParNom[cle] = { cout: m.dernierCout, date: m.dernierAchat };
     (categories[m.categorie] ??= []).push(m.nom);
@@ -76,6 +83,7 @@ export function construireParams(p: ParametresCreator): ParamsAppliques {
     defauts,
     app,
     prixParNom,
+    epaisseurParNom,
     achatParNom,
     categories,
     formats,

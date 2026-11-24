@@ -974,7 +974,7 @@ export const MATERIAUX_LOCAL: Materiau[] = [
  {
   nom: "Carton YUPPO ,0015x23x35 mez",
   categorie: "ABS-STYRENE",
-  epaisseur: 0.015,
+  epaisseur: 0.0,
   largeur: 23,
   longueur: 35,
   prixPi2: 0,
@@ -1095,7 +1095,7 @@ export const MATERIAUX_LOCAL: Materiau[] = [
  {
   nom: "Vinyle Flextwin 3930 TWD ,0026x30x3600",
   categorie: "VINYLE",
-  epaisseur: 0.026,
+  epaisseur: 0.0026,
   largeur: 30,
   longueur: 3600,
   prixPi2: 0,
@@ -1700,7 +1700,7 @@ export const MATERIAUX_LOCAL: Materiau[] = [
  {
   nom: "Vinyle Flextwin 3930 TWD ,0026x30x3600",
   categorie: "OVERLAMINATING",
-  epaisseur: 0.026,
+  epaisseur: 0.0026,
   largeur: 30,
   longueur: 3600,
   prixPi2: 0,
@@ -2052,7 +2052,7 @@ export const MATERIAUX_LOCAL: Materiau[] = [
  {
   nom: "Foil 7940 Argent Mat ,0037x20x27",
   categorie: "ALUMINIUM FOIL",
-  epaisseur: 0.037,
+  epaisseur: 0.002,
   largeur: 20,
   longueur: 27,
   prixPi2: 0,
@@ -2063,7 +2063,7 @@ export const MATERIAUX_LOCAL: Materiau[] = [
  {
   nom: "Foil 7942 Argent Brillant ,0037x20x27",
   categorie: "ALUMINIUM FOIL",
-  epaisseur: 0.037,
+  epaisseur: 0.0037,
   largeur: 20,
   longueur: 27,
   prixPi2: 0,

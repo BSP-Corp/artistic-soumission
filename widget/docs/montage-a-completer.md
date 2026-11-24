@@ -78,6 +78,20 @@ développement. Ne le supprime pas. Il devient simplement inutilisé en producti
 
 ## 2. Corriger `APP_MONTAGE_GRAIN_FIGE` — 1 minute, aucun redéploiement
 
+> ⛔ **L'ORDRE COMPTE — ne pas toucher au paramètre avant le déploiement.**
+>
+> Le code sait désormais tourner la pièce, et `grainFige` vaut `false` par défaut
+> (`montage.ts`). Mais le `APP_MONTAGE_GRAIN_FIGE` à **1** présent dans `Taux_Calcul`
+> (ID …875014) **n'est pas un oubli** : il tient le grain fermé tant que l'ancien build est en
+> ligne. Ce build-là ne fait pas voyager le sens de pose avec la soumission
+> (`X!MONTAGETOURNEE`). Y libérer le grain, c'est activer la rotation **sans que l'orientation
+> soit enregistrée nulle part** — l'atelier peut monter la pièce dans le mauvais sens. C'est le
+> trou du 11 novembre, rouvert.
+>
+> **Séquence : déployer le build de `main`, PUIS passer le 1 à 0, PUIS jouer T16.**
+> Relevé par Soufiane le 16 novembre.
+
+
 Le paramètre vaut **1** (pas de rotation de la pièce), repris de l'onglet « Paramètres » du gabarit
 Excel, où Roberto avait coché « Oui ».
 
@@ -101,47 +115,182 @@ sortir avec la mention « pièce tournée de 90° ».
 
 ---
 
-## 3. Trancher le conflit des formats maxi des presses — demande au client
+## 3. Corriger les fiches machines — **tranché par Roberto le 16 novembre**
 
-Les formats maxi fournis par Roberto ne correspondent pas aux fiches machines déjà dans Creator.
-Relevé le 3 novembre, documenté en tête de `montageSnapshot.ts` :
+Roberto a répondu le 16 novembre à 15 h 06 : **« utilise ma liste »**. Ce sont donc ses chiffres
+du 2 novembre qui font foi, et les fiches Creator qui sont à corriger — l'inverse de ce qu'on
+faisait en attendant.
 
-| Presse | Liste Roberto | Fiche Creator | |
+### Les sept presses de sa liste
+
+> **Ces écritures se font à la main, dans l'écran Creator** — les six ci-dessous plus One man.
+> L'écriture automatisée a été refusée (modification de données partagées) et Youssef a tranché
+> le 18 novembre de ne pas lever ce garde-fou. Recopier les valeurs ci-dessous telles quelles.
+
+| Presse | Fiche Creator aujourd'hui | **À corriger pour** |
+|---|---|---|
+| 110 | 26 × 18 | **21 × 30** |
+| 116 | 12 × 8 | **16 × 12** |
+| 120 | vides, fiche inactive | **30 × 28** — et à réactiver, Roberto la liste |
+| 130 | 21 × 28 | inchangée ✅ |
+| 140 | 25 × 38 | **24 × 24** |
+| 150 | 30 × 50 | **44 × 64** |
+| 170 | 30 × 40 | **30 × 39** |
+
+### Les trois fiches qui n'étaient pas dans sa liste
+
+Il les a reprises une par une, et aucune des trois n'était ce qu'on croyait.
+
+**« One man » — 48 × 96, mais pas encore.** *« une presse qui sera réactivée prochainement »*. Le
+format est confirmé. Tant qu'elle n'est pas remise en service elle n'a rien à faire dans la liste
+de choix ; c'est la seule des trois dont la fiche est juste.
+
+**« DTS » — ce n'est pas une presse.** *Direct To Screen* : la machine qui **brûle les soies**
+utilisées sur les presses. Son format maxi de cadre est 1200 × 1500 mm, soit ≈ **47 × 59 po** —
+pas le 48 × 96 de sa fiche. À retirer des presses sélectionnables : tant qu'elle y figure à
+48 × 96, elle fait croire au calcul qu'un format géant est roulable alors qu'aucune presse ne
+l'imprimerait.
+
+**« 182 » — probablement la 180.** *« tu dois sûrement vouloir dire la 180 »* : une presse
+multi-tête 6 couleurs rotative, en fonction, **impression 28 × 38**. La fiche porte 24 × 44, qui
+ne correspond à rien de connu. À confirmer avec lui que c'est bien la même machine avant de
+renommer — c'est la seule inconnue qui reste.
+
+### Ce que ça change pour le calcul
+
+Le conflit se referme proprement : **avec la liste de Roberto, chacun des neuf formats permis est
+roulable par au moins une presse.** Le 16 × 12 redevient disponible — il n'existait dans les neuf
+qu'à cause de la 116, et la fiche à 12 × 8 l'écartait de tout.
+
+Le test T12 du protocole devient donc caduc tel qu'il est écrit : il demande de choisir la
+Cameo 18 no.116 et d'attendre un avertissement. Une fois la fiche corrigée à 16 × 12, cette
+presse roule le 16 × 12 et l'avertissement ne doit plus sortir pour ce format. Prendre une autre
+presse pour éprouver l'avertissement — la 140 à 24 × 24 face à une suggestion 24 × 48, par
+exemple.
+
+### Vérifié contre les données et le code — 17 novembre
+
+Les fiches ont été relues par l'API et le comportement confronté au code avant de toucher à
+quoi que ce soit. Trois choses écrites ci-dessus ne tiennent pas.
+
+**1. T12 n'est pas caduc.** Le raisonnement ci-dessus porte sur le 16 × 12, mais T12 ne teste pas
+ça : il met la 116 face à la suggestion du scénario, qui est **24 × 48** (pièce 7 × 1,4,
+40 000 ex.). Or le 24 × 48 n'est roulable que par la **Viking no.150**, avant comme après
+correction — la 116 à 16 × 12 ne le roule pas davantage qu'à 12 × 8. **L'avertissement sortira
+donc toujours, et T12 reste valide tel qu'il est écrit.** Inutile de le réécrire.
+
+**2. Le trou du calcul, c'est « One man », pas la DTS.** La DTS a ses champs numériques
+`Largeur_max_po` / `Hauteur_max_po` **vides** — son 48 × 96 n'existe que dans le champ texte
+`Format_max`, que le calcul ne lit pas. Et `presseAccepte` (`lib/montage.ts`) écarte
+explicitement une presse sans format renseigné, au lieu de la croire illimitée. La DTS ne valide
+donc **aucun** format : elle encombre la liste de choix, ce qui est un défaut d'ergonomie, pas de
+prix.
+
+« One man », elle, porte 48 × 96 **dans les champs numériques** et son statut est **Actif**.
+`machinesFamille` ne filtre que sur le statut, donc elle entre dans le calcul et rend
+« roulables » des formats que personne n'imprime aujourd'hui. C'est la fiche décrite plus haut
+comme « la seule des trois dont la fiche est juste » : juste sur les dimensions, mais active à
+tort. **La passer à Inactif tant qu'elle n'est pas remise en service est la seule des trois
+corrections qui change un résultat.**
+
+**3. Le 16 × 12 n'est pas « écarté de tout ».** Il est roulable dès aujourd'hui par la 110, la
+130, la 140, la 150 et la 170. Et les neuf formats permis sont **tous** déjà couverts par au moins
+une presse, avant comme après la liste de Roberto — vérifié format par format. La correction des
+fiches reste nécessaire (les chiffres sont faux), mais elle ne débloque aucun format.
+
+**Ce qu'elle déplace vraiment**, c'est quelles presses roulent quoi — donc l'avertissement de
+T12 — et le fait que la 120, aujourd'hui **Inactif**, est dans la liste de Roberto : sans
+réactivation, son 30 × 28 n'entre pas dans le calcul.
+
+> ⚠ **Un point de fragilité à connaître :** le 24 × 48 — le format que le montage recommande
+> dans tous les scénarios de test — ne tient que sur **une seule presse**, la Viking no.150, dans
+> les deux jeux de données. Si cette fiche est fausse ou la presse indisponible, c'est toute la
+> recommandation phare qui n'a plus de machine.
+
+### Les six fiches à corriger, avec leurs identifiants
+
+| Presse | ID Creator | Aujourd'hui | → Roberto |
 |---|---|---|---|
-| 110 | 21 × 30 | 26 × 18 | ≠ |
-| 116 | 16 × 12 | 12 × 8 | ≠ |
-| 120 | 30 × 28 | vides, fiche inactive | ≠ |
-| 130 | 21 × 28 | 21 × 28 | ✅ seule concordance |
-| 140 | 24 × 24 | 25 × 38 | ≠ |
-| 150 | 44 × 64 | 30 × 50 | ≠ |
-| 170 | 30 × 39 | 30 × 40 | ≈ |
-| 182 | absente | 24 × 44, active | — |
+| Cameo 30SS no.110 | `4153107000022536120` | 26 × 18 | **21 × 30** |
+| Cameo 18 no.116 | `4153107000022536124` | 12 × 8 | **16 × 12** |
+| Cameo 38SS no.120 | `4153107000022536122` | vides, **Inactif** | **30 × 28** + réactiver |
+| Saturn no.140 | `4153107000022536118` | 25 × 38 | **24 × 24** |
+| Viking no.150 | `4153107000022536116` | 30 × 50 | **44 × 64** |
+| Renegade 170 | `4153107000022536114` | 30 × 40 | **30 × 39** |
+| Svecia no.130 | `4153107000022536112` | 21 × 28 | inchangée ✅ |
+| One man | `4153107000022536056` | 48 × 96, **Actif** | **passer à Inactif** |
 
-Les presses « One man » (48 × 96) et « DTS » sont actives dans Creator et absentes de la liste.
 
-**Conséquence concrète :** le format 16 × 12 n'existe dans la liste que parce que la 116 ferait
-16 × 12. Avec la fiche Creator (12 × 8), aucune presse ne peut le rouler et le calcul l'écarte.
+> ✅ **One man : décision prise le 17 novembre (Youssef) — la passer à Inactif.** Elle est hors
+> service, Roberto le dit lui-même, et tant qu'elle est active elle fait considérer roulables des
+> formats que personne n'imprime.
+>
+> **Changer le statut, rien d'autre.** Garder les 48 × 96 dans les champs numériques : ils sont
+> confirmés par Roberto, et il faudra les retrouver tels quels quand la presse reviendra.
+>
+> **Conséquence à connaître :** une fois One man inactive, le **24 × 48 ne tient plus que sur la
+> Viking no.150**. C'est le format que tous les scénarios de test recommandent, et il ne dépend
+> plus que d'une seule fiche. Si la 150 devenait inactive, ou si son format maxi passait sous
+> 24 × 48, ce format disparaîtrait des propositions — sans erreur, juste en cessant d'être
+> suggéré. Vaut la peine d'être dit à Christian le jour où on touchera aux presses.
 
-**En attendant, les fiches Creator font foi** — elles sont la source déjà branchée et déjà affichée
-dans l'écran. Rien n'est écrasé. Ce point demande un appel à Roberto, pas du code.
+Le champ texte `Format_max` est décoratif : aucun calcul ne le lit. Le corriger aussi évite
+qu'il contredise les champs numériques à l'œil.
 
-> À noter : le 3 novembre à 14 h 29, Christian écrivait à Roberto *« Tu as oublié le fichier 😊 »*.
-> Un fichier devait accompagner ses réponses et n'est jamais arrivé. C'est peut-être la liste
-> corrigée. À réclamer avant de trancher.
+---
+
+> Le fichier que Christian réclamait le 3 novembre (« Tu as oublié le fichier 😊 ») n'est jamais
+> arrivé et n'est plus attendu : la réponse du 16 novembre tranche sans lui.
+
+---
+
+## 4. Les boutons « Accepter » / « Annuler » sont illisibles — correctif CSS
+
+Relevé en testant le widget déployé dans Creator le 16 novembre. Les deux boutons du bloc montage
+s'affichent comme des **rectangles blancs vides**. Ils fonctionnent — cliquer « Accepter » inscrit
+bien « retenu : 24 × 48 » — mais leur libellé est invisible.
+
+Ce n'est pas Creator qui écrase le style, c'est le nôtre. Dans `src/styles.css` :
+
+```css
+.btn.ghost {
+  background: transparent;
+  color: #fff;        /* texte blanc */
+  border: 1px solid #4a4a4a;
+}
+```
+
+`btn ghost` est faite pour la **barre d'outils du haut**, sur fond foncé. Dans `App.tsx` le bloc
+montage la réutilise (`className="btn ghost petit"`) pour des boutons placés dans une cellule
+`.machine-info`, **sur fond clair** : texte blanc sur fond blanc.
+
+**Correctif :** une variante à texte foncé pour les boutons dans `.machine-info`. La règle
+`.machine-info .btn.petit` existe déjà (ligne ~1356) et ne porte que des marges — c'est l'endroit
+naturel où ajouter la couleur et la bordure.
+
+À vérifier dans Creator après correction, pas seulement en développement : c'est précisément parce
+que le contraste passait sur l'écran de dev que le défaut n'a pas été vu.
 
 ---
 
 ## Récapitulatif
 
-| # | Quoi | Où | Redéploiement |
+| # | Quoi | Où | État au 16 nov. (soir) |
 |---|---|---|---|
-| 1 | Créer `Formats_Feuille` + les 9 lignes | Creator (builder) | non |
-| 2 | `APP_MONTAGE_GRAIN_FIGE` → 0 | Creator (`Taux_Calcul`) | non |
-| 3 | Conflit des formats maxi presses | Appel client | — |
+| 1 | Créer `Formats_Feuille` + les 9 lignes | Creator (builder) | CSV d'import prêt, table à créer |
+| 2 | Grain libre | Code | ✅ défaut dans le code — le `1` de `Taux_Calcul` ne passe à `0` **qu'après** le déploiement |
+| 3 | Fiches machines selon la liste Roberto | Creator (`Fiche_Machine`) | tranché, à saisir |
+| 4 | Boutons illisibles (CSS) | Code | ✅ corrigé, à revoir dans Creator |
 
-Aucun des trois ne touche au code. L'**étape 6** — réinjecter le format retenu dans le temps
-d'impression et donc dans le prix — reste le seul vrai chantier de développement, et elle attend un
-arbitrage client parce qu'elle change des prix.
+Reste donc deux choses à faire dans Creator : la table des formats et les fiches machines. Le
+reste est dans le code, sur `main`, et attend d'être déployé puis validé — le protocole est dans
+`montage-protocole-tests.md`.
+
+> **Vérifié en production le 16 novembre** (build `2026-11-05 15:12 UTC`, Creator : 211 matériaux ·
+> 124 taux) : le montage était bien déployé et calculait juste. Pièce 7 × 1,4 po, 40 000
+> exemplaires → feuille 24 × 48, 3 × 28 = 84 up/feuille, 477 feuilles. Après « Accepter », coût,
+> total, prix unitaire et temps étaient **inchangés au cent près** — c'est ce constat qui a
+> déclenché l'étape 6, livrée depuis.
 
 ---
 
