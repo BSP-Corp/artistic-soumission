@@ -105,8 +105,22 @@ export interface InfosProposition {
   couleurs: string;
 }
 
+/** Produit supplémentaire de la grille (refonte : 2 à 5 pièces par soumission). */
+export interface ProduitSupplementaire {
+  nom: string;
+  spec: string;
+  /** palier → quantité réelle et prix unitaire de CE produit ; absent = non proposé */
+  prix: Record<number, { qte: number; unitaire: number }>;
+}
+
 interface Props {
   infos: InfosProposition;
+  /** lignes ajoutées sous l'article principal — l'écran actuel n'en a pas */
+  autresProduits?: ProduitSupplementaire[];
+  /** montants forfaitaires (sous-traitance, installation) : les mêmes à tous les paliers */
+  forfaits?: { libelle: string; montant: number }[];
+  /** notes imprimées au bas de la page 1 */
+  notesClient?: string;
   lignes: LigneProposition[];
   /** valeur d'une ligne du gabarit saisie à la main (pseudo-cellules `CELL_PROP`) */
   libre: (cell: string) => CellValue;
@@ -128,7 +142,7 @@ function dateValidite(date: string): string {
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
 
-export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Props) {
+export function PopupProposition({ infos, lignes, libre, setLibre, onClose, autresProduits = [], forfaits = [], notesClient = "" }: Props) {
   useEchap(onClose);
   // `mode-proposition` sur <body> : la feuille de style d'impression ne laisse que ce document
   // sur le papier (sans la barre d'outils, sans la soumission, sans les boutons du popup).
@@ -154,8 +168,15 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
   const auCent = (v: number) => Math.round(v * 100) / 100;
   const montantLigne = (l: LigneProposition) => auCent(l.unitaire) * l.qte;
 
-  const montantRetenu = retenue ? montantLigne(retenue) : 0;
-  const sousTotal = montantRetenu + montantFrais;
+  const montantAutre = (p: ProduitSupplementaire, palier: number) => {
+    const x = p.prix[palier];
+    return x ? auCent(x.unitaire) * x.qte : 0;
+  };
+  const montantRetenu = retenue
+    ? montantLigne(retenue) + autresProduits.reduce((s, p) => s + montantAutre(p, retenue.qte), 0)
+    : 0;
+  const montantForfaits = forfaits.reduce((s, f) => s + auCent(f.montant), 0);
+  const sousTotal = montantRetenu + montantForfaits + montantFrais;
   const mtTPS = sousTotal * TPS;
   const mtTVQ = sousTotal * TVQ;
   const total = sousTotal + mtTPS + mtTVQ;
@@ -301,6 +322,45 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
                     </td>
                   </tr>
                 )}
+                {paliers.length > 0 &&
+                  autresProduits.map((p, n) => (
+                    <tr key={"autre" + n}>
+                      <td className="prop-grille-produit">
+                        <b>{p.nom}</b>
+                        {p.spec ? <div className="prop-grille-spec">{p.spec}</div> : null}
+                      </td>
+                      {paliers.map((l, i) => {
+                        const x = p.prix[l.qte];
+                        return (
+                          <td key={i} className={"ct" + (l.active ? " prop-reco" : "")}>
+                            {x ? (
+                              <>
+                                <div className="prop-unitaire">{nombre2(auCent(x.unitaire))} $</div>
+                                <div className="prop-par">× {x.qte.toLocaleString("fr-CA")}</div>
+                                <div className="prop-montant">{nombre2(montantAutre(p, l.qte))} $</div>
+                              </>
+                            ) : (
+                              "—"
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                {paliers.length > 0 &&
+                  forfaits.map((f, n) => (
+                    <tr key={"forfait" + n} className="prop-frais">
+                      <td className="prop-grille-produit">
+                        <b>{f.libelle}</b>
+                      </td>
+                      {paliers.length > 1 && (
+                        <td className="prop-frais-note" colSpan={paliers.length - 1}>
+                          Montant forfaitaire, peu importe la quantité choisie
+                        </td>
+                      )}
+                      <td className="ct">{nombre2(auCent(f.montant))} $</td>
+                    </tr>
+                  ))}
                 {/* La ligne de frais occupe toute la largeur : le libellé, la mention « une
                     seule fois » qui couvre les paliers sauf un, et le montant sous le dernier.
                     Sans palier, la grille n'a qu'une colonne de prix et la mention saute. */}
@@ -391,6 +451,8 @@ export function PopupProposition({ infos, lignes, libre, setLibre, onClose }: Pr
                 </tbody>
               </table>
             </div>
+
+            {notesClient ? <p className="prop-note">{notesClient}</p> : null}
 
             {/* Avertissement interne : il met en garde le chargé de projet dans l'aperçu, il n'a
                 rien à faire sur le document que le client reçoit. */}

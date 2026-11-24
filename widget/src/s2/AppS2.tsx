@@ -1,12 +1,14 @@
 // 2e widget de soumission (docs/refonte-soumission.md).
 //
 // Même moteur, mêmes cellules, mêmes services que l'écran actuel : seule la présentation
-// change. Seule la sérigraphie se chiffre. Le numérique se saisit et se vérifie, mais il n'a
-// aucun calcul de coût (docs/production-numerique.md) : pas de prix, pas d'enregistrement.
+// change. La pièce 1 en sérigraphie garde EXACTEMENT le prix de l'écran actuel. Les pièces 2 à 5
+// passent par le même moteur (pieces.ts). Le numérique et la découpe seule ont un prix PROVISOIRE
+// (chiffrageNumerique.ts), qui ne s'imprime pas et ne crée pas de bon de travail.
 //
-// Pas encore là : pièces multiples (décision du client), sous-traitance et PO, bon de travail.
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { useSoumission, simulerQuantite, CLASSEUR } from "@/hooks/useSoumission";
+// Rien ne sort d'ici : statut toujours « Brouillon », aucun envoi à la plateforme du client,
+// aucun bon de commande créé, bons de travail créés en « Brouillon ».
+import { useDeferredValue, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useSoumission, simulerQuantite, simulerScenario, CLASSEUR } from "@/hooks/useSoumission";
 import {
   IN,
   OUT,
@@ -20,7 +22,7 @@ import {
   listeCatalogue,
 } from "@/lib/modele";
 import { CATEGORIE_VERS_CHAMP } from "@/lib/parametres";
-import { controlesSoumission, SEUIL_DOUBLE_CHECK_DEFAUT } from "@/lib/controles";
+import { controlesSoumission, SEUIL_DOUBLE_CHECK_DEFAUT, type Controle } from "@/lib/controles";
 import { REGLES_DEFAUT, fusionnerRegles, type RegleMateriau } from "@/lib/reglesMateriaux";
 import { deduireAdhesif } from "@/lib/adhesif";
 import { argent, dateOuTexte, nombre2, nombre3, toNum } from "@/lib/format";
@@ -51,15 +53,19 @@ import {
   majDatesCreator,
   majSoumission,
   sauvegarderSoumission,
+  type Machine,
   type ResultatSoumissions,
 } from "@/services/zohoService";
+import { creerBonTravail } from "@/services/bonTravailService";
+import { CELLULES_SAISIE, champsPlatsBT } from "@/bt/modeleFT";
 import { construireSoumissionJSON } from "@/api/contratSoumission";
 import { PopupSoumissions } from "@/components/PopupSoumissions";
 import { PopupVerification } from "@/components/PopupVerification";
-import { PopupProposition, type LigneProposition } from "@/components/PopupProposition";
+import { PopupProposition, type LigneProposition, type ProduitSupplementaire } from "@/components/PopupProposition";
 import { Champ, Coche, Materiau, Nombre, Texte } from "./champs";
 import {
   CELL_METHODE,
+  CELL_NOTES_CLIENT,
   CELL_TYPE_CLIENT,
   PREFIXE_NUM,
   Certifications,
@@ -75,8 +81,14 @@ import {
   coordonneesManquantes,
   controlesNumeriques,
   lireMethode,
+  valeursNumeriques,
   type Methode,
 } from "./sections";
+import { GrillePieces, HypothesesNum, Installation, PopupPO, SousTraitance, TableauPieces } from "./sections09";
+import { cellVenduPiece, infosPiece, modifsPiece, piecesPresentes, quantitePiece } from "./pieces";
+import { MAJORATION_DEFAUT, achats, installationRequise, manquesSection09, montantInstallation, totauxAchats } from "./soustraitance";
+import { CELL_MATIERE_NUM, chiffrerNumerique } from "./chiffrageNumerique";
+import { CONFIG_EMBARQUEE, chargerConfigNumerique } from "./configNumerique";
 import {
   CELL_ORIGINE_S2,
   avecGache,
@@ -88,6 +100,19 @@ import {
   paliersDefaut,
   prochainPalier,
 } from "./logique";
+
+/** Numéro S-AAAA-NNNN (format de la spec, à confirmer par le client). */
+const CELL_NUMERO = "X!S2_NO";
+/** N° du bon de travail déjà créé pour chaque pièce : évite d'en créer deux. */
+const cellBT = (k: number) => "X!S2_BT" + k;
+
+/** Prix d'une pièce 2 à 5 pour un palier. */
+interface PrixPiece {
+  qte: number;
+  unitaire: number;
+  cout: number;
+  heures: number;
+}
 
 /** Même jeton que l'écran actuel : le workflow Deluge le remplace par le vrai ID. */
 const ID_SUBSTITUTION = "__ID_SOUMISSION__";
@@ -142,17 +167,24 @@ export default function AppS2() {
   const [idSoumission, setIdSoumission] = useState("");
   const [occupe, setOccupe] = useState(false);
   const [liste, setListe] = useState<ResultatSoumissions | null>(null);
-  const [popup, setPopup] = useState<null | "ouvrir" | "verifier" | "client">(null);
+  const [popup, setPopup] = useState<null | "ouvrir" | "verifier" | "client" | "po">(null);
+  const [poSeul, setPoSeul] = useState("");
+  const [machines, setMachines] = useState<Machine[]>([]);
+  const [configNum, setConfigNum] = useState(CONFIG_EMBARQUEE);
 
   useEffect(() => {
     let vivant = true;
     void (async () => {
       await initZohoEnv();
-      const [p, a, r] = await Promise.all([chargerParametres(), chargerAdmin(), chargerReglesMateriaux()]);
+      const [p, a, r, cfg] = await Promise.all([chargerParametres(), chargerAdmin(), chargerReglesMateriaux(), chargerConfigNumerique()]);
       if (!vivant) return;
       const prixCreator = !!p && (p.materiaux.length > 0 || p.taux.length > 0);
       if (p && prixCreator) setParametres(p);
-      if (a) setMachinesCreator(a.machines);
+      if (a) {
+        setMachinesCreator(a.machines);
+        setMachines(a.machines);
+      }
+      setConfigNum(cfg);
       setRegles(fusionnerRegles(r).regles);
       setSources({
         prix: p && prixCreator ? `Creator (${p.materiaux.length} matériaux, ${p.taux.length} taux)` : "copie embarquée",
@@ -251,17 +283,39 @@ export default function AppS2() {
     if (cell === actif) set(CELL_VENDU, v);
   };
 
+  // ── méthode ───────────────────────────────────────────────────────────────
+  const methode = lireMethode(s.saisie(CELL_METHODE));
+  const seri = methode === "serigraphie";
+  const app = s.params?.app;
+
+  /** Chiffrage provisoire (numérique, découpe seule) d'une pièce. */
+  const numerique = (e: Record<string, CellValue>, q: number, dims?: { l: number; h: number }, principal = true) =>
+    chiffrerNumerique({
+      methode: methode === "decoupe" ? "decoupe" : "numerique",
+      valeurs: valeursNumeriques(e),
+      qte: q,
+      gache: toNum(e[IN.perte] ?? ""),
+      facteur: toNum(e[IN.facteur] ?? ""),
+      transport: principal ? toNum(e[IN.transport] ?? "") : 0,
+      entrees: e,
+      app,
+      fiches: machines,
+      prixMatiere: s.params?.prixParNom[String(e[CELL_MATIERE_NUM] ?? "").toLowerCase()] ?? null,
+      dims,
+    });
+  const resNum = useMemo(() => numerique(s.entrees, qte), [s.entrees, s.params, machines, qte, methode]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const simulations = useMemo(() => {
     const surch = { ...s.overridesTaux, ...s.surchargesMach };
     return paliers.map((c) => {
       const q = toNum(s.saisie(c));
-      return q > 0 ? { qte: q, ...simulerQuantite(s.entrees, q, s.params, surch) } : { qte: 0, cout: 0, prix: 0, vendu: 0, us: 0 };
+      if (!(q > 0)) return { qte: 0, cout: 0, prix: 0, vendu: 0, us: 0 };
+      if (seri) return { qte: q, ...simulerQuantite(s.entrees, q, s.params, surch) };
+      const n = numerique(s.entrees, q);
+      return { qte: q, cout: n.cout / q, prix: n.unitaire, vendu: n.unitaire, us: 0 };
     });
-  }, [paliers, s.entrees, s.params, s.overridesTaux, s.surchargesMach]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [paliers, s.entrees, s.params, s.overridesTaux, s.surchargesMach, machines, methode]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── méthode ───────────────────────────────────────────────────────────────
-  const methode = lireMethode(s.saisie(CELL_METHODE));
-  const seri = methode === "serigraphie";
   const changerMethode = (m: Methode) => {
     set(CELL_METHODE, m);
     if (m !== "numerique") for (const c of Object.keys(s.entrees)) if (c.startsWith(PREFIXE_NUM)) unset(c);
@@ -281,12 +335,103 @@ export default function AppS2() {
       ),
     [s.entrees, s.overridesTaux, s.surchargesMach, s.presseChoisie, s.zundChoisi, s.platineChoisie, s.params, regles, seuil], // eslint-disable-line react-hooks/exhaustive-deps
   );
-  const bloquants = controles.filter((c) => c.type !== "info");
+  // ── pièces 2 à 5 ──────────────────────────────────────────────────────────
+  // Différées : jusqu'à 4 pièces × 10 paliers, la frappe passe avant.
+  const differees = useDeferredValue(s.entrees);
+  /** Feuille suggérée pour une pièce : celle que la presse choisie peut rouler, sinon la meilleure. */
+  const feuillePour = (e: Record<string, CellValue>, k: number, q: number) => {
+    const p = infosPiece(e, k);
+    const r = choisirMontage(
+      s.params?.formats ?? FORMATS_FEUILLE_SNAPSHOT,
+      machinesFamille(s.machinesCalc, "presse").map((m) => ({ nom: m.nom, largeurMaxPo: m.largeurPo, hauteurMaxPo: m.hauteurPo })),
+      p.l,
+      p.h,
+      q,
+      reglesMontage({ espace: s.moteur.val(CELL_ESPACE_UP), pourtour: s.moteur.val(CELL_POURTOUR), perte: s.moteur.val(CELL_PERTE) }, app),
+      null,
+    );
+    const c = r.candidats.find((x) => !s.presseChoisie || x.presses.includes(s.presseChoisie.nom));
+    return c ? { up: c.upParFeuille, l: c.format.largeurPo, h: c.format.hauteurPo } : null;
+  };
+  const autresPieces = useMemo(
+    () =>
+      piecesPresentes(differees)
+        .filter((k) => k > 1)
+        .map((k) => {
+          const p = infosPiece(differees, k);
+          const manque: Controle[] = [];
+          const bloque = (message: string) => manque.push({ type: "bloquant", cle: `piece${k}-${manque.length}`, message: `Pièce ${k} : ${message}` });
+          if (!(p.l > 0 && p.h > 0)) bloque("dimensions manquantes.");
+          const cache = new Map<number, PrixPiece>();
+          const prix: Record<string, PrixPiece> = {};
+          const refs = cellulesPaliers(differees);
+          const actifRef = palierActif(differees);
+          if (p.l > 0 && p.h > 0)
+            for (const c of refs) {
+              const q = quantitePiece(differees, k, c);
+              if (!(q > 0)) continue;
+              let v = cache.get(q);
+              if (!v && seri) {
+                const f = feuillePour(differees, k, q);
+                if (!f) {
+                  if (c === actifRef) bloque("aucune feuille ne convient à la presse choisie.");
+                  continue;
+                }
+                const modifs = modifsPiece(differees, k, q, f);
+                const m = simulerScenario(differees, s.params, { ...s.overridesTaux, ...s.surchargesMach }, modifs);
+                v = { qte: q, unitaire: m.num(OUT.prixUnitaire), cout: m.num(OUT.montant), heures: m.num(OUT.tempsTotalHrs) + m.num(OUT.tempsTotalMin) / 60 };
+                if (c === actifRef)
+                  for (const x of controlesSoumission(m, { ...differees, ...modifs }, { presse: s.presseChoisie, zund: s.zundChoisi, platine: s.platineChoisie }, regles, seuil))
+                    if (x.type === "bloquant") manque.push({ ...x, cle: `piece${k}-${x.cle}`, message: `Pièce ${k} : ${x.message}` });
+              } else if (!v) {
+                const n = numerique(differees, q, { l: p.l, h: p.h }, false);
+                v = { qte: q, unitaire: n.unitaire, cout: n.cout, heures: n.heures };
+              }
+              cache.set(q, v);
+              prix[c] = v;
+            }
+          return { k, infos: p, prix, manque };
+        }),
+    [differees, s.params, s.machinesCalc, s.overridesTaux, s.surchargesMach, s.presseChoisie, s.zundChoisi, s.platineChoisie, regles, seuil, machines, methode], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  const venduPiece = (k: number, c: string, calcule: number) => {
+    const v = toNum(s.saisie(cellVenduPiece(k, c)));
+    return v > 0 ? v : calcule;
+  };
+
+  // ── section 09 ────────────────────────────────────────────────────────────
+  const listeAchats = useMemo(() => achats(s.entrees), [s.entrees]);
+  const manques09 = useMemo(() => manquesSection09(s.entrees, listeAchats), [s.entrees, listeAchats]);
+  const totAchats = totauxAchats(listeAchats);
+  const montantInst = montantInstallation(s.entrees);
+
+  const tous: Controle[] = [
+    ...controles,
+    ...autresPieces.flatMap((x) => x.manque),
+    ...manques09.map((message, i): Controle => ({ type: "bloquant", cle: "s09-" + i, message })),
+  ];
+  const enAttente = differees !== s.entrees && piecesPresentes(s.entrees).length > 1;
+  const bloquants = seri ? tous.filter((c) => c.type !== "info") : [];
+  const manquesNum = seri
+    ? []
+    : [
+        ...(methode === "numerique" ? controlesNumeriques(s.entrees, configNum.champs).filter((c) => c.type !== "info").map((c) => c.message) : []),
+        ...(resNum.manque ? [resNum.manque] : []),
+        ...autresPieces.flatMap((x) => x.manque.map((c) => c.message)),
+        ...manques09,
+      ];
+  /** Prix validé : imprimable, transformable en bon de travail. */
   const prixVisible = demarre && seri && bloquants.length === 0;
-  const aCompleter = methode === "numerique" ? controlesNumeriques(s.entrees).filter((c) => c.type !== "info").length : 0;
+  const aCompleter = manquesNum.length;
   const masque = (v: ReactNode) =>
-    !pret ? "…" : !seri ? (
-      <span className="s2-nonchiffre" title="Aucun taux ni vitesse n'est encore disponible pour cette méthode">non chiffré</span>
+    !pret ? (
+      "…"
+    ) : !seri ? (
+      aCompleter ? (
+        <span className="s2-nonchiffre" title={manquesNum.join(" · ")}>à compléter ({aCompleter})</span>
+      ) : (
+        <span className="s2-prov" title="Prix provisoire : hypothèses de BSP, à confirmer par Artistic">{v}</span>
+      )
     ) : prixVisible ? (
       v
     ) : (
@@ -355,59 +500,170 @@ export default function AppS2() {
     for (const c of [CELL_AVANT_UP, CELL_AVANT_DIM_X, CELL_AVANT_DIM_Y, CELL_MONTAGE_FORMAT, CELL_MONTAGE_UP, CELL_MONTAGE_TOURNEE]) set(c, "");
   };
 
+  // ── totaux : pièce 1 + pièces 2 à 5 + section 09 ──────────────────────────
+  const autresActif = autresPieces.map((x) => {
+    const v = actif ? x.prix[actif] : undefined;
+    return v ? { ...v, k: x.k, vente: venduPiece(x.k, actif!, v.unitaire) * v.qte } : null;
+  }).filter((x) => x !== null);
+  const cout1 = seri ? s.num(OUT.montant) : resNum.cout;
+  const total1 = seri ? s.num(OUT.total) : resNum.prix;
+  const unitaire = seri ? s.num(OUT.prixUnitaire) : resNum.unitaire;
+  const cout = cout1 + autresActif.reduce((n, x) => n + x.cout, 0) + totAchats.cout + montantInst;
+  const total = total1 + autresActif.reduce((n, x) => n + x.vente, 0) + totAchats.prix + montantInst;
+  const heures1 = seri ? Math.trunc(s.num(OUT.tempsTotalHrs)) + s.num(OUT.tempsTotalMin) / 60 : resNum.heures;
+  const heures = heures1 + autresActif.reduce((n, x) => n + x.heures, 0);
+  /** Une pièce, en sérigraphie, sans section 09 : le contrat v1.3 sait la décrire. */
+  const simple = seri && piecesPresentes(s.entrees).length === 1 && listeAchats.length === 0 && !installationRequise(s.entrees);
+
+  // Seuils d'approbation : réglables dans Taux_Calcul, aucun tant que le client n'a pas répondu.
+  const marge = margeReelle(total, cout);
+  const approbations = [
+    (app?.PRIX_MIN ?? 0) > 0 && total > 0 && total < app!.PRIX_MIN ? `Sous le prix minimum de commande (${argent(app!.PRIX_MIN)}).` : "",
+    (app?.MARGE_MIN ?? 0) > 0 && marge !== null && marge < app!.MARGE_MIN ? `Marge sous le seuil de ${nombre2(app!.MARGE_MIN * 100)} % : approbation requise.` : "",
+    (app?.MONTANT_APPROB ?? 0) > 0 && total > app!.MONTANT_APPROB ? `Montant au-dessus de ${argent(app!.MONTANT_APPROB)} : approbation requise.` : "",
+  ].filter(Boolean);
+
   // ── enregistrement : toujours « Brouillon », jamais d'envoi ───────────────
+  function dossierPour(entrees: Record<string, CellValue>, id: string) {
+    const json = construireSoumissionJSON({
+      m: s.moteur,
+      e: entrees,
+      meta: {
+        id: id || ID_SUBSTITUTION,
+        statut: "Brouillon",
+        source: "widget",
+        date_soumission: new Date().toISOString().slice(0, 10),
+        reference_externe: null,
+        notes: "",
+        moment: "validation",
+      },
+      simuler: (q) => simulerQuantite(entrees, q, s.params, { ...s.overridesTaux, ...s.surchargesMach }),
+      epaisseurPo: (nom) => s.params?.epaisseurParNom[nom.toLowerCase()] ?? null,
+    });
+    return {
+      // Le contrat ne décrit qu'une pièce chiffrée par le classeur. Vide, « Renvoyer à la
+      // plateforme » s'annule de lui-même : mieux que d'y pousser un prix incomplet.
+      soumission_json: simple ? JSON.stringify(json) : "",
+      statut: "Brouillon" as const,
+      webhook_statut: "",
+      client: String(entrees[IN.client] ?? ""),
+      no_client: String(entrees[IN.noClient] ?? ""),
+      // L'écran actuel ouvre aussi ces soumissions, mais n'y voit que la pièce 1 : on le signale.
+      modele: "[Essai] " + String(entrees[IN.modele] ?? ""),
+      no_pce: String(entrees[IN.noPce] ?? ""),
+      quantite: qte,
+      facteur: toNum(entrees[IN.facteur] ?? ""),
+      montant: cout,
+      total,
+      prix_unitaire: unitaire,
+      donnees_json: JSON.stringify(entrees),
+    };
+  }
+
+  /** S-AAAA-NNNN suivant, d'après les soumissions existantes. "" si la liste est illisible. */
+  async function prochainNumero(): Promise<string> {
+    const r = await chargerSoumissions();
+    if (!r.ok) return "";
+    const annee = new Date().getFullYear();
+    let max = 0;
+    for (const x of r.liste) {
+      const m = new RegExp(`"${CELL_NUMERO}":"S-${annee}-(\\d+)"`).exec(x.donnees);
+      if (m) max = Math.max(max, Number(m[1]));
+    }
+    return `S-${annee}-${String(max + 1).padStart(4, "0")}`;
+  }
+
+  async function enregistrerSans(): Promise<{ ok: boolean; id: string; entrees: Record<string, CellValue>; message: string }> {
+    const entrees: Record<string, CellValue> = { ...s.entrees, [CELL_ORIGINE_S2]: 1 };
+    if (!entrees[CELL_NUMERO]) entrees[CELL_NUMERO] = await prochainNumero();
+    const dossier = dossierPour(entrees, idSoumission);
+    const res = idSoumission ? await majSoumission(idSoumission, dossier) : await sauvegarderSoumission(dossier);
+    if (!res.ok) return { ok: false, id: "", entrees, message: res.message };
+    const id = res.id ?? idSoumission;
+    if (id) {
+      setIdSoumission(id);
+      set(CELL_ORIGINE_S2, 1);
+      set(CELL_NUMERO, entrees[CELL_NUMERO]);
+      const d = await majDatesCreator(id, { requise: s.saisie(IN.date), commande: "", expedition: s.saisie("X!DATE_EXP") });
+      if (!d.ok) console.warn("majDatesCreator:", d.message);
+    }
+    return { ok: true, id, entrees, message: res.message };
+  }
+
   async function enregistrer() {
     const manque = coordonneesManquantes(s.entrees);
-    if (manque.length) {
-      setMessage("Nouveau client, à compléter avant d'enregistrer : " + manque.join(", ") + ".");
+    if (manque.length || manques09.length) {
+      setMessage("À compléter avant d'enregistrer : " + [...(manque.length ? ["nouveau client (" + manque.join(", ") + ")"] : []), ...manques09].join(" "));
       return;
     }
+    if (enAttente) return;
     setOccupe(true);
     setMessage("Enregistrement…");
     try {
-      const entrees = { ...s.entrees, [CELL_ORIGINE_S2]: 1 };
-      const json = construireSoumissionJSON({
-        m: s.moteur,
-        e: entrees,
-        meta: {
-          id: idSoumission || ID_SUBSTITUTION,
-          statut: "Brouillon",
-          source: "widget",
-          date_soumission: new Date().toISOString().slice(0, 10),
-          reference_externe: null,
-          notes: "",
-          moment: "validation",
-        },
-        simuler: (q) => simulerQuantite(entrees, q, s.params, { ...s.overridesTaux, ...s.surchargesMach }),
-        epaisseurPo: (nom) => s.params?.epaisseurParNom[nom.toLowerCase()] ?? null,
-      });
-      const dossier = {
-        soumission_json: JSON.stringify(json),
-        statut: "Brouillon" as const,
-        webhook_statut: "",
-        client: String(s.saisie(IN.client) ?? ""),
-        no_client: String(s.saisie(IN.noClient) ?? ""),
-        modele: String(s.saisie(IN.modele) ?? ""),
-        no_pce: String(s.saisie(IN.noPce) ?? ""),
-        quantite: qte,
-        facteur: toNum(s.saisie(IN.facteur)),
-        montant: s.num(OUT.montant),
-        total: s.num(OUT.total),
-        prix_unitaire: s.num(OUT.prixUnitaire),
-        donnees_json: JSON.stringify(entrees),
-      };
-      const res = idSoumission ? await majSoumission(idSoumission, dossier) : await sauvegarderSoumission(dossier);
-      if (res.ok && res.id) {
-        setIdSoumission(res.id);
-        set(CELL_ORIGINE_S2, 1);
-        const d = await majDatesCreator(res.id, { requise: s.saisie(IN.date), commande: "", expedition: s.saisie("X!DATE_EXP") });
-        if (!d.ok) console.warn("majDatesCreator:", d.message);
-      }
-      setMessage(res.message);
+      const r = await enregistrerSans();
+      setMessage(r.message + (r.ok && !simple ? " Cette soumission ne s'ouvre au complet que dans cet écran." : ""));
     } finally {
       setOccupe(false);
     }
   }
+
+  // ── bon de travail : un par pièce, en « Brouillon », jamais deux fois ─────
+  async function versBonTravail() {
+    const manque = coordonneesManquantes(s.entrees);
+    if (manque.length) {
+      setMessage("Nouveau client, à compléter : " + manque.join(", ") + ".");
+      return;
+    }
+    if (!prixVisible) {
+      setPopup("verifier");
+      return;
+    }
+    if (enAttente || !actif) return;
+    setOccupe(true);
+    setMessage("Bon de travail…");
+    try {
+      const r = await enregistrerSans();
+      if (!r.ok || !r.id) {
+        setMessage(r.ok ? "Mode démo : aucun bon de travail créé." : r.message);
+        return;
+      }
+      const atelier = new Set(CELLULES_SAISIE);
+      const entrees = { ...r.entrees };
+      const faits: string[] = [];
+      let erreur = "";
+      for (const k of piecesPresentes(entrees)) {
+        if (entrees[cellBT(k)]) continue;
+        const q = quantitePiece(entrees, k, actif);
+        if (!(q > 0)) continue;
+        const modifs = modifsPiece(entrees, k, q, k === 1 ? null : feuillePour(entrees, k, q));
+        const m = k === 1 ? s.moteur : simulerScenario(entrees, s.params, { ...s.overridesTaux, ...s.surchargesMach }, modifs);
+        const soum: Record<string, CellValue> = {};
+        const bt: Record<string, CellValue> = {};
+        for (const [c, v] of Object.entries(k === 1 ? entrees : { ...entrees, ...modifs })) (atelier.has(c) ? bt : soum)[c] = v;
+        const res = await creerBonTravail({
+          plats: champsPlatsBT(m, bt, r.id, "Brouillon"),
+          donnees_soum: JSON.stringify(soum),
+          donnees_bt: JSON.stringify(bt),
+        });
+        if (!res.ok) {
+          erreur = res.message;
+          break;
+        }
+        entrees[cellBT(k)] = res.no_bt || "créé";
+        faits.push(res.no_bt || "créé");
+      }
+      if (faits.length) {
+        for (const k of piecesPresentes(entrees)) if (entrees[cellBT(k)]) set(cellBT(k), entrees[cellBT(k)]);
+        const maj = await majSoumission(r.id, dossierPour(entrees, r.id));
+        if (!maj.ok) erreur = "le numéro du bon n'a pas pu être noté sur la soumission : " + maj.message;
+      }
+      setMessage([faits.length ? "Bon de travail créé en brouillon : " + faits.join(", ") + "." : "", erreur].filter(Boolean).join(" "));
+    } finally {
+      setOccupe(false);
+    }
+  }
+  const btFaits = piecesPresentes(s.entrees).map((k) => String(s.saisie(cellBT(k)) ?? "")).filter(Boolean);
+  const btComplet = btFaits.length > 0 && piecesPresentes(s.entrees).every((k) => s.saisie(cellBT(k)) || !(actif && quantitePiece(s.entrees, k, actif) > 0));
 
   function ouvrir() {
     setPopup("ouvrir");
@@ -429,12 +685,24 @@ export default function AppS2() {
   );
   const C = (label: string, cell: string) => <Coche label={label} cell={cell} value={s.saisie(cell)} onChange={set} />;
 
-  const cout = s.num(OUT.montant);
-  const total = s.num(OUT.total);
-  const unitaire = s.num(OUT.prixUnitaire);
-  const marge = margeReelle(total, cout);
-  const temps = !seri ? "non chiffré" : dureeTexte(Math.trunc(s.num(OUT.tempsTotalHrs)), s.num(OUT.tempsTotalMin));
-  const unitaireUs = s.num(OUT.prixUnitaireUs);
+  const temps = dureeTexte(0, heures * 60);
+  const unitaireUs = seri ? s.num(OUT.prixUnitaireUs) : 0;
+  const plusieurs = autresPieces.length > 0;
+  const matieres = useMemo(
+    () => [...new Set(Object.values(catalogues).flat())].filter((n) => (s.params?.prixParNom[n.toLowerCase()] ?? 0) > 0).sort((x, y) => x.localeCompare(y, "fr")),
+    [catalogues, s.params],
+  );
+  const autresProduits: ProduitSupplementaire[] = autresPieces.map((x) => ({
+    nom: x.infos.desc || x.infos.modele || `Pièce ${x.k}`,
+    spec: [x.infos.no && "N° " + x.infos.no, x.infos.l > 0 && x.infos.h > 0 ? `${nombre3(x.infos.l)} × ${nombre3(x.infos.h)} po` : ""].filter(Boolean).join(" · "),
+    prix: Object.fromEntries(
+      Object.entries(x.prix).map(([c, v]) => [toNum(s.saisie(c)), { qte: v.qte, unitaire: venduPiece(x.k, c, v.unitaire) }]),
+    ),
+  }));
+  const forfaits = [
+    ...(totAchats.prix > 0 ? [{ libelle: "Sous-traitance et achats", montant: totAchats.prix }] : []),
+    ...(montantInst > 0 ? [{ libelle: "Installation", montant: montantInst }] : []),
+  ];
   const presses = machinesFamille(s.machinesCalc, "presse");
   const valeurPresse = String(s.saisie(CELL_PRESSE) ?? "");
 
@@ -444,11 +712,11 @@ export default function AppS2() {
         <div className="s2-marque" aria-hidden="true" />
         <div>
           <h1>
-            Soumission <small>{idSoumission ? "enregistrée, ID " + idSoumission : "non enregistrée"}</small>
+            Soumission {String(s.saisie(CELL_NUMERO) ?? "")} <small>{idSoumission ? "enregistrée, ID " + idSoumission : "non enregistrée"}{btFaits.length ? " · " + btFaits.join(", ") : ""}</small>
           </h1>
           <p>
             Valide 30 jours · paiement selon le dossier client · prix : {sources.prix || "chargement…"} · machines :{" "}
-            {sources.machines || "chargement…"} · build {__BUILD__}
+            {sources.machines || "chargement…"} · questions numériques : {configNum.source} · build {__BUILD__}
           </p>
         </div>
         <b className="s2-essai">Version d'essai</b>
@@ -463,17 +731,24 @@ export default function AppS2() {
           title="Garde tout le contenu ; le prochain enregistrement crée une nouvelle soumission"
           onClick={() => {
             setIdSoumission("");
+            for (const c of Object.keys(s.entrees)) if (c === CELL_NUMERO || /^X!S2_BT\d$/.test(c)) unset(c);
             setMessage("Copie prête : l'originale reste intacte, « Enregistrer » crée une nouvelle soumission.");
           }}
         >
           Dupliquer
         </button>
         <button type="button" className="btn" disabled={!pret} onClick={ouvrir}>Ouvrir</button>
-        <button type="button" className="btn" disabled={!prixVisible} title={prixVisible ? "Soumission client, deux pages" : "Le prix n'est pas encore validé"} onClick={() => setPopup("client")}>Imprimer</button>
+        <button type="button" className="btn" disabled={!prixVisible} title={prixVisible ? "Soumission client, deux pages" : seri ? "Le prix n'est pas encore validé" : "Un prix provisoire ne s'imprime pas"} onClick={() => setPopup("client")}>Imprimer</button>
         <button type="button" className="btn" disabled={!prixVisible} title={prixVisible ? "Ouvre le document, d'où part le courriel" : "Le prix n'est pas encore validé"} onClick={() => setPopup("client")}>Envoyer</button>
         <span className="s2-message" role="status">{message}</span>
-        <button type="button" className="btn" disabled={!pret || occupe || !seri} title={seri ? "" : "Une soumission non chiffrée ne s'enregistre pas encore : elle porterait un prix de sérigraphie"} onClick={() => void enregistrer()}>Enregistrer</button>
-        <button type="button" className="btn solid" disabled title="Pas encore branché. En attendant, le bon de travail se crée depuis l'écran actuel.">
+        <button type="button" className="btn" disabled={!pret || occupe} onClick={() => void enregistrer()}>Enregistrer</button>
+        <button
+          type="button"
+          className="btn solid"
+          disabled={!pret || occupe || !seri || btComplet}
+          title={!seri ? "Un prix provisoire ne crée pas de bon de travail" : btComplet ? "Déjà créé : " + btFaits.join(", ") : "Enregistre, puis crée un bon de travail en brouillon par pièce"}
+          onClick={() => void versBonTravail()}
+        >
           Envoyer vers le bon de travail
         </button>
       </nav>
@@ -484,6 +759,8 @@ export default function AppS2() {
           {sources.machines === "copie embarquée" ? "les machines " : ""}viennent de la copie embarquée, qui peut être périmée. Rechargez la page avant de chiffrer.
         </p>
       )}
+
+      {configNum.alerte && <p className="s2-repli" role="alert">{configNum.alerte}</p>}
 
       <main className="s2-grille">
         <div className="s2-gauche">
@@ -500,13 +777,7 @@ export default function AppS2() {
           </Section>
 
           <Section no="02" titre="Pièces et fichier">
-            <div className="s2-champs">
-              {T("N° de pièce", IN.noPce)}
-              {T("Modèle", IN.modele)}
-              {N("Largeur", IN.dimPceX, { unite: "po" })}
-              {N("Hauteur", IN.dimPceY, { unite: "po" })}
-            </div>
-            <p className="s2-note">Une seule pièce pour l'instant. Le tableau de 1 à 5 pièces attend la réponse du client : impression séparée ou montage mixte.</p>
+            <TableauPieces a={acces} entrees={s.entrees} />
             <Fichier a={acces} taux={s.params?.app?.TAUX_INFOGRAPHIE ?? 85} />
           </Section>
 
@@ -534,6 +805,7 @@ export default function AppS2() {
               <button type="button" className="btn" disabled={paliers.length >= 10} onClick={() => set(prochainPalier(s.entrees), "")}>+ Ajouter un palier</button>
               {N("Gâche", IN.perte, { pct: true })}
             </div>
+            <GrillePieces a={acces} entrees={s.entrees} paliers={paliers} />
           </Section>
 
           <Section no="05" titre="Production">
@@ -542,11 +814,9 @@ export default function AppS2() {
                 <label key={m}><input type="radio" name="methode" checked={methode === m} onChange={() => changerMethode(m)} /> {l}</label>
               ))}
             </div>
-            {!seri ? (
-              <p className="s2-alerte">Cette méthode ne se chiffre pas encore : les vitesses et les taux ne sont pas fournis. La saisie n'est pas enregistrable.</p>
-            ) : null}
-            {methode === "numerique" ? <Numerique a={acces} entrees={s.entrees} /> : null}
-            {methode === "decoupe" ? <p className="s2-note">Aucune impression : la découpe se décrit à la section 07.</p> : null}
+            {methode === "numerique" ? <Numerique a={acces} entrees={s.entrees} config={configNum.champs} /> : null}
+            {methode === "decoupe" ? <p className="s2-note">Aucune impression : seules la matière et la découpe Zünd sont chiffrées.</p> : null}
+            {!seri ? <HypothesesNum a={acces} entrees={s.entrees} r={resNum} app={app} fiches={machines} matieres={matieres} imprime={methode === "numerique"} /> : null}
             {seri ? (<>
             <h3>Base</h3>
             <div className="s2-champs">
@@ -589,6 +859,7 @@ export default function AppS2() {
           </Section>
 
           <Section no="06" titre="Matériel et laminage">
+            {seri ? (<>
             <div className="s2-champs large">
               {MATERIAUX.map(([label, champ, cell]) => (
                 <Materiau key={cell} label={label} cell={cell} value={s.saisie(cell)} onChange={set} options={catalogues[champ]} />
@@ -602,22 +873,27 @@ export default function AppS2() {
             {adhesif && !toNum(s.saisie(adhesif.cellule)) ? (
               <p className="s2-alerte">L'adhésif choisi demande « {adhesif.libelle} » ({adhesif.indice}), qui n'est pas coché : ce temps n'est pas compris dans le prix.</p>
             ) : null}
+            </>) : <p className="s2-note">La matière chiffrée se choisit à la section 05.</p>}
             <Laminage a={acces} />
           </Section>
 
           <Section no="07" titre="Finition et découpe">
-            <div className="s2-champs">
+            {seri ? <div className="s2-champs">
               {C("Zünd, coupe", IN.zundCoupeC)}
               {C("Zünd, mi-chair", IN.zundKisscutC)}
               {N("Platine, matrices", IN.platCoupeDie)}
               {N("Platine, poses", IN.platCoupeUp)}
               {N("Guillotine", IN.guillotineQte)}
-            </div>
+            </div> : null}
             <Outillage a={acces} />
           </Section>
 
           <Section no="08" titre="Livraison"><Livraison a={acces} /></Section>
-          <SectionOptionnelle no="09" titre="Sous-traitance et installation" phase="à venir" />
+          <SectionOptionnelle no="09" titre="Sous-traitance et installation" phase={totAchats.prix + montantInst > 0 ? argent(totAchats.prix + montantInst) : undefined}>
+            <SousTraitance a={acces} entrees={s.entrees} liste={listeAchats} majoration={app?.MAJORATION_ST ?? MAJORATION_DEFAUT} onPO={(f) => { setPoSeul(f); setPopup("po"); }} />
+            <Installation a={acces} entrees={s.entrees} />
+            {manques09.length ? <ul className="s2-liste">{manques09.map((x) => <li key={x} className="s2-alerte">{x}</li>)}</ul> : null}
+          </SectionOptionnelle>
           <SectionOptionnelle no="10" titre="Notes"><Notes a={acces} /></SectionOptionnelle>
         </div>
 
@@ -641,6 +917,23 @@ export default function AppS2() {
                   )}
                 </tbody>
               </table>
+              {plusieurs ? (
+                <table className="s2-table" aria-label="Prix unitaire par pièce et par palier">
+                  <thead><tr><th>Pièce</th>{paliers.map((c, i) => (simulations[i].qte > 0 ? <th key={c}>{simulations[i].qte.toLocaleString("fr-CA")}</th> : null))}</tr></thead>
+                  <tbody>
+                    {autresPieces.map((x) => [
+                      <tr key={x.k}>
+                        <td>{x.k}. {x.infos.desc || x.infos.modele || "sans nom"}</td>
+                        {paliers.map((c, i) => (simulations[i].qte > 0 ? <td key={c} className="num" title={x.prix[c] ? x.prix[c].qte.toLocaleString("fr-CA") + " pièces" : "non proposé"}>{x.prix[c] ? masque(nombre2(x.prix[c].unitaire)) : "—"}</td> : null))}
+                      </tr>,
+                      <tr key={x.k + "v"}>
+                        <td className="s2-aide">vendu</td>
+                        {paliers.map((c, i) => (simulations[i].qte > 0 ? <td key={c}>{x.prix[c] ? <Nombre nu label={`Vendu, pièce ${x.k}, palier ${simulations[i].qte}`} cell={cellVenduPiece(x.k, c)} value={s.saisie(cellVenduPiece(x.k, c))} onChange={set} /> : null}</td> : null))}
+                      </tr>,
+                    ])}
+                  </tbody>
+                </table>
+              ) : null}
             </div>
           </section>
 
@@ -687,10 +980,14 @@ export default function AppS2() {
                 <dt>Coût de revient</dt><dd>{masque(argent(cout))}</dd>
                 <dt>Marge réelle</dt><dd>{masque(marge === null ? "" : nombre2(marge * 100) + " %")}</dd>
                 <dt>Temps de production</dt><dd>{pret ? temps : "…"}</dd>
-                <dt>Prix unitaire</dt><dd>{masque(nombre3(unitaire) + " $")}</dd>
+                {plusieurs || forfaits.length ? (<><dt>Pièce 1</dt><dd>{masque(argent(total1))}</dd></>) : null}
+                {autresActif.map((x) => [<dt key={x.k}>Pièce {x.k} × {x.qte.toLocaleString("fr-CA")}</dt>, <dd key={x.k + "m"}>{masque(argent(x.vente))}</dd>])}
+                {forfaits.map((f) => [<dt key={f.libelle}>{f.libelle}</dt>, <dd key={f.libelle + "m"}>{masque(argent(f.montant))}</dd>])}
+                <dt>Prix unitaire{plusieurs ? ", pièce 1" : ""}</dt><dd>{masque(nombre3(unitaire) + " $")}</dd>
                 <dt>Prix unitaire US</dt><dd>{unitaireUs > 0 ? masque(nombre3(unitaireUs) + " $") : "aucun taux saisi"}</dd>
               </dl>
               <div className="s2-champs">{N("Facteur", IN.facteur, { pct: true })}{N("Transport", IN.transport, { unite: "$" })}</div>
+              {approbations.length && (prixVisible || !seri) ? <ul className="s2-liste">{approbations.map((x) => <li key={x} className="s2-alerte">{x}</li>)}</ul> : null}
             </div>
           </details>
         </aside>
@@ -699,9 +996,9 @@ export default function AppS2() {
       <footer className="s2-barre" aria-label="Sommaire">
         <span>Quantité <b>{qte > 0 ? qte.toLocaleString("fr-CA") : "aucune"}</b></span>
         <span>Coût <b>{masque(argent(cout))}</b></span>
-        <span>Unitaire <b>{masque(nombre2(unitaire) + " $")}</b></span>
+        <span>Unitaire{plusieurs ? " (pièce 1)" : ""} <b>{masque(nombre2(unitaire) + " $")}</b></span>
         <span>Temps <b>{pret ? temps : "…"}</b></span>
-        {aCompleter > 0 ? <span>À compléter <b>{aCompleter}</b></span> : null}
+        {!seri && !aCompleter ? <span className="s2-provisoire">Prix provisoire</span> : null}
         <span className="total">Total <b aria-live="polite">{masque(argent(total))}</b></span>
       </footer>
 
@@ -737,7 +1034,7 @@ export default function AppS2() {
       )}
       {popup === "verifier" && (
         <PopupVerification
-          controles={controles}
+          controles={tous}
           onAccepter={(drapeau) => set(drapeau, 1)}
           onRefuser={(c) => {
             setPopup(null);
@@ -746,10 +1043,11 @@ export default function AppS2() {
           onClose={() => setPopup(null)}
         />
       )}
+      {popup === "po" && <PopupPO liste={listeAchats} seul={poSeul} reference={String(s.saisie(CELL_NUMERO) ?? "")} onClose={() => setPopup(null)} />}
       {popup === "client" && (
         <PopupProposition
           infos={{
-            noSoumission: String(s.saisie(IN.codeS) ?? "").trim(),
+            noSoumission: String(s.saisie(IN.codeS) || s.saisie(CELL_NUMERO) || "").trim(),
             date: dateOuTexte(s.saisie(IN.date)) || new Date().toLocaleDateString("fr-CA"),
             client: String(s.saisie(IN.client) ?? "").trim(),
             noClient: String(s.saisie(IN.noClient) ?? "").trim(),
@@ -762,6 +1060,9 @@ export default function AppS2() {
             couleurs: toNum(s.saisie(IN.couleursVisibles)) > 0 ? `${toNum(s.saisie(IN.couleursVisibles))} couleur(s)` : "",
           }}
           lignes={lignesProposition}
+          autresProduits={autresProduits}
+          forfaits={forfaits}
+          notesClient={String(s.saisie(CELL_NOTES_CLIENT) ?? "").trim()}
           libre={s.saisie}
           setLibre={set}
           onClose={() => setPopup(null)}

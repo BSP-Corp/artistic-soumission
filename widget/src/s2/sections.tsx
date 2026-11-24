@@ -41,9 +41,9 @@ export function valeursNumeriques(entrees: Record<string, CellValue>): ValeursNu
 }
 
 /** Contrôles du numérique, sans ceux que les sections 02 et 04 couvrent déjà sous d'autres mots. */
-export function controlesNumeriques(entrees: Record<string, CellValue>) {
+export function controlesNumeriques(entrees: Record<string, CellValue>, config?: ChampNumerique[]) {
   const v = valeursNumeriques(entrees);
-  return controlerNumerique(String(v.Num_Type_produit ?? ""), v);
+  return controlerNumerique(String(v.Num_Type_produit ?? ""), v, config);
 }
 
 // ── petits champs ────────────────────────────────────────────────────────────
@@ -170,18 +170,18 @@ function ChampNum({ c, a }: { c: ChampNumerique; a: Acces }) {
   return c.typeChamp === "decimal" ? N(a, label, cell) : T(a, label, cell);
 }
 
-export function Numerique({ a, entrees }: { a: Acces; entrees: Record<string, CellValue> }) {
+export function Numerique({ a, entrees, config }: { a: Acces; entrees: Record<string, CellValue>; config: ChampNumerique[] }) {
   const valeurs = valeursNumeriques(entrees);
   const produit = String(valeurs.Num_Type_produit ?? "");
   // Changer de produit vide ce qui n'appartenait qu'à l'ancien : des œillets restés sur une face
   // graphique, invisibles à l'écran, partiraient quand même avec la soumission.
   const choisir = (nouveau: string) => {
-    for (const c of champsAVider(produit, nouveau)) a.unset(PREFIXE_NUM + c);
+    for (const c of champsAVider(produit, nouveau, config)) a.unset(PREFIXE_NUM + c);
     a.set(PREFIXE_NUM + "Num_Type_produit", nouveau);
   };
-  const blocs = produit ? blocsVisibles(produit, valeurs) : [];
+  const blocs = produit ? blocsVisibles(produit, valeurs, config) : [];
   const constantes = Object.values(constantesProduit(produit));
-  const alertes = controlerNumerique(produit, valeurs);
+  const alertes = controlerNumerique(produit, valeurs, config).filter((x) => x.type !== "info");
   return (
     <>
       <div className="s2-champs">
@@ -214,7 +214,7 @@ export function Numerique({ a, entrees }: { a: Acces; entrees: Record<string, Ce
       {produit && alertes.length ? (
         <ul className="s2-liste" aria-label="Points à compléter">
           {alertes.map((x) => (
-            <li key={x.cle} className={x.type === "info" ? "" : "s2-alerte"}>{x.message}</li>
+            <li key={x.cle} className="s2-alerte">{x.message}</li>
           ))}
         </ul>
       ) : null}
@@ -309,6 +309,10 @@ export function Livraison({ a }: { a: Acces }) {
   );
 }
 
+/** Note imprimée. `CELL_PROP.notes` est la note INTERNE de l'écran actuel : la reprendre ici
+ *  aurait imprimé, sur le document du client, ce qui ne devait jamais sortir. */
+export const CELL_NOTES_CLIENT = "X!NOTES_CLIENT";
+
 // ── 10 notes ─────────────────────────────────────────────────────────────────
 export function Notes({ a }: { a: Acces }) {
   const zone = (label: string, cell: string) => (
@@ -318,8 +322,8 @@ export function Notes({ a }: { a: Acces }) {
   );
   return (
     <div className="s2-champs large">
-      {zone("Notes internes (jamais imprimées)", "X!NOTES_INTERNES")}
-      {zone("Notes au client (imprimées sur la soumission)", CELL_PROP.notes)}
+      {zone("Notes internes (jamais imprimées)", CELL_PROP.notes)}
+      {zone("Notes au client (imprimées sur la soumission)", CELL_NOTES_CLIENT)}
     </div>
   );
 }

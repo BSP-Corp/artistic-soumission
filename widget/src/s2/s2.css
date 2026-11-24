@@ -72,6 +72,18 @@
 .s2-disposition .poses rect { fill: #f6b26b; stroke: #a94e00; stroke-width: 0.12; }
 .s2-disposition figcaption { margin-top: 6px; font-size: 11px; color: var(--text-2); }
 
+.s2-defile { overflow-x: auto; }
+.s2-pieces { min-width: 700px; }
+.s2-achats { min-width: 1080px; }
+.s2-achats td:nth-child(2), .s2-achats td:nth-child(3) { min-width: 170px; }
+.s2-pieces td:first-child { width: 28px; }
+.s2-prov { border-bottom: 2px dotted #d9822b; cursor: help; }
+.s2-provisoire { padding: 3px 10px; border: 1px solid #ffb066; border-radius: 6px; color: #ffb066; font-weight: 700; }
+.s2-hypo { margin: 10px 0 0; }
+.s2-hypo > summary { cursor: pointer; font-weight: 600; font-size: 12px; padding: 4px 0; }
+.s2-hyp { color: #a3260f; font-weight: 600; white-space: nowrap; }
+.s2-po-tampon { padding: 8px 12px; border: 2px solid #a3260f; color: #a3260f; font-weight: 700; text-align: center; }
+
 /* toujours visible : c'est la première chose que le client a redemandée le 9 novembre */
 .s2-barre { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px 34px; min-height: 58px; padding: 8px 24px; background: var(--ink); color: #c9c3ba; border-top: 3px solid var(--orange); font-variant-numeric: tabular-nums; }
 .s2-barre b { margin-left: 6px; color: #fff; font-size: 15px; }
