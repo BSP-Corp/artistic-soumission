@@ -1,11 +1,22 @@
-// Déclaration des temps — poste de pointage d'atelier.
+// Tableau d'atelier — déclaration des temps, la job au centre.
 //
-// Pensé pour un écran tactile debout : gros boutons, peu de texte, une seule décision à la
-// fois. L'opérateur se choisit une fois (mémorisé sur la tablette), puis l'écran ne montre
-// que ce qui le concerne : ce qu'il est en train de faire, et ce qu'il a fait aujourd'hui.
+// L'écran précédent demandait à l'opérateur de se reconnaître, puis de remplir un formulaire :
+// un bon de travail, une opération, une machine, démarrer. Celui-ci part de l'autre bout. Il
+// montre les jobs en production et, sur chacune, les opérations de sa gamme. On appuie sur
+// l'opération qu'on commence, on dit qui on est, c'est parti. Déclarer son temps devient un
+// effet de bord : on fait avancer la job.
 //
-// Le widget n'horodate RIEN : il envoie un changement de statut, le workflow Creator pose
-// les heures et calcule les durées. Le chrono affiché est un reflet, jamais une source.
+// Trois conséquences voulues :
+//   · tout le monde voit où en est l'atelier sans demander à personne ;
+//   · le temps prévu s'affiche sur chaque opération, donc l'écart se voit pendant le travail
+//     et non dans un rapport trois semaines plus tard ;
+//   · le même écran tient sur une tablette de poste comme sur un écran au mur.
+//
+// La gamme de chaque job n'est pas devinée : `gammeDuBon` la déduit des temps estimés que le
+// bon porte déjà et de la règle de déclenchement d'`Operations_Liste`.
+//
+// Le widget n'horodate RIEN : il envoie un changement de statut, le workflow Creator pose les
+// heures et calcule les durées. Les chronos affichés sont des reflets, jamais des sources.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { initZohoEnv, isZohoEnv } from "@/services/zohoService";
@@ -15,45 +26,84 @@ import {
   demarrerPointage,
   changerStatut,
   creerRessource,
+  gammeDuBon,
+  operationsAjoutables,
+  reelMin,
+  referentielsExemple,
+  pointagesExemple,
   minutesEcoulees,
   dureeLisible,
+  dureeCourte,
   heureLisible,
-  estAujourdhui,
   type Referentiels,
   type Pointage,
   type Operation,
+  type BonRef,
 } from "@/services/pointageService";
 import "./pointage.css";
 
 declare const __BUILD__: string;
 
 const CLE_OPERATEUR = "bsp.pointage.operateur";
+const CLE_STATUT = "bsp.pointage.statut";
 
 type Avis = { ton: "ok" | "erreur"; texte: string } | null;
+
+/** Ce que la feuille du bas demande, quand elle est ouverte. */
+type Feuille =
+  | { quoi: "demarrer"; bon: BonRef; op: Operation }
+  | { quoi: "agir"; bon: BonRef; op: Operation; pointages: Pointage[] }
+  | { quoi: "ajouter"; bon: BonRef }
+  | null;
+
+/** Lecture tolérante du stockage local : une tablette en navigation privée ne doit pas
+ *  faire échouer l'écran. */
+function memoire(cle: string): string {
+  try {
+    return localStorage.getItem(cle) ?? "";
+  } catch {
+    return "";
+  }
+}
+function retenir(cle: string, v: string) {
+  try {
+    if (v) localStorage.setItem(cle, v);
+    else localStorage.removeItem(cle);
+  } catch {
+    /* tablette verrouillée : tant pis, on ne mémorise pas */
+  }
+}
 
 export default function AppPointage() {
   const [pret, setPret] = useState(false);
   const [dansZoho, setDansZoho] = useState(false);
   const [ref, setRef] = useState<Referentiels | null>(null);
   const [pointages, setPointages] = useState<Pointage[]>([]);
-  const [operateur, setOperateur] = useState<string>(() => localStorage.getItem(CLE_OPERATEUR) ?? "");
   const [avis, setAvis] = useState<Avis>(null);
   const [occupe, setOccupe] = useState(false);
   const [maintenant, setMaintenant] = useState(() => new Date());
 
-  // saisie d'un nouveau pointage
-  const [rechercheBT, setRechercheBT] = useState("");
-  const [btChoisi, setBtChoisi] = useState("");
-  const [opChoisie, setOpChoisie] = useState("");
-  const [machineChoisie, setMachineChoisie] = useState("");
+  const [feuille, setFeuille] = useState<Feuille>(null);
+  const [recherche, setRecherche] = useState("");
+  const [statutFiltre, setStatutFiltre] = useState(() => memoire(CLE_STATUT));
+  const [dernierOperateur, setDernierOperateur] = useState(() => memoire(CLE_OPERATEUR));
 
-  // ajout d'un opérateur
+  // ajout d'un opérateur absent de la liste
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
   const [prenom, setPrenom] = useState("");
   const [nom, setNom] = useState("");
   const [depNouveau, setDepNouveau] = useState("");
 
   const rafraichir = useCallback(async () => {
+    // Hors Creator, les rapports ne répondent pas : l'écran resterait vide et indémontrable.
+    // On charge une demi-journée d'atelier d'exemple, annoncée comme telle, et les actions
+    // s'appliquent en mémoire — de quoi montrer l'écran sans toucher aux données réelles.
+    if (!isZohoEnv()) {
+      const r = referentielsExemple();
+      setRef(r);
+      setPointages(pointagesExemple(r));
+      return;
+    }
     const [r, p] = await Promise.all([chargerReferentiels(), chargerPointages()]);
     if (r) setRef(r);
     setPointages(p);
@@ -62,245 +112,284 @@ export default function AppPointage() {
   useEffect(() => {
     (async () => {
       await initZohoEnv();
-      const dedans = isZohoEnv();
-      setDansZoho(dedans);
-      if (dedans) await rafraichir();
+      setDansZoho(isZohoEnv());
+      await rafraichir();
       setPret(true);
     })();
   }, [rafraichir]);
 
-  // Le chrono est purement visuel : une seconde suffit, et on ne réinterroge pas Creator.
+  // Un seul battement pour tous les chronos de la page.
   useEffect(() => {
     const t = setInterval(() => setMaintenant(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
 
-  const mesPointages = useMemo(
-    () => pointages.filter((p) => !operateur || p.ressourceId === operateur),
-    [pointages, operateur],
+  const agir = useCallback(
+    async (action: () => Promise<{ ok: boolean; message: string }>) => {
+      setOccupe(true);
+      const r = await action();
+      setAvis({ ton: r.ok ? "ok" : "erreur", texte: r.message });
+      if (r.ok) await rafraichir();
+      setOccupe(false);
+      return r.ok;
+    },
+    [rafraichir],
   );
+
+  // ── ce qui s'affiche ──────────────────────────────────────────────────────
+  const statuts = useMemo(() => {
+    const vus = new Set((ref?.bons ?? []).map((b) => b.statut).filter(Boolean));
+    return [...vus].sort((a, b) => a.localeCompare(b, "fr"));
+  }, [ref]);
+
+  const bons = useMemo(() => {
+    const q = recherche.trim().toLowerCase();
+    return (ref?.bons ?? [])
+      .filter((b) => !statutFiltre || b.statut === statutFiltre)
+      .filter(
+        (b) =>
+          !q ||
+          [b.noBT, b.client, b.modele, b.noPiece].some((x) => x.toLowerCase().includes(q)),
+      );
+  }, [ref, statutFiltre, recherche]);
+
+  /** Les pointages ouverts, toutes jobs confondues : ce qui tourne en ce moment dans l'atelier. */
   const enCours = useMemo(
-    () => mesPointages.filter((p) => p.statut === "En cours" || p.statut === "En pause"),
-    [mesPointages],
+    () => pointages.filter((p) => p.statut === "En cours" || p.statut === "En pause"),
+    [pointages],
   );
-  const duJour = useMemo(
-    () =>
-      mesPointages
-        .filter((p) => p.statut === "Termine" && estAujourdhui(p.punchIn))
-        .sort((a, b) => (b.punchIn?.getTime() ?? 0) - (a.punchIn?.getTime() ?? 0)),
-    [mesPointages],
+
+  const pointagesDe = useCallback(
+    (bonId: string, opId: string) =>
+      pointages.filter((p) => p.btId === bonId && p.operationId === opId),
+    [pointages],
   );
-  const totalJour = useMemo(() => duJour.reduce((s, p) => s + (p.dureeReelleMin ?? 0), 0), [duJour]);
 
-  const bonsFiltres = useMemo(() => {
-    const q = rechercheBT.trim().toLowerCase();
-    const liste = ref?.bons ?? [];
-    if (!q) return liste.slice(0, 12);
-    return liste
-      .filter((b) => [b.noBT, b.client, b.modele, b.noPiece].some((v) => v.toLowerCase().includes(q)))
-      .slice(0, 12);
-  }, [ref, rechercheBT]);
+  /** Hors Creator : le jeu d'exemple, et des actions qui ne quittent pas la page. */
+  const demo = !dansZoho;
 
-  const operationsOffertes = useMemo(() => {
-    const actives = (ref?.operations ?? []).filter((o) => o.actif);
-    const moi = ref?.ressources.find((r) => r.id === operateur);
-    if (!moi?.departement) return actives;
-    // On remonte les opérations du département de l'opérateur, sans masquer les autres :
-    // en atelier on dépanne souvent un poste voisin.
-    const sien = (o: Operation) => (o.departement === moi.departement ? 0 : 1);
-    return [...actives].sort((a, b) => sien(a) - sien(b) || (a.ordre ?? 999) - (b.ordre ?? 999));
-  }, [ref, operateur]);
-
-  const agir = async (fn: () => Promise<{ ok: boolean; message: string }>) => {
-    setOccupe(true);
-    const r = await fn();
-    setAvis({ ton: r.ok ? "ok" : "erreur", texte: r.message });
-    if (r.ok) await rafraichir();
-    setOccupe(false);
-  };
-
-  const demarrer = () =>
-    agir(async () => {
-      if (!btChoisi) return { ok: false, message: "Choisissez un bon de travail." };
-      if (!opChoisie) return { ok: false, message: "Choisissez une opération." };
-      if (!operateur) return { ok: false, message: "Choisissez votre nom." };
-      const r = await demarrerPointage({
-        btId: btChoisi,
-        operationId: opChoisie,
-        ressourceId: operateur,
-        machineId: machineChoisie || undefined,
-      });
-      if (r.ok) {
-        setBtChoisi("");
-        setOpChoisie("");
-        setMachineChoisie("");
-        setRechercheBT("");
-      }
-      return r;
-    });
-
-  const ajouterOperateur = () =>
-    agir(async () => {
-      if (!prenom.trim() || !nom.trim()) return { ok: false, message: "Prénom et nom sont requis." };
-      if (!depNouveau) return { ok: false, message: "Choisissez un département." };
-      const roleUser = ref?.roles.find((r) => /user/i.test(r.nom)) ?? ref?.roles[0];
-      if (!roleUser) return { ok: false, message: "Aucun rôle défini dans Creator." };
-      const r = await creerRessource({
-        prenom: prenom.trim(),
-        nom: nom.trim(),
-        departementId: depNouveau,
-        roleId: roleUser.id,
-        organisationId: ref?.organisationId ?? "",
-      });
-      if (r.ok && r.id) {
-        setOperateur(r.id);
-        localStorage.setItem(CLE_OPERATEUR, r.id);
-        setAjoutOuvert(false);
-        setPrenom("");
-        setNom("");
-      }
-      return r;
-    });
-
-  const choisirOperateur = (id: string) => {
-    setOperateur(id);
-    localStorage.setItem(CLE_OPERATEUR, id);
-    setAvis(null);
-  };
-
-  if (!pret) return <div className="pt-vide">Chargement…</div>;
-
-  if (!dansZoho) {
-    return (
-      <div className="pt-vide">
-        <h1>Déclaration des temps</h1>
-        <p>
-          Cet écran doit être ouvert depuis Creator : il lit et écrit les pointages dans l'application.
-          Hors Zoho, il n'a aucune donnée à afficher.
-        </p>
-        <p className="pt-build">build {__BUILD__}</p>
-      </div>
-    );
+  /** Change le statut d'un pointage — dans Creator, ou en mémoire pour la démonstration. */
+  async function basculer(id: string, statut: Pointage["statut"]) {
+    if (demo) {
+      setPointages((ps) =>
+        ps.map((p) =>
+          p.id === id
+            ? {
+                ...p,
+                statut: statut as Pointage["statut"],
+                dureeReelleMin:
+                  statut === "Termine" ? minutesEcoulees(p, new Date()) : p.dureeReelleMin,
+                punchOut: statut === "Termine" ? new Date() : p.punchOut,
+              }
+            : p,
+        ),
+      );
+      return true;
+    }
+    return agir(() => changerStatut(id, statut as "En cours" | "En pause" | "Termine"));
   }
 
-  const moi = ref?.ressources.find((r) => r.id === operateur);
+  if (!pret) return <div className="pt-page pt-attente">Chargement…</div>;
 
-  // ── Choix de l'opérateur ────────────────────────────────────────────────
-  if (!operateur || !moi) {
-    return (
-      <div className="pt-page">
-        <header className="pt-entete">
-          <h1>Qui pointe&nbsp;?</h1>
-          <span className="pt-build">build {__BUILD__}</span>
-        </header>
-        {avis && <p className={`pt-avis pt-avis-${avis.ton}`}>{avis.texte}</p>}
+  // ── feuille du bas ────────────────────────────────────────────────────────
+  function fermer() {
+    setFeuille(null);
+    setAjoutOuvert(false);
+  }
 
-        {ref?.ressources.length ? (
-          <div className="pt-grille-operateurs">
-            {ref.ressources.map((r) => (
-              <button key={r.id} className="pt-operateur" onClick={() => choisirOperateur(r.id)}>
-                <span className="pt-operateur-nom">{r.nom}</span>
-                {r.departement && <span className="pt-operateur-dep">{r.departement}</span>}
+  async function demarrer(bon: BonRef, op: Operation, ressourceId: string) {
+    if (demo) {
+      const r = ref?.ressources.find((x) => x.id === ressourceId);
+      setPointages((ps) => [
+        ...ps,
+        {
+          id: "demo-" + Date.now(), btId: bon.id, btNo: bon.noBT,
+          operationId: op.id, operationNom: op.nom,
+          ressourceId, ressourceNom: r?.nom ?? "", machineNom: "",
+          statut: "En cours", punchIn: new Date(), punchOut: null, pauseDebut: null,
+          pauseCumuleeMin: 0, dureeReelleMin: null, commentaire: "",
+        },
+      ]);
+      setDernierOperateur(ressourceId);
+      retenir(CLE_OPERATEUR, ressourceId);
+      fermer();
+      return;
+    }
+    const ok = await agir(() =>
+      demarrerPointage({ btId: bon.id, operationId: op.id, ressourceId }),
+    );
+    if (ok) {
+      setDernierOperateur(ressourceId);
+      retenir(CLE_OPERATEUR, ressourceId);
+      fermer();
+    }
+  }
+
+  async function ajouterOperateur(bon: BonRef, op: Operation) {
+    if (!prenom.trim() || !nom.trim() || !depNouveau) {
+      setAvis({ ton: "erreur", texte: "Prénom, nom et département sont nécessaires." });
+      return;
+    }
+    setOccupe(true);
+    const r = await creerRessource({
+      prenom: prenom.trim(),
+      nom: nom.trim(),
+      departementId: depNouveau,
+      roleId: ref?.roles[0]?.id ?? "",
+      organisationId: ref?.organisationId ?? "",
+    });
+    setOccupe(false);
+    setAvis({ ton: r.ok ? "ok" : "erreur", texte: r.message });
+    if (!r.ok) return;
+    setPrenom("");
+    setNom("");
+    setAjoutOuvert(false);
+    await rafraichir();
+    if (r.id) await demarrer(bon, op, r.id);
+  }
+
+  function rendreFeuille() {
+    if (!feuille) return null;
+
+    if (feuille.quoi === "demarrer") {
+      const { bon, op } = feuille;
+      const equipe = ref?.ressources ?? [];
+      const memorise = equipe.find((r) => r.id === dernierOperateur);
+      const autres = equipe.filter((r) => r.id !== dernierOperateur);
+      return (
+        <div className="pt-feuille" role="dialog" aria-label={"Démarrer " + op.nom}>
+          <div className="pt-feuille-tete">
+            <div>
+              <h2>{op.nom}</h2>
+              <p className="pt-sous">
+                {bon.noBT} · {bon.client}
+                {op.departement ? " · " + op.departement : ""}
+              </p>
+            </div>
+            <button className="pt-btn pt-fermer" onClick={fermer} aria-label="Fermer">
+              ×
+            </button>
+          </div>
+          <p className="pt-question">Qui commence ?</p>
+          <div className="pt-equipe">
+            {memorise && (
+              <button
+                className="pt-qui pt-qui-moi"
+                disabled={occupe}
+                onClick={() => demarrer(bon, op, memorise.id)}
+              >
+                <span className="pt-qui-nom">{memorise.nom}</span>
+                <span className="pt-qui-dep">dernier sur cette tablette</span>
+              </button>
+            )}
+            {autres.map((r) => (
+              <button
+                key={r.id}
+                className="pt-qui"
+                disabled={occupe}
+                onClick={() => demarrer(bon, op, r.id)}
+              >
+                <span className="pt-qui-nom">{r.nom}</span>
+                {r.departement && <span className="pt-qui-dep">{r.departement}</span>}
               </button>
             ))}
           </div>
-        ) : (
-          <p className="pt-note">
-            Aucun opérateur n'est encore enregistré dans Creator. Ajoutez le premier ci-dessous.
-          </p>
-        )}
 
-        {ajoutOuvert ? (
-          <div className="pt-carte pt-ajout">
-            <h2>Nouvel opérateur</h2>
-            <div className="pt-ligne">
-              <input className="pt-champ" placeholder="Prénom" value={prenom} onChange={(e) => setPrenom(e.target.value)} />
-              <input className="pt-champ" placeholder="Nom" value={nom} onChange={(e) => setNom(e.target.value)} />
-              <select className="pt-champ" value={depNouveau} onChange={(e) => setDepNouveau(e.target.value)}>
-                <option value="">Département…</option>
-                {ref?.departements.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.nom}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="pt-ligne">
-              <button className="pt-btn pt-btn-primaire" disabled={occupe} onClick={ajouterOperateur}>
-                Ajouter
+          {ajoutOuvert ? (
+            <div className="pt-ajout">
+              <div className="pt-ligne">
+                <input
+                  className="pt-champ"
+                  placeholder="Prénom"
+                  value={prenom}
+                  onChange={(e) => setPrenom(e.target.value)}
+                />
+                <input
+                  className="pt-champ"
+                  placeholder="Nom"
+                  value={nom}
+                  onChange={(e) => setNom(e.target.value)}
+                />
+                <select
+                  className="pt-champ"
+                  aria-label="Département"
+                  value={depNouveau}
+                  onChange={(e) => setDepNouveau(e.target.value)}
+                >
+                  <option value="">Département…</option>
+                  {ref?.departements.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.nom}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                className="pt-btn pt-btn-primaire"
+                disabled={occupe}
+                onClick={() => ajouterOperateur(bon, op)}
+              >
+                M'ajouter et démarrer
               </button>
-              <button className="pt-btn" disabled={occupe} onClick={() => setAjoutOuvert(false)}>
-                Annuler
-              </button>
             </div>
+          ) : (
+            <button className="pt-btn pt-lien" onClick={() => setAjoutOuvert(true)}>
+              Je ne suis pas dans la liste
+            </button>
+          )}
+        </div>
+      );
+    }
+
+    if (feuille.quoi === "agir") {
+      const { bon, op } = feuille;
+      const ouverts = feuille.pointages.filter(
+        (p) => p.statut === "En cours" || p.statut === "En pause",
+      );
+      return (
+        <div className="pt-feuille" role="dialog" aria-label={op.nom}>
+          <div className="pt-feuille-tete">
+            <div>
+              <h2>{op.nom}</h2>
+              <p className="pt-sous">
+                {bon.noBT} · {bon.client}
+              </p>
+            </div>
+            <button className="pt-btn pt-fermer" onClick={fermer} aria-label="Fermer">
+              ×
+            </button>
           </div>
-        ) : (
-          <button className="pt-btn pt-lien" onClick={() => setAjoutOuvert(true)}>
-            Je ne suis pas dans la liste
-          </button>
-        )}
-      </div>
-    );
-  }
-
-  // ── Poste de pointage ───────────────────────────────────────────────────
-  return (
-    <div className="pt-page">
-      <header className="pt-entete">
-        <div>
-          <h1>{moi.nom}</h1>
-          {moi.departement && <span className="pt-sous">{moi.departement}</span>}
-        </div>
-        <div className="pt-entete-droite">
-          <span className="pt-build">build {__BUILD__}</span>
-          <button className="pt-btn pt-lien" onClick={() => choisirOperateur("")}>
-            Changer d'opérateur
-          </button>
-        </div>
-      </header>
-
-      {avis && <p className={`pt-avis pt-avis-${avis.ton}`}>{avis.texte}</p>}
-
-      {enCours.length > 0 && (
-        <section className="pt-section">
-          <h2>En cours</h2>
-          {enCours.map((p) => {
-            const enPause = p.statut === "En pause";
+          {ouverts.map((p) => {
+            const pause = p.statut === "En pause";
             return (
-              <div key={p.id} className={`pt-carte pt-actif ${enPause ? "pt-pause" : ""}`}>
-                <div className="pt-actif-tete">
-                  <span className="pt-bt">{p.btNo}</span>
-                  <span className="pt-op">{p.operationNom}</span>
-                  {p.machineNom && <span className="pt-machine">{p.machineNom}</span>}
-                </div>
-                <div className="pt-chrono">{dureeLisible(minutesEcoulees(p, maintenant))}</div>
-                <div className="pt-detail">
+              <div key={p.id} className={"pt-encours" + (pause ? " pt-pause" : "")}>
+                <div className="pt-encours-qui">{p.ressourceNom || "sans nom"}</div>
+                <div className="pt-encours-temps">{dureeLisible(minutesEcoulees(p, maintenant))}</div>
+                <div className="pt-sous">
                   Début {heureLisible(p.punchIn)}
                   {p.pauseCumuleeMin > 0 && <> · pause {dureeLisible(p.pauseCumuleeMin)}</>}
-                  {enPause && <> · <strong>en pause</strong></>}
+                  {pause && (
+                    <>
+                      {" · "}
+                      <strong>en pause</strong>
+                    </>
+                  )}
                 </div>
                 <div className="pt-ligne">
-                  {enPause ? (
-                    <button
-                      className="pt-btn pt-btn-primaire pt-btn-grand"
-                      disabled={occupe}
-                      onClick={() => agir(() => changerStatut(p.id, "En cours"))}
-                    >
-                      Reprendre
-                    </button>
-                  ) : (
-                    <button
-                      className="pt-btn pt-btn-grand"
-                      disabled={occupe}
-                      onClick={() => agir(() => changerStatut(p.id, "En pause"))}
-                    >
-                      Pause
-                    </button>
-                  )}
+                  <button
+                    className="pt-btn pt-btn-grand"
+                    disabled={occupe}
+                    onClick={() => basculer(p.id, pause ? "En cours" : "En pause")}
+                  >
+                    {pause ? "Reprendre" : "Pause"}
+                  </button>
                   <button
                     className="pt-btn pt-btn-fin pt-btn-grand"
                     disabled={occupe}
-                    onClick={() => agir(() => changerStatut(p.id, "Termine"))}
+                    onClick={async () => {
+                      const ok = await basculer(p.id, "Termine");
+                      if (ok && ouverts.length === 1) fermer();
+                    }}
                   >
                     Terminer
                   </button>
@@ -308,90 +397,204 @@ export default function AppPointage() {
               </div>
             );
           })}
-        </section>
-      )}
-
-      <section className="pt-section">
-        <h2>Démarrer un pointage</h2>
-        <div className="pt-carte">
-          <input
-            className="pt-champ pt-recherche"
-            placeholder="Chercher un bon de travail (n°, client, modèle, n° pièce)"
-            value={rechercheBT}
-            onChange={(e) => setRechercheBT(e.target.value)}
-          />
-          <div className="pt-grille-bt">
-            {bonsFiltres.map((b) => (
-              <button
-                key={b.id}
-                className={`pt-bt-carte ${btChoisi === b.id ? "pt-choisi" : ""}`}
-                onClick={() => setBtChoisi(b.id === btChoisi ? "" : b.id)}
-              >
-                <span className="pt-bt">{b.noBT}</span>
-                <span className="pt-bt-info">{[b.client, b.modele].filter(Boolean).join(" · ") || "—"}</span>
-                {b.noPiece && <span className="pt-bt-info">n° pièce {b.noPiece}</span>}
-              </button>
-            ))}
-            {!bonsFiltres.length && <p className="pt-note">Aucun bon de travail ne correspond.</p>}
-          </div>
-
-          <div className="pt-ligne">
-            <select className="pt-champ" value={opChoisie} onChange={(e) => setOpChoisie(e.target.value)}>
-              <option value="">Opération…</option>
-              {operationsOffertes.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.nom}
-                  {o.departement ? ` — ${o.departement}` : ""}
-                </option>
-              ))}
-            </select>
-            <select className="pt-champ" value={machineChoisie} onChange={(e) => setMachineChoisie(e.target.value)}>
-              <option value="">Machine (facultatif)…</option>
-              {ref?.machines.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.nom}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button className="pt-btn pt-btn-primaire pt-btn-grand pt-btn-large" disabled={occupe} onClick={demarrer}>
-            Démarrer
+          <button
+            className="pt-btn pt-lien"
+            onClick={() => setFeuille({ quoi: "demarrer", bon, op })}
+          >
+            Quelqu'un d'autre commence aussi
           </button>
         </div>
-      </section>
+      );
+    }
 
-      <section className="pt-section">
-        <h2>
-          Aujourd'hui{duJour.length > 0 && <span className="pt-total"> — {dureeLisible(totalJour)} au total</span>}
-        </h2>
-        {duJour.length ? (
-          <table className="pt-table">
-            <thead>
-              <tr>
-                <th>Bon</th>
-                <th>Opération</th>
-                <th>Début</th>
-                <th>Fin</th>
-                <th className="pt-droite">Durée</th>
-              </tr>
-            </thead>
-            <tbody>
-              {duJour.map((p) => (
-                <tr key={p.id}>
-                  <td>{p.btNo}</td>
-                  <td>{p.operationNom}</td>
-                  <td>{heureLisible(p.punchIn)}</td>
-                  <td>{heureLisible(p.punchOut)}</td>
-                  <td className="pt-droite">{dureeLisible(p.dureeReelleMin ?? 0)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p className="pt-note">Aucun pointage terminé aujourd'hui.</p>
+    // ajouter une opération hors gamme
+    const { bon } = feuille;
+    const possibles = operationsAjoutables(bon, ref?.operations ?? [], pointages);
+    return (
+      <div className="pt-feuille" role="dialog" aria-label="Ajouter une opération">
+        <div className="pt-feuille-tete">
+          <div>
+            <h2>Autre opération</h2>
+            <p className="pt-sous">
+              {bon.noBT} · {bon.client} — celles que la gamme n'a pas prévues
+            </p>
+          </div>
+          <button className="pt-btn pt-fermer" onClick={fermer} aria-label="Fermer">
+            ×
+          </button>
+        </div>
+        <div className="pt-puces">
+          {possibles.map((o) => (
+            <button
+              key={o.id}
+              className="pt-puce"
+              onClick={() => setFeuille({ quoi: "demarrer", bon, op: o })}
+            >
+              {o.nom}
+            </button>
+          ))}
+          {!possibles.length && <p className="pt-note">Toutes les opérations sont déjà à l'écran.</p>}
+        </div>
+      </div>
+    );
+  }
+
+  // ── écran ─────────────────────────────────────────────────────────────────
+  return (
+    <div className={"pt-page" + (feuille ? " pt-page-figee" : "")}>
+      <header className="pt-entete">
+        <div>
+          <h1>Atelier</h1>
+          <span className="pt-sous">
+            {enCours.length
+              ? enCours.length + (enCours.length > 1 ? " opérations en cours" : " opération en cours")
+              : "rien en cours"}
+          </span>
+        </div>
+        <div className="pt-entete-droite">
+          <span className="pt-horloge">{heureLisible(maintenant)}</span>
+          <span className="pt-build">build {__BUILD__}</span>
+        </div>
+      </header>
+
+      {demo && (
+        <p className="pt-avis pt-avis-demo">
+          <strong>Jeu d'exemple.</strong> Hors Creator : ces jobs sont inventées et rien n'est
+          enregistré. L'écran se manipule normalement — démarrez, mettez en pause, terminez.
+        </p>
+      )}
+      {avis && <p className={`pt-avis pt-avis-${avis.ton}`}>{avis.texte}</p>}
+
+      <div className="pt-filtres">
+        <input
+          className="pt-champ pt-recherche"
+          placeholder="Chercher une job (n°, client, modèle, n° pièce)"
+          value={recherche}
+          onChange={(e) => setRecherche(e.target.value)}
+        />
+        {statuts.length > 1 && (
+          <div className="pt-puces">
+            <button
+              className={"pt-puce" + (statutFiltre ? "" : " pt-puce-active")}
+              onClick={() => {
+                setStatutFiltre("");
+                retenir(CLE_STATUT, "");
+              }}
+            >
+              Toutes
+            </button>
+            {statuts.map((s) => (
+              <button
+                key={s}
+                className={"pt-puce" + (statutFiltre === s ? " pt-puce-active" : "")}
+                onClick={() => {
+                  setStatutFiltre(s);
+                  retenir(CLE_STATUT, s);
+                }}
+              >
+                {s}
+              </button>
+            ))}
+          </div>
         )}
-      </section>
+      </div>
+
+      {!bons.length && (
+        <p className="pt-note">
+          Aucune job à afficher. {recherche ? "Essayez une autre recherche." : "Les bons de travail apparaîtront ici dès qu'ils existent."}
+        </p>
+      )}
+
+      <div className="pt-jobs">
+        {bons.map((bon) => {
+          const gamme = gammeDuBon(bon, ref?.operations ?? [], pointages);
+          const faites = gamme.filter((g) => {
+            const ps = pointagesDe(bon.id, g.operation.id);
+            return ps.length > 0 && ps.every((p) => p.statut === "Termine");
+          }).length;
+          const ecart = gamme.reduce((s, g) => {
+            const r = reelMin(bon.id, g.operation.id, pointages, maintenant);
+            return s + (r > 0 && g.prevuMin > 0 ? r - g.prevuMin : 0);
+          }, 0);
+
+          return (
+            <section className="pt-job" key={bon.id} aria-label={bon.noBT}>
+              <div className="pt-job-tete">
+                <span className="pt-job-no">{bon.noBT}</span>
+                <span className="pt-job-client">{bon.client}</span>
+                <span className="pt-sous">
+                  {[bon.modele, bon.noPiece && "n° " + bon.noPiece].filter(Boolean).join(" · ")}
+                </span>
+                <span className="pt-job-etat">
+                  {faites} / {gamme.length}
+                  {Math.abs(ecart) >= 1 && (
+                    <em className={ecart > 0 ? "pt-retard" : "pt-avance"}>
+                      {ecart > 0 ? "+" : "−"}
+                      {dureeCourte(Math.abs(ecart))}
+                    </em>
+                  )}
+                </span>
+              </div>
+
+              <div className="pt-jauge" role="presentation">
+                <i style={{ width: gamme.length ? (faites / gamme.length) * 100 + "%" : "0%" }} />
+              </div>
+
+              <div className="pt-ops">
+                {gamme.map(({ operation: op, prevuMin }) => {
+                  const ps = pointagesDe(bon.id, op.id);
+                  const ouverts = ps.filter(
+                    (p) => p.statut === "En cours" || p.statut === "En pause",
+                  );
+                  const fait = ps.length > 0 && !ouverts.length;
+                  const reel = reelMin(bon.id, op.id, pointages, maintenant);
+                  const etat = ouverts.length ? "cours" : fait ? "fait" : "afaire";
+                  const retard = reel > 0 && prevuMin > 0 && reel > prevuMin;
+
+                  let detail: string;
+                  if (ouverts.length) {
+                    const qui = ouverts.map((p) => p.ressourceNom || "?").join(", ");
+                    detail = "▶ " + qui + " · " + dureeLisible(reel);
+                  } else if (fait) {
+                    detail = prevuMin > 0
+                      ? dureeCourte(reel) + " / " + dureeCourte(prevuMin)
+                      : dureeCourte(reel) + " · sans estimation";
+                  } else {
+                    detail = prevuMin > 0 ? "prévu " + dureeCourte(prevuMin) : "sans estimation";
+                  }
+
+                  return (
+                    <button
+                      key={op.id}
+                      className={`pt-op pt-op-${etat}${retard ? " pt-op-retard" : ""}`}
+                      disabled={occupe}
+                      onClick={() =>
+                        setFeuille(
+                          ouverts.length
+                            ? { quoi: "agir", bon, op, pointages: ps }
+                            : { quoi: "demarrer", bon, op },
+                        )
+                      }
+                    >
+                      <span className="pt-op-nom">{op.nom}</span>
+                      <span className="pt-op-detail">{detail}</span>
+                    </button>
+                  );
+                })}
+                <button
+                  className="pt-op pt-op-plus"
+                  onClick={() => setFeuille({ quoi: "ajouter", bon })}
+                >
+                  + autre opération
+                </button>
+              </div>
+            </section>
+          );
+        })}
+      </div>
+
+      {feuille && <div className="pt-voile" onClick={fermer} role="presentation" />}
+      {rendreFeuille()}
     </div>
   );
 }

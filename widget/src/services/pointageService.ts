@@ -38,8 +38,14 @@ export interface Operation {
   code: string;
   nom: string;
   departement: string;
+  /** Rang dans la gamme, de 10 (soie) à 160 (emballage). Donne l'ordre d'affichage. */
   ordre: number | null;
   categorieMachine: string;
+  /** « serigraphie », « numerique », « platine », « zund », « adhesif_rouleau »,
+   *  « adhesif_feuille », « toujours » ou « manuel ». Dit à quelles jobs l'opération
+   *  s'applique — voir `gammeDuBon`. */
+  regle: string;
+  pointable: boolean;
   actif: boolean;
 }
 export interface Ressource {
@@ -58,7 +64,21 @@ export interface BonRef {
   modele: string;
   noPiece: string;
   statut: string;
+  /** Les cinq temps estimés que porte le bon, en minutes, rangés par code d'opération.
+   *  Les onze autres opérations de la gamme n'ont pas d'estimation : elles restent
+   *  déclarables, simplement sans rien à quoi se comparer. */
+  prevuMin: Record<string, number>;
 }
+
+/** Quels temps du bon de travail alimentent quelle opération. Même correspondance que
+ *  `TEMPS_VERS_OPERATION` dans bonTravailService : une seule vérité, deux lectures. */
+const PREVU_PAR_CODE: [string, string][] = [
+  ["SOIE", "Temps_Soies_Min"],
+  ["IMPR", "Temps_Impression_Min"],
+  ["NUM", "Temps_Numerique_Min"],
+  ["DEC_PLAT", "Temps_Decoupe_Min"],
+  ["DEC_ZUND", "Temps_Zund_Min"],
+];
 export interface Referentiel {
   id: string;
   nom: string;
@@ -206,6 +226,10 @@ export async function chargerReferentiels(): Promise<Referentiels | null> {
       departement: lookup(r.Departement).libelle,
       ordre: num(r.Ordre),
       categorieMachine: String(r.Categorie_machine ?? "").trim(),
+      // Creator ne nomme pas toujours le champ pareil selon qu'il a été créé à la main ou
+      // importé : on essaie les trois orthographes plutôt que d'en supposer une.
+      regle: String(r.Regle_de_declenchement ?? r.Regle_declenchement ?? r.Regle ?? "").trim().toLowerCase(),
+      pointable: String(r.Pointable) !== "false",
       actif: String(r.Actif) !== "false",
     }))
     .filter((o) => o.id)
@@ -233,6 +257,9 @@ export async function chargerReferentiels(): Promise<Referentiels | null> {
       modele: String(r.Modele ?? "").trim(),
       noPiece: String(r.No_Piece ?? "").trim(),
       statut: String(r.Statut ?? "").trim(),
+      prevuMin: Object.fromEntries(
+        PREVU_PAR_CODE.map(([code, champ]) => [code, num(r[champ]) ?? 0]).filter(([, v]) => (v as number) > 0),
+      ) as Record<string, number>,
     }))
     .filter((b) => b.id && b.noBT)
     .sort((a, b) => b.noBT.localeCompare(a.noBT, "fr", { numeric: true }));
@@ -255,6 +282,62 @@ export async function chargerReferentiels(): Promise<Referentiels | null> {
     roles: ref(roles),
     organisationId: String(orgs[0]?.ID ?? ""),
   };
+}
+
+/** Ce qu'une job a réellement à faire, dans l'ordre de la gamme.
+ *
+ *  `Operations_Liste` porte une règle de déclenchement par opération. Quatre d'entre elles se
+ *  déduisent des temps estimés que le bon porte déjà : un temps d'impression veut dire que la
+ *  job est en sérigraphie, un temps Zünd qu'elle passe au Zünd. Les opérations « toujours »
+ *  (contrôle qualité, emballage) valent pour toutes les jobs. Les autres — laminage, régistre,
+ *  et tout ce qui est « manuel » — ne se devinent pas : l'opérateur les ajoute quand il les fait.
+ *
+ *  Une opération déjà pointée est toujours incluse, même si la règle ne l'aurait pas prévue :
+ *  ce qui a été déclaré ne doit jamais disparaître de l'écran. */
+export function gammeDuBon(
+  bon: BonRef,
+  operations: Operation[],
+  pointages: Pointage[] = [],
+): { operation: Operation; prevuMin: number }[] {
+  const prevu = bon.prevuMin;
+  const regles = new Set<string>(["toujours"]);
+  if ((prevu.IMPR ?? 0) > 0 || (prevu.SOIE ?? 0) > 0) regles.add("serigraphie");
+  if ((prevu.NUM ?? 0) > 0) regles.add("numerique");
+  if ((prevu.DEC_PLAT ?? 0) > 0) regles.add("platine");
+  if ((prevu.DEC_ZUND ?? 0) > 0) regles.add("zund");
+
+  const dejaPointees = new Set(pointages.filter((p) => p.btId === bon.id).map((p) => p.operationId));
+
+  return operations
+    .filter((o) => o.actif && o.pointable)
+    .filter((o) => regles.has(o.regle) || dejaPointees.has(o.id))
+    .map((o) => ({ operation: o, prevuMin: prevu[o.code] ?? 0 }))
+    .sort((a, b) => (a.operation.ordre ?? 999) - (b.operation.ordre ?? 999));
+}
+
+/** Les opérations que l'opérateur peut ajouter à la main : celles que la gamme n'a pas
+ *  déduites. Laminage, régistre, coins ronds, œillets… tout ce qui dépend de la job sans
+ *  qu'aucun temps estimé ne le dise. */
+export function operationsAjoutables(
+  bon: BonRef,
+  operations: Operation[],
+  pointages: Pointage[] = [],
+): Operation[] {
+  const deja = new Set(gammeDuBon(bon, operations, pointages).map((g) => g.operation.id));
+  return operations.filter((o) => o.actif && o.pointable && !deja.has(o.id));
+}
+
+/** Le temps déclaré sur une opération d'un bon, toutes personnes confondues. Les pointages
+ *  en cours comptent leur temps écoulé, ceux qui sont terminés leur durée réelle. */
+export function reelMin(
+  bonId: string,
+  operationId: string,
+  pointages: Pointage[],
+  maintenant: Date,
+): number {
+  return pointages
+    .filter((p) => p.btId === bonId && p.operationId === operationId)
+    .reduce((somme, p) => somme + minutesEcoulees(p, maintenant), 0);
 }
 
 export async function chargerPointages(): Promise<Pointage[]> {
@@ -387,6 +470,14 @@ export function dureeLisible(minutes: number): string {
   return `${h} h ${String(Math.round(minutes - h * 60)).padStart(2, "0")}`;
 }
 
+/** Une durée posée : « 52 min », « 2 h 51 ». Sans les secondes, qui n'ont de sens que sur
+ *  un chrono qui tourne — `dureeLisible` reste là pour celui-là. */
+export function dureeCourte(minutes: number): string {
+  if (!Number.isFinite(minutes) || minutes < 0) return "—";
+  const m = Math.round(minutes);
+  if (m < 60) return m + " min";
+  return Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0");
+}
 export function heureLisible(d: Date | null): string {
   if (!d) return "—";
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -397,3 +488,122 @@ export function estAujourdhui(d: Date | null): boolean {
   const n = new Date();
   return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
 }
+
+// ── jeu d'exemple, hors Creator ─────────────────────────────────────────────
+// Le widget ne sert à rien hors de Creator : les rapports ne répondent pas et l'écran reste
+// vide. Plutôt qu'un écran mort, on montre une demi-journée d'atelier plausible, clairement
+// annoncée comme telle. Ça permet de regarder l'écran sans toucher aux données réelles —
+// pour une démonstration, une relecture, ou simplement travailler la mise en page.
+//
+// Les opérations sont celles de la vraie gamme (codes, ordre et règles d'`Operations_Liste`).
+// Les clients et les bons sont inventés.
+
+const OPS_EXEMPLE: [string, string, string, number, string][] = [
+  ["SOIE", "Fabrication des écrans (soie)", "Soie", 10, "serigraphie"],
+  ["COLOR", "Préparation des encres (coloriste)", "Coloriste", 20, "serigraphie"],
+  ["IMPR", "Impression sérigraphie", "Impression", 30, "serigraphie"],
+  ["NUM", "Impression numérique", "Impression", 40, "numerique"],
+  ["LAM", "Laminage", "Laminage", 50, "adhesif_rouleau"],
+  ["REG", "Régistre (adhésif en feuille)", "Préparation", 60, "adhesif_feuille"],
+  ["DEC_PLAT", "Découpe platine", "Découpe", 70, "platine"],
+  ["DEC_ZUND", "Découpe Zünd", "Découpe", 80, "zund"],
+  ["DECORT", "Décorticage", "Finition", 90, "manuel"],
+  ["COINS", "Coins ronds", "Finition", 100, "manuel"],
+  ["SLIT", "Slitting", "Finition", 110, "manuel"],
+  ["GUILL", "Guillotine", "Finition", 120, "manuel"],
+  ["OEIL", "Œillets", "Finition", 130, "manuel"],
+  ["ASSEMB", "Assemblage", "Finition", 140, "manuel"],
+  ["QC", "Contrôle qualité", "QC", 150, "toujours"],
+  ["EMB", "Emballage", "Expédition", 160, "toujours"],
+];
+
+const EQUIPE_EXEMPLE: [string, string][] = [
+  ["Phillipe", "Impression"],
+  ["Roberto", "Découpe"],
+  ["Jose", "Finition"],
+  ["Marc-André", "Soie"],
+  ["Sylvie", "Expédition"],
+];
+
+export function referentielsExemple(): Referentiels {
+  const operations: Operation[] = OPS_EXEMPLE.map(([code, nom, departement, ordre, regle], i) => ({
+    id: "op" + i,
+    code,
+    nom,
+    departement,
+    ordre,
+    categorieMachine: "",
+    regle,
+    pointable: true,
+    actif: true,
+  }));
+  return {
+    operations,
+    ressources: EQUIPE_EXEMPLE.map(([nom, departement], i) => ({ id: "r" + i, nom, departement })),
+    machines: [],
+    bons: [
+      {
+        id: "b1", noBT: "BT-1042", client: "Groupe Delmar",
+        modele: "Panneau Lexan 7 × 1,4", noPiece: "4152464", statut: "En production",
+        prevuMin: { SOIE: 32, IMPR: 158, DEC_PLAT: 52 },
+      },
+      {
+        id: "b2", noBT: "BT-1041", client: "Ateliers Rivard",
+        modele: "Plaque signalétique alu", noPiece: "88120", statut: "En production",
+        prevuMin: { SOIE: 28, IMPR: 95, DEC_ZUND: 70 },
+      },
+      {
+        id: "b3", noBT: "BT-1039", client: "Norbec Industries",
+        modele: "Étiquettes polyester", noPiece: "55566", statut: "En production",
+        prevuMin: { NUM: 64, DEC_ZUND: 45 },
+      },
+    ],
+    departements: [...new Set(OPS_EXEMPLE.map((o) => o[2]))].map((nom, i) => ({ id: "d" + i, nom })),
+    roles: [{ id: "role1", nom: "Opérateur" }],
+    organisationId: "org-exemple",
+  };
+}
+
+export function pointagesExemple(ref: Referentiels): Pointage[] {
+  const op = (code: string) => ref.operations.find((o) => o.code === code);
+  const qui = (n: number) => ref.ressources[n];
+  const ilYA = (min: number) => new Date(Date.now() - min * 60000);
+
+  const fait = (
+    id: string, bon: { id: string; noBT: string }, code: string, n: number, duree: number,
+  ): Pointage[] => {
+    const o = op(code);
+    const r = qui(n);
+    if (!o || !r) return [];
+    return [{
+      id, btId: bon.id, btNo: bon.noBT, operationId: o.id, operationNom: o.nom,
+      ressourceId: r.id, ressourceNom: r.nom, machineNom: "", statut: "Termine",
+      punchIn: ilYA(duree + 90), punchOut: ilYA(90), pauseDebut: null,
+      pauseCumuleeMin: 0, dureeReelleMin: duree, commentaire: "",
+    }];
+  };
+  const encours = (
+    id: string, bon: { id: string; noBT: string }, code: string, n: number, depuis: number,
+  ): Pointage[] => {
+    const o = op(code);
+    const r = qui(n);
+    if (!o || !r) return [];
+    return [{
+      id, btId: bon.id, btNo: bon.noBT, operationId: o.id, operationNom: o.nom,
+      ressourceId: r.id, ressourceNom: r.nom, machineNom: "", statut: "En cours",
+      punchIn: ilYA(depuis), punchOut: null, pauseDebut: null,
+      pauseCumuleeMin: 0, dureeReelleMin: null, commentaire: "",
+    }];
+  };
+
+  const [b1, b2, b3] = ref.bons;
+  return [
+    ...fait("p1", b1, "SOIE", 3, 35),
+    ...fait("p2", b1, "COLOR", 0, 22),
+    ...encours("p3", b1, "IMPR", 0, 171),
+    ...fait("p4", b2, "SOIE", 3, 26),
+    ...encours("p5", b2, "COLOR", 2, 14),
+    ...fait("p6", b3, "NUM", 1, 58),
+  ];
+}
+
