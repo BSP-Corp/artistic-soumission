@@ -111,8 +111,10 @@ Accepte la proposition : **le prix et le temps doivent suivre**.
 
 « + Ajouter une pièce », jusqu'à cinq. La grille devient pièce × palier.
 
-**Les pièces s'impriment séparément** — c'est l'hypothèse retenue faute de réponse d'Artistic. Si
-Roberto confirme qu'on peut les monter ensemble sur la même feuille, ce bloc sera à refaire.
+⚠️ **Hypothèse périmée depuis le 25 novembre.** L'écran chiffre les pièces comme s'imprimant
+séparément. **Roberto a confirmé le contraire** : le montage mixte est autorisé pour les pièces
+pleines, et interdit seulement quand une pièce porte une fenêtre. Ce bloc est à refaire — ne juge
+donc pas ses prix, vérifie seulement que la saisie tient.
 
 > ⚠️ **Limite connue :** une soumission à plusieurs pièces ouverte dans l'écran **actuel** n'y montre
 > que la pièce 1. C'est pour ça qu'elles se nomment « [Essai] … ». Ne t'en sers pas pour comparer

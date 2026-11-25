@@ -14,6 +14,21 @@
 > qui en sort, dans l'ordre où ça presse. Le détail de chaque point est dans le Journal, plus bas.
 > **La rencontre client est jeudi 13 h.**
 
+**0. D'ABORD — Roberto a répondu aux quatre questions, hier soir.** Détail complet dans le Journal.
+Ce qu'il faut en retenir pour demain :
+
+- **Les taux du classeur sont validés par la production** — *« ceux dans le système actuel sont
+  correct »*. La réserve « justes dans leur logique, pas dans leurs montants » tombe pour la
+  sérigraphie. Rien à coder : un caveat de moins à dire devant le client.
+- **Seuil de revalidation : 3 000 $** (au lieu des 4 000 $ par défaut). C'est le paramètre
+  `APP_SEUIL_DOUBLE_CHECK` de `Taux_Calcul` — **une saisie dans Creator, aucun déploiement**.
+- **Prix minimum de commande : 250 $.** N'existe nulle part dans le code. Contrôle à écrire, petit.
+- **Révisions : S-2026-0000R1, R2, R3…** à la fin de la séquence. Petit, sur la numérotation.
+- **Montage mixte autorisé pour les pièces pleines, interdit dès qu'il y a une fenêtre.**
+  ⚠️ **L'hypothèse de la refonte est donc fausse** : elle chiffre les pièces comme s'imprimant
+  toujours séparément. Ce bloc est à refaire — c'est un chantier, pas une correction, et ce n'est
+  pas pour demain.
+
 **1. Déployer le repliage des sections.** ✅ *En ligne (Soufiane, 25 nov.), voir le Journal.* Fait et testé : branche `repliage-sections`, commit
 `4eb766b`, partie de `refonte-soumission`. Il reste à fusionner, `npm run pack:s2`, et téléverser
 dans Creator — c'est la seule étape qu'on ne pouvait pas faire. Les dix sections se replient, 01 à
@@ -244,6 +259,60 @@ valeur > 1, mais il arrive après coup : il rattrape l'erreur au lieu de l'empê
 multiplie, une job qui demande deux passes ne peut plus le dire, et une soumission rouverte qui
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
+
+### 25 nov. — Roberto répond aux quatre questions *(Youssef, courriel de Roberto)*
+**Les quatre décisions attendues depuis le 20 novembre sont prises.** Réponses reçues par courriel,
+reproduites ici mot pour mot avec ce qu'elles impliquent.
+
+#### 1. Pièces multiples — *« Oui pour des solides, sauf si multiple fenêtre plus grande contrainte »*
+**Le montage mixte est autorisé**, mais seulement pour les pièces **pleines**. Dès qu'une pièce
+porte une **fenêtre** — une découpe intérieure — elle sort de la règle et s'imprime sur ses propres
+feuilles.
+
+**Conséquence, et elle est lourde : l'hypothèse de la refonte est fausse.** `refonte-soumission`
+chiffre les pièces multiples comme s'imprimant séparément, et la feuille d'essai l'annonce ainsi.
+Ce bloc est à refaire. C'était écrit dans le handoff : *« si Roberto confirme qu'on peut les monter
+ensemble, ce bloc sera à refaire »*. Il l'a confirmé.
+
+La règle est codable : une pièce est exclue du montage mixte si elle a des découpes intérieures
+(« Cut O », `S!E39-41`, que `C!V30` multiplie) ou un protecteur fenêtre (`S!E27`). Reste à faire
+confirmer par Roberto que c'est bien ce qu'il appelle une fenêtre — en une phrase, à la rencontre.
+
+#### 2. Prix minimum et seuil d'approbation — *« $250.00, revalidation à plus de $3000.00 »*
+- **Minimum de commande : 250 $.** N'existe nulle part dans le code aujourd'hui. Contrôle à écrire.
+- **Revalidation au-delà de 3 000 $.** Celui-là **existe déjà** : `SEUIL_DOUBLE_CHECK_DEFAUT` vaut
+  4 000 $ et se pilote par le paramètre `APP_SEUIL_DOUBLE_CHECK` de `Taux_Calcul`. **Passer de 4 000
+  à 3 000 est une saisie dans Creator, pas un déploiement** — faisable tout de suite, sans Soufiane.
+
+**Reste ouvert : qui approuve ?** Roberto a donné le montant, pas la personne. Une phrase à la
+rencontre suffira.
+
+#### 3. Format des numéros — *« Mettre R1, R2 ainsi de suite à la fin de la séquence »*
+Les révisions s'écrivent **S-2026-0000R1**, puis R2, et ainsi de suite. La réponse ne confirme pas
+explicitement le format `S-2026-0000` lui-même, mais « à la fin de la séquence » le suppose. À faire
+confirmer d'un mot plutôt que par un autre courriel.
+
+#### 4. Les taux réels — *« Ceux dans le système actuel sont correct, on pourra faire évoluer le système avec le temps »*
+**C'est la meilleure nouvelle des quatre.** Les taux du classeur, chargés dans `Taux_Calcul_Report`,
+sont validés par la production. La réserve qu'on répétait depuis des semaines — *« les prix sont
+justes dans leur logique, pas dans leurs montants »* — **tombe pour la sérigraphie**. Rien à
+construire : un caveat disparaît.
+
+⚠️ **Le document d'avancement remis au client porte encore cette réserve**, dans « Ce qu'on attend
+de vous ». Elle est périmée. À corriger avant de le remontrer.
+
+Les taux **numériques** restent des hypothèses : ils ne viennent pas du classeur. Roberto revient
+avec les deux feuilles produit (Faces graphiques, Affiches) et les machines numériques : *« Je te
+reviens avec les specs »*.
+
+#### Ce qui est présentable demain, et ce qui ne l'est pas
+| | Quoi | Combien de travail |
+|---|---|---|
+| ✅ | Seuil de revalidation à 3 000 $ | une saisie dans Creator, aucun déploiement |
+| ✅ | Taux confirmés | rien à faire — c'est une phrase à dire |
+| ◐ | Prix minimum 250 $ | un contrôle à écrire, petit |
+| ◐ | Révisions R1, R2 | petit, sur la numérotation |
+| ✗ | Montage mixte des pièces | un chantier, pas une correction. Débloqué, pas fait |
 
 ### 25 nov. — Le tableau d'atelier est faisable sans rien attendre *(Claude)*
 Youssef veut développer la recommandation B sans dépendre du rythme de Soufiane. Vérifié dans le
