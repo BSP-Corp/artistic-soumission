@@ -267,6 +267,35 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Des tablettes à l'atelier, et plus de papier : A devient un écran *(Youssef)*
+**Fait de projet qui n'était écrit nulle part, et qui tranche la question posée plus haut.** Artistic
+prévoit d'**acheter des tablettes pour l'atelier**, pour que les opérateurs y voient ce qu'ils ont à
+faire et y déclarent leurs temps. Youssef : *« l'idée, c'est qu'on va automatiser tout, rendre tout
+numérique, et que tout passe par des écrans »*. La façon de travailler actuelle est explicitement
+traitée comme **l'ancienne manière**.
+
+**Donc l'approche A ne sera pas une fiche imprimable.** La question « est-ce que l'atelier travaille
+encore avec le bon sur papier ? » n'a plus à être posée à Roberto : la réponse est que ce n'est pas
+là qu'on va.
+
+**Mais son contenu reste nécessaire**, et il change seulement d'adresse. Un opérateur devant sa
+tablette doit savoir *quoi faire sur cette job* — matière, couleurs, presse, numéro de matrice,
+feuille, poses, instructions — avant de pouvoir déclarer quoi que ce soit. Aujourd'hui le tableau
+d'atelier montre **ce qu'il y a à déclarer**, pas **ce qu'il y a à faire**.
+
+#### Ce que ça donne comme plan
+| Écran | Pour qui | État |
+|---|---|---|
+| **Tableau d'atelier** + **vue de détail d'une job** | l'opérateur, sur sa tablette | tableau livré ; **la vue de détail reste à faire** — c'est le contenu de la maquette A, en écran |
+| **Bon de travail** (approche C) | le chargé de projet | livré : frise, comparatif, libellés, densité |
+
+La maquette B disparaît comme écran séparé : son comparatif est dans le bon de travail, sa frise
+aussi, et son repliage n'a jamais été demandé.
+
+**La prochaine chose à construire sur cette piste** est donc la vue de détail d'une job dans le
+tableau d'atelier : on appuie sur une job, on voit sa fiche de production à l'écran, et on déclare
+depuis là. Les tablettes arrivent ; c'est ce qu'elles afficheront.
+
 ### 25 nov. — L'approche C est construite *(Claude)*
 **Commit `36a3e52`** sur `tableau-atelier`. Trois changements, aucun ne déplace quoi que ce soit.
 
