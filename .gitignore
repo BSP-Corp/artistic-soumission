@@ -15,6 +15,8 @@ widget/bontravail/app/
 widget/bontravail/dist/
 widget/pointage/app/
 widget/pointage/dist/
+widget/soumission2/app/
+widget/soumission2/dist/
 
 # .gen contient des relevés d'envois réels, jeton d'API compris : jamais partagé
 widget/.gen/
