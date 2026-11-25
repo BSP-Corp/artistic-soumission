@@ -267,6 +267,37 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — La pause ne faisait rien : un défaut à moi, et un manque côté Creator *(Youssef + Claude)*
+**Youssef, en éprouvant le cycle complet sur `Pointage_essai` :** *« quand j'appuie sur le bouton
+pause, il ne s'est rien passé, le compteur a continué »*. Deux causes, une de chaque côté.
+
+#### Dans l'écran — corrigé (`70af2bc`)
+Une opération en pause était traitée comme une opération en cours : **même pastille verte, même
+flèche**. Rien ne distinguait les deux états, d'où l'impression que le bouton n'avait rien fait.
+Elle a maintenant sa couleur ambre et son symbole ⏸, et les deux chronos — celui de la pastille et
+celui de la feuille — se figent.
+
+Vérifié dans le navigateur : 14 min 23 s puis 24 s en marche, figé à 14 min 26 s après la pause, et
+la reprise repart.
+
+#### Côté Creator — à faire
+Le compteur soustrayait la pause à partir de **`Pause_debut`**, que **seul le workflow Creator
+pose** : le widget n'écrit que `Statut`, par conception (*« les heures et les durées sont posées par
+le workflow »*). Tant que ce workflow ne pose pas `Pause_debut`, le temps continue de courir dans
+la base, même si l'écran ne le montre plus.
+
+**Il manque donc, sur `Pointage_Atelier` :**
+1. quand `Statut` passe à **En pause** → poser `Pause_debut` à maintenant ;
+2. quand il revient à **En cours** → ajouter l'écart à `Pause_cumulee_min` et vider `Pause_debut` ;
+3. à **Termine** → fermer la pause en cours avant de calculer `Duree_reelle_min`.
+
+Sans ça, une opération mise en pause une heure comptera cette heure comme du travail, et le
+comparatif estimé / réalisé en héritera.
+
+**L'écran ne dépend plus de ce workflow pour afficher juste** — il retient lui-même l'instant où il
+voit la pause. Mais la durée enregistrée, elle, reste celle que Creator calcule. Le correctif de
+l'écran rend le défaut invisible, il ne le répare pas : la vérité est dans la base.
+
 ### 25 nov. — Le tableau d'atelier est en ligne sur `Pointage_essai` *(Youssef)*
 **Téléversé et posé sur la page, il lit les vraies données de Creator.** Relevé sur la capture :
 
