@@ -217,6 +217,45 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le tableau d'atelier est faisable sans rien attendre *(Claude)*
+Youssef veut développer la recommandation B sans dépendre du rythme de Soufiane. Vérifié dans le
+code : **les données nécessaires existent déjà**, et la seule inconnue se lève en trente secondes
+dans Creator.
+
+**Ce que B exige :** pour chaque bon de travail, ses opérations avec leur **temps prévu**.
+
+**Ce qu'on a déjà.** `bonTravailService.ts` écrit cinq temps prévus en minutes sur l'enregistrement
+`bon_travail`, au moment où la soumission passe en production :
+
+| Champ Creator | Opération |
+|---|---|
+| `Temps_Soies_Min` | Préparation d'écrans |
+| `Temps_Impression_Min` | Impression |
+| `Temps_Zund_Min` | Découpe Zünd |
+| `Temps_Decoupe_Min` | Découpe (platine, guillotine) |
+| `Temps_Numerique_Min` | Numérique multi-up |
+
+Et `pointageService.ts` lit déjà `bon_travail_Report`. Le prévu est donc à portée : il suffit de
+l'ajouter à l'interface `BonRef`, qui aujourd'hui s'arrête à `noBT`, `client`, `modele`, `noPiece`
+et `statut`.
+
+**La seule inconnue :** `bon_travail_Report` expose-t-il ces cinq colonnes ? Le formulaire les
+porte, le rapport ne les montre peut-être pas. C'est une vérification dans Creator, pas du
+développement. Si elles manquent, les ajouter au rapport est une case à cocher.
+
+**Les opérations sans temps prévu** (décorticage, laminage, assemblage, vérification, emballage)
+restent déclarables : le tableau les affiche sans prévu plutôt que de les cacher. Mieux vaut un
+écart manquant qu'une opération qu'on ne peut pas déclarer.
+
+**Le déploiement n'est pas un obstacle non plus.** Le widget de pointage existe déjà dans Creator
+avec sa page et son emplacement : le remplacer, c'est `npm run pack:pointage` puis un téléversement
+dans Paramètres → Widgets. Un administrateur Creator peut le faire — Youssef en est un. **Le goulot
+n'est pas un développeur, c'est un téléversement de cinq minutes.**
+
+**Ce qu'on fait :** le nouvel écran se construit sur une branche et se déploie d'abord sur une
+**page d'essai**, comme `Soumission_essai`, jamais par-dessus le pointage de production. Soufiane
+garde ses huit points ; celui-ci ne s'ajoute pas à sa pile.
+
 ### 25 nov. — Recommandation BSP : **B**, avec le détail de A et les champs de C *(Claude)*
 Youssef a demandé un avis tranché plutôt qu'un comparatif. Le voici, avec ce qui le fonde et ce qui
 le renverserait.
