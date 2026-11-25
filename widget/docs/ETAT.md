@@ -267,6 +267,44 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le tableau d'atelier est écrit, branche `tableau-atelier` *(Claude)*
+**Commit `a39afb5`, partie de `main`.** L'approche B des trois maquettes, celle recommandée.
+`build:pointage` compile, les types passent, et l'écran a été manipulé dans le navigateur :
+démarrer, mettre en pause, terminer, et l'avancement comme l'écart suivent.
+
+**Ce que l'écran montre.** Les jobs en production, chacune avec les opérations de sa gamme, dans
+l'ordre de production. Sur chaque opération : son temps prévu, ou son réel comparé au prévu quand
+elle est faite, ou qui la fait en ce moment avec le chrono qui tourne. Sur chaque job : l'avancement
+et **l'écart cumulé**, en vert s'il est en avance, en orange s'il dépasse.
+
+**La gamme n'est pas devinée.** `gammeDuBon` lit les règles de déclenchement d'`Operations_Liste` et
+les recoupe avec les temps estimés que le bon porte déjà : un temps d'impression veut dire
+sérigraphie, un temps Zünd veut dire Zünd. Les opérations « toujours » (QC, emballage) valent pour
+toutes les jobs ; les « manuel » s'ajoutent par le bouton « + autre opération ». **Une opération déjà
+pointée reste affichée même si la règle ne l'aurait pas prévue** — ce qui a été déclaré ne doit
+jamais disparaître de l'écran.
+
+**Onze opérations sur seize n'ont aucune estimation.** Elles affichent « sans estimation » plutôt
+que d'être cachées. C'est exactement ce que le comparatif doit révéler : le décorticage,
+l'assemblage et l'emballage se font et ne se chiffrent nulle part.
+
+**Un jeu d'exemple hors Creator.** Trois jobs, cinq opérateurs, la vraie gamme, et toutes les
+actions s'appliquent en mémoire. L'écran est donc démontrable sans toucher aux données réelles —
+utile demain, et utile pour relire la mise en page sans attendre un téléversement.
+
+#### Ce que ça demande à Youssef
+`npm run pack:pointage` produit `widget/pointage/dist/pointage.zip`. **À téléverser dans
+Paramètres → Widgets**, de préférence d'abord sur une page d'essai plutôt que par-dessus le
+pointage de production.
+
+#### Ce qui reste sur cette piste
+- **Le bloc comparatif dans le bon de travail** : lire les pointages du bon, grouper par opération,
+  afficher prévu / réel / écart. C'est le pendant de ce tableau, et ça ferme la boucle.
+- **Redéployer le widget de bon de travail**, figé au 20 octobre.
+- Une fois en ligne : vérifier que `Regle_de_declenchement` est bien le nom du champ côté Creator.
+  Le service essaie trois orthographes ; si aucune ne répond, la gamme se réduira aux opérations
+  « toujours » et ça se verra tout de suite.
+
 ### 25 nov. — Qui fait quoi : deux pistes, aucun fichier en commun *(Youssef + Claude)*
 **Question de Youssef :** le tableau d'atelier et le bloc comparatif touchent le pointage et le bon
 de travail — est-ce que c'est encore à Soufiane, ou à nous ?
