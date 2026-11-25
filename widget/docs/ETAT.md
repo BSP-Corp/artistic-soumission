@@ -267,6 +267,33 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le tableau d'atelier est en ligne sur `Pointage_essai` *(Youssef)*
+**Téléversé et posé sur la page, il lit les vraies données de Creator.** Relevé sur la capture :
+
+**Ce qui est vérifié, et c'était le point le plus incertain.** La gamme se déduit correctement.
+Un bon en numérique affiche *Impression numérique · Découpe platine · Découpe Zünd · Contrôle
+qualité · Emballage* ; un bon en sérigraphie affiche *Soie · Coloriste · Impression sérigraphie ·
+Découpe platine · QC · Emballage*. **Le champ `Regle_de_declenchement` répond donc bien** — sinon
+toutes les jobs se seraient réduites aux deux opérations « toujours ». Les trois orthographes
+tentées par le service n'étaient pas de la paranoïa inutile, mais la première a suffi.
+
+**Les temps prévus sont réels** et viennent du bon : 26 min, 37 min, 16 min sur l'un ; 32 min,
+3 h 51, 52 min sur l'autre. Et les cinq opérations sans estimation disent « sans estimation ».
+
+**Tout est à 0 / 5 et 0 / 6**, ce qui est cohérent : aucun temps n'a encore été déclaré, et la
+grille `Temps_par_operation` est vide pour la même raison.
+
+⚠️ **Un défaut de données révélé au passage : trois bons portent le numéro `BT-1000`.** Deux sont
+même identiques à l'œil — *BSP · n° 4152464* — et ne se distinguent que par leur découpe platine
+prévue, 52 min contre 33 min. `bonTravailService` prévoit pourtant une renumérotation en cas de
+collision, en supposant le champ `No_BT` coché *Unique* dans Creator. Soit la contrainte n'est pas
+posée, soit ces enregistrements sont antérieurs. **À vérifier**, parce qu'un atelier qui voit trois
+fois le même numéro ne peut pas pointer sur le bon.
+
+**Ce qui reste à éprouver :** déclarer un vrai temps. Démarrer une opération, la voir passer au
+vert, la terminer, et voir l'écart apparaître sur la job. C'est le seul bout du cycle qui n'a été
+vérifié que sur le jeu d'exemple.
+
 ### 25 nov. — Comment on met un écran à l'essai sans toucher à la production *(Youssef + Claude)*
 **La convention, telle qu'elle existe déjà** pour la refonte de la soumission :
 
