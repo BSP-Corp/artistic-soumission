@@ -267,6 +267,43 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le décalage venait de la grille elle-même *(Youssef + Claude)*
+**Youssef, après la palette : *« toujours le même problème, toujours décalé »*.** Il avait raison,
+et j'avais traité deux symptômes avant d'atteindre la cause.
+
+**Une grille place UN bloc par cellule.** La rangée du milieu portait **quatre blocs pour trois
+colonnes** : le quatrième passait à la ligne et laissait **deux cellules vides derrière lui**. C'est
+le grand rectangle blanc à côté de PRODUCTION DÉCOUPE.
+
+`align-items: start` avait supprimé l'étirement — un vrai défaut, mais pas celui-là. Et
+`grid-auto-flow: dense` ne pouvait rien : il n'y avait plus aucun bloc à déplacer dans la rangée.
+
+**Les deux rangées du corps n'en font plus qu'une, en multi-colonnes.** Les six blocs se
+répartissent d'eux-mêmes selon leur hauteur, et il ne reste aucun trou quel que soit leur nombre —
+y compris quand le bloc du comparatif apparaît ou disparaît selon qu'un bon est ouvert.
+
+**Mesuré sur la fiche vierge :** les trois colonnes portent 297, 391 et 546 px au lieu d'une colonne
+entièrement vide, et la page passe de **1 230 à 1 047 px**.
+
+**La rangée d'entête reste une vraie rangée** (`.bt-rangee`) : ses trois blocs d'identification se
+lisent ensemble, de gauche à droite, et aucun n'est assez haut pour creuser un trou.
+
+Commit `a628448`.
+
+#### La leçon, pour la prochaine fois
+Trois passes pour un seul symptôme visible. La densité, la géométrie de papier, la palette et la
+grille étaient **quatre défauts distincts** qui produisaient tous la même impression — « c'est
+moche, c'est décalé ». Chacun demandait un geste différent, et aucun ne se voyait tant que les
+autres étaient là. **Quand un écran paraît mauvais sans qu'on sache dire pourquoi, c'est rarement
+une seule cause.**
+
+#### Ce qui reste
+- **Instructions et Procédure** réservent encore de la hauteur d'avance.
+- **Les drapeaux de PRODUCTION DÉCOUPE** restent une vingtaine de pastilles au fil de l'eau ; un
+  rangement par famille les rendrait lisibles.
+- **Un bloc présent mais vide s'affiche toujours** : le flux referme les trous de colonne, pas les
+  blocs creux.
+
 ### 25 nov. — Pourquoi le bon de travail paraissait froid, et ce qui a changé *(Youssef + Claude)*
 **Youssef : *« je l'aime pas beaucoup… change-moi les couleurs, comme ce qui reflète la soumission
 et le logo »*.** Il a raison, et trois causes se cumulaient — aucune n'était une question de
