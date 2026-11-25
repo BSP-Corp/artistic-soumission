@@ -267,6 +267,49 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Trois lignes au bon de travail, six opérations à l'atelier *(Youssef + Claude)*
+**Question de Youssef :** pourquoi le bon de travail n'affiche que trois opérations alors que le
+tableau d'atelier en montre six pour la même job ?
+
+**Parce que les deux ne répondent pas à la même question.**
+
+| | Ce qu'il liste | D'où ça vient | BT-1019 |
+|---|---|---|---|
+| La grille du bon | ce que la soumission **a estimé** | les cinq champs `Temps_*_Min` ; une ligne seulement si la valeur est > 0 | **3** — soie, impression, platine |
+| Le tableau d'atelier | ce que la job **doit traverser** | la règle de déclenchement d'`Operations_Liste` | **6** — plus coloriste, contrôle qualité, emballage |
+
+Les trois opérations en plus — **préparation des encres, contrôle qualité, emballage** — sont du
+travail réel que le classeur ne chiffre pas. Ce n'est pas un défaut d'affichage : c'est le constat
+des « onze opérations sur seize sans estimation », rendu visible sur une seule job.
+
+#### La conséquence, et elle oriente le bloc comparatif
+Quand l'atelier pointera le coloriste ou l'emballage, **ce temps existera dans `Pointage_Atelier`
+mais n'aura aucune ligne où se poser** dans la grille : le workflow n'écrit que dans des lignes
+existantes, et il n'en crée pas.
+
+Donc le bon de travail montrerait **trois opérations comparées** là où l'atelier en aura fait
+**six**. C'est une raison de plus — la troisième — de faire lire **les pointages** au bloc
+comparatif plutôt que la grille :
+
+| | La grille | Les pointages |
+|---|---|---|
+| Opérations montrées | 3 (les estimées) | **6 (toutes celles faites)** |
+| Marche sur les bons sans semis | non | **oui** |
+| Peut diverger | oui, c'est un report | **non, c'est la source** |
+
+Le bloc affichera donc les six : trois avec leur écart, trois avec leur temps réel et la mention
+« sans estimation ». **C'est précisément ce qu'il faut mettre sous les yeux de Roberto** — non pas
+pour signaler une erreur, mais pour poser la question : *ces temps-là devraient-ils entrer dans vos
+soumissions ?*
+
+#### Au passage : un bon de travail aberrant
+BT-1018 annonce **268 h 12 d'impression** et **116 h 10 de découpe platine**, sur la même pièce où
+BT-1019 compte 2 h 38 et 52 min. Cent fois plus. Ce sont des données d'essai, donc rien d'urgent —
+mais à regarder avant que ces chiffres ne servent de référence à quoi que ce soit.
+
+C'est aussi une démonstration involontaire de ce que vaut un écran fait pour être lu : cette
+anomalie dort dans la base depuis sa création et personne ne l'avait vue.
+
 ### 25 nov. — Le semis fonctionne : c'est bien le build du bon de travail qui est en cause *(Youssef)*
 **Bon créé depuis `Soumission_essai`** (soumission S-2026-0002) → **BT-1019**, et sa grille
 « Temps par operation » porte **trois lignes, avant tout pointage** :
