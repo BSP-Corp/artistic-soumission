@@ -267,6 +267,47 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — La grille « Temps par opération » est vide, et c'est une bonne nouvelle *(Youssef + Claude)*
+**Vérifié dans Creator par Youssef :** le formulaire `bon_travail` porte bien la grille
+« Temps par operation » avec ses quatre colonnes — Operation, Temps prevu (min), Temps reel (min),
+Ecart (min) — **et elle est vide**. Aucune ligne semée.
+
+#### Pourquoi, et ce n'est pas tranché
+Deux causes possibles, et le code ne dit pas laquelle :
+1. **Le build déployé est antérieur au semis.** Le widget de bon de travail tourne sur
+   `2026-10-20 15:29 UTC` ; le dépôt commence le 27 octobre.
+2. **Le semis tourne mais ne trouve rien.** `semerTempsOperations` lit `Operations_Liste` et
+   construit une correspondance **Code → ID**. Il attend exactement `SOIE`, `IMPR`, `NUM`,
+   `DEC_PLAT`, `DEC_ZUND`. Si les codes diffèrent, rien n'est semé et **le code se contente d'un
+   `console.warn`** : *« un semis raté ne doit pas empêcher la création du bon »*. Échec silencieux.
+
+**La vérification qui tranche, trente secondes :** ouvrir `Operations_Liste` dans Creator et
+regarder la colonne **Code**. Si les cinq codes attendus n'y sont pas, on a la cause.
+
+#### Rien n'est perdu
+Les pointages d'atelier vivent dans leur propre formulaire, `Pointage_Atelier`, et ils y sont
+complets : `btId`, `btNo`, `operationId`, `operationNom`, `dureeReelleMin`. **La grille du bon
+n'était qu'un report.** Ce qui manque, c'est le report — pas les données.
+
+#### Donc on change d'approche, et c'est plus simple
+**Le bloc comparatif du bon de travail ne lira pas la grille. Il lira les pointages directement.**
+
+| | La grille semée | Les pointages lus directement |
+|---|---|---|
+| Dépend d'un semis à la création | oui | **non** |
+| Marche sur les bons déjà créés | non | **oui** |
+| Marche si les codes changent | non | **oui** |
+| Peut diverger de la réalité | oui, c'est un cache | **non, c'est la source** |
+
+Concrètement : lire `Pointage_Atelier_Vue` filtré sur le bon, grouper par opération, sommer
+`dureeReelleMin`, et comparer aux temps prévus que le bon porte déjà. Les opérations sans estimation
+(décorticage, laminage, emballage…) s'affichent avec leur réel et sans prévu, plutôt que d'être
+cachées.
+
+**Ça supprime toute la fragilité du semis**, et ça marche sur BT-1000 comme sur les suivants. La
+grille peut rester où elle est : si Deluge la remplit un jour, tant mieux ; l'écran n'en dépendra
+pas.
+
 ### 25 nov. — Principe : ce que l'utilisateur doit voir passe par un widget *(Youssef)*
 **Youssef, en apprenant que la grille « Temps par opération » n'est lisible que dans Creator :**
 *« est-ce qu'il va falloir à chaque fois que j'ouvre Creator pour le voir ? … je veux quelque chose
