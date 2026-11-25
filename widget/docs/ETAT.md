@@ -135,20 +135,31 @@ pourquoi les deux points ci-dessus pressent.
 ### 24 nov. — Essai de la refonte : la platine n'a qu'une paire au lieu de quatre *(Youssef + Claude)*
 **Relevé en saisissant une job de référence dans `Soumission_essai`.** La section 07 du nouvel écran
 offre **une seule paire** « Platine, matrices » / « Platine, poses ». L'écran actuel en a **quatre**,
-chacune avec sa matrice : `platAdhesifDie` (S!D33), `platCoupeDie` (S!D34), `platKisscutDie` (S!D35)
-et `platEmbossageDie` (S!D36).
+chacune avec sa matrice et son nombre de poses : adhésif (S!D33/E33), coupe (S!D34/E34), kiss-cut
+(S!D35/E35) et embossage (S!D36/E36).
 
-La paire du nouvel écran correspond au **kiss-cut**, seul des quatre à porter un nombre de poses
-(S!E35). Pour la job d'essai ça tombe juste — elle ne fait qu'un kiss-cut, 1 matrice, 4 poses. Mais
-**une job qui coupe, adhésive ou embosse à la platine ne peut pas s'exprimer** dans le nouvel écran :
-sa quantité n'a nulle part où aller, et le coût correspondant disparaît sans rien dire.
+**La paire du nouvel écran est la coupe.** `AppS2.tsx` l'attache à `IN.platCoupeDie` et
+`IN.platCoupeUp`, donc S!D34 et S!E34. Les trois autres lignes n'existent nulle part dans l'écran :
+une job qui adhésive, qui fait un kiss-cut ou qui embosse à la platine n'a nulle part où mettre sa
+quantité, et le coût correspondant disparaît sans rien dire.
 
-À trancher avec Soufiane : rendre les quatre lignes saisissables, ou afficher un avertissement quand
-une des trois autres est utilisée dans la soumission rouverte. Le silence est le pire des deux.
+**C'est déjà ce qui est arrivé à l'essai du 25 novembre.** La job de référence fait un *kiss-cut*
+(1 matrice, 4 poses). Saisie dans le nouvel écran, elle est tombée sur la ligne **coupe** : un coût
+de coupe est apparu, le kiss-cut est resté à zéro, et les deux écrans ne donnent pas le même prix.
+L'écart n'est pas un défaut de calcul — c'est la saisie qui n'a pas où aller.
 
-**Rappel de modélisation, à ne pas perdre :** `S!D35` (kiss-cut) **exige la valeur 1**. Toute autre
-valeur annule le coût de découpe au lieu de le multiplier — c'est écrit dans `modele.ts` et ça se
-comporte à l'inverse de l'intuition. Les trois autres `Die` sont de vraies quantités.
+À trancher avec Soufiane : rendre les quatre lignes saisissables, ce qui est le plus simple et le
+plus sûr ; ou au minimum renommer la paire actuelle « Platine, coupe » et avertir quand une
+soumission rouverte porte une des trois autres. Le silence est le pire des cas.
+
+**Rappel de modélisation, à ne pas perdre :** `S!D35` (kiss-cut) **exige la valeur 1** — toute autre
+valeur annule le coût au lieu de le multiplier (`C!Q8`/`J9`). Même chose pour les « Cont. » du Zünd
+(S!D39-41). Les trois autres `Die` de la platine sont de vraies quantités. C'est écrit dans
+`modele.ts` (`DRAPEAUX_DECOUPE`) et ça se comporte à l'inverse de l'intuition.
+
+**Correction :** la première version de cette note disait que la paire correspondait au kiss-cut, et
+que le kiss-cut était le seul des quatre à porter un nombre de poses. Les deux sont faux : c'est la
+coupe, et les quatre lignes ont leur cellule « Up ».
 
 ### 24 nov. — Le repliage des sections revient, ouvert par défaut *(Youssef)*
 **Youssef demande que chaque section se replie**, en cliquant sur son titre : « l'idée, c'est qu'on

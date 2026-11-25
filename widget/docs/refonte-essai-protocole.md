@@ -155,7 +155,12 @@ Inutile de le relever, c'est connu :
 - la recherche de client dans le CRM n'est pas branchée ;
 - le montage mixte de plusieurs pièces sur une feuille n'est pas fait ;
 - l'infographie s'affiche mais n'entre pas dans le prix ;
-- les sections ne se replient pas encore — c'est demandé, pas fait.
+- les sections ne se replient pas encore — c'est demandé, pas fait ;
+- **la section 07 n'offre qu'une seule paire « Platine, matrices / poses », et c'est la *coupe*.**
+  L'adhésif, le kiss-cut et l'embossage à la platine n'ont nulle part où aller. Si ta job de
+  référence en fait un, les deux écrans ne tomberont pas pareil — et ce n'est pas le calcul qui est
+  en cause. Pour l'essai 2, **choisis une job dont la découpe platine est une coupe**, ou pas de
+  platine du tout.
 
 ---
 
