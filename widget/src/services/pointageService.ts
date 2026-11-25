@@ -226,9 +226,10 @@ export async function chargerReferentiels(): Promise<Referentiels | null> {
       departement: lookup(r.Departement).libelle,
       ordre: num(r.Ordre),
       categorieMachine: String(r.Categorie_machine ?? "").trim(),
-      // Creator ne nomme pas toujours le champ pareil selon qu'il a été créé à la main ou
-      // importé : on essaie les trois orthographes plutôt que d'en supposer une.
-      regle: String(r.Regle_de_declenchement ?? r.Regle_declenchement ?? r.Regle ?? "").trim().toLowerCase(),
+      // `Regle_declenchement` est le nom exact du champ, relevé dans l'export de l'application
+      // le 25 novembre. Les deux autres orthographes restent en secours : le champ a déjà été
+      // renommé une fois, et une liste vide ne se verrait qu'à la gamme qui se réduit en silence.
+      regle: String(r.Regle_declenchement ?? r.Regle_de_declenchement ?? r.Regle ?? "").trim().toLowerCase(),
       pointable: String(r.Pointable) !== "false",
       actif: String(r.Actif) !== "false",
     }))
