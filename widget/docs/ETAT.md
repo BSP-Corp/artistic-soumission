@@ -267,6 +267,55 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — La gamme des 16 opérations, et ce qu'elle débloque *(Youssef + Claude)*
+Youssef a exporté `Operations_Liste`. **Les cinq codes attendus par le semis y sont tous** — `SOIE`,
+`IMPR`, `NUM`, `DEC_PLAT`, `DEC_ZUND`. La cause de la grille vide n'est donc pas là : il reste le
+**build du bon de travail, figé au 20 octobre**. Redéployer le widget suffira pour les bons à venir ;
+les bons déjà créés resteront sans lignes, ce qui confirme qu'il faut lire les pointages plutôt que
+la grille.
+
+#### La table porte trois colonnes qu'on n'exploitait pas
+| Code | Nom | Département | Ordre | Déclenchement | Prévu ? |
+|---|---|---|---|---|---|
+| `SOIE` | Fabrication des écrans (soie) | Soie | 10 | sérigraphie | **oui** |
+| `COLOR` | Préparation des encres (coloriste) | Coloriste | 20 | sérigraphie | non |
+| `IMPR` | Impression sérigraphie | Impression | 30 | sérigraphie | **oui** |
+| `NUM` | Impression numérique | Impression | 40 | numérique | **oui** |
+| `LAM` | Laminage | Laminage | 50 | adhésif rouleau | non |
+| `REG` | Régistre (adhésif en feuille) | Préparation | 60 | adhésif feuille | non |
+| `DEC_PLAT` | Découpe platine | Découpe | 70 | platine | **oui** |
+| `DEC_ZUND` | Découpe Zünd | Découpe | 80 | zund | **oui** |
+| `DECORT` | Décorticage | Finition | 90 | manuel | non |
+| `COINS` | Coins ronds | Finition | 100 | manuel | non |
+| `SLIT` | Slitting | Finition | 110 | manuel | non |
+| `GUILL` | Guillotine | Finition | 120 | manuel | non |
+| `OEIL` | Œillets | Finition | 130 | manuel | non |
+| `ASSEMB` | Assemblage | Finition | 140 | manuel | non |
+| `QC` | Contrôle qualité | QC | 150 | toujours | non |
+| `EMB` | Emballage | Expédition | 160 | toujours | non |
+
+**`Ordre`** donne la séquence réelle de production, de 10 à 160. Le tableau d'atelier n'a plus à
+deviner l'ordre des opérations : il le lit.
+
+**`Regle de declenchement`** dit **quelles opérations s'appliquent à une job donnée** :
+`serigraphie` → SOIE, COLOR, IMPR · `numerique` → NUM · `platine` → DEC_PLAT · `zund` → DEC_ZUND ·
+`adhesif_rouleau` → LAM · `adhesif_feuille` → REG · `toujours` → QC, EMB · `manuel` → ajoutée par
+l'opérateur.
+
+C'est exactement ce qui manquait au tableau : au lieu d'afficher les seize opérations ou d'en
+choisir arbitrairement, **chaque bon de travail montre la sienne**, déduite de ses propres
+caractéristiques — sérigraphie ou numérique, platine ou Zünd, adhésif en rouleau ou en feuille.
+
+#### Ce que ça change concrètement
+1. **Le tableau d'atelier affiche la vraie gamme de chaque job**, dans le bon ordre, sans en
+   inventer. La maquette B devinait les deux ; elle n'aura plus à le faire.
+2. **Onze opérations sur seize n'ont pas d'estimation.** Elles sont toutes `Pointable`, donc
+   déclarables. Le comparatif affichera leur réel sans prévu — et c'est une information en soi :
+   le décorticage, l'assemblage et l'emballage se font et ne se chiffrent nulle part.
+3. **`Departement`** regroupe naturellement : Soie, Coloriste, Impression, Laminage, Préparation,
+   Découpe, Finition, QC, Expédition. De quoi filtrer le tableau par poste quand il y aura plusieurs
+   écrans.
+
 ### 25 nov. — La grille « Temps par opération » est vide, et c'est une bonne nouvelle *(Youssef + Claude)*
 **Vérifié dans Creator par Youssef :** le formulaire `bon_travail` porte bien la grille
 « Temps par operation » avec ses quatre colonnes — Operation, Temps prevu (min), Temps reel (min),
