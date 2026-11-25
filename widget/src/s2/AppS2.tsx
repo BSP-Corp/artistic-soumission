@@ -127,32 +127,49 @@ const MATERIAUX: [string, keyof typeof CATALOGUES, string][] = [
   ["Overlaminating", "matOverlam", IN.matOverlam],
 ];
 
-/** Sections 01 à 08 toujours ouvertes, sans flèche : le client l'a tranché le 9 novembre. */
-function Section({ no, titre, phase, children }: { no: string; titre: string; phase?: string; children?: ReactNode }) {
+/** Toutes les sections se replient ; 01 à 08 s'ouvrent d'office, 09 et 10 restent fermées.
+ *
+ *  Les deux consignes du client tiennent ensemble : « on aime mieux tout voir pour être sûr qu'on
+ *  n'a rien oublié » (9 nov.) reste vrai à l'ouverture, et « réduire chaque sous-formulaire pour
+ *  n'avoir que les écrans sur lesquels je travaille » (24 nov.) devient possible.
+ *
+ *  Replier ne démonte rien : les enfants restent dans le DOM, les valeurs saisies restent dans
+ *  l'état, le moteur continue de calculer et les contrôles de `controles.ts` sont évalués sur les
+ *  entrées, jamais sur l'affichage. Une section repliée ne peut donc pas faire disparaître une
+ *  erreur — d'où la pastille, qui la signale sur la ligne de titre. */
+function Section({ no, titre, phase, resume, alerte, ouvert: ouvertInitial = true, children }: {
+  no: string;
+  titre: string;
+  phase?: string;
+  /** Ce qu'on veut pouvoir vérifier sans rouvrir la section. */
+  resume?: string;
+  alerte?: boolean;
+  ouvert?: boolean;
+  children?: ReactNode;
+}) {
+  const [ouvert, setOuvert] = useState(ouvertInitial);
   return (
-    <section className="s2-section" aria-label={no + " " + titre}>
-      <h2>
-        <span>{no}</span>
-        {titre}
-        {phase ? <em>{phase}</em> : null}
-      </h2>
-      {children ? <div className="s2-corps">{children}</div> : null}
-    </section>
-  );
-}
-
-/** Seules 09 et 10 se replient : elles sont optionnelles. */
-function SectionOptionnelle({ no, titre, phase, children }: { no: string; titre: string; phase?: string; children?: ReactNode }) {
-  return (
-    <details className="s2-section">
+    <details
+      className="s2-section"
+      open={ouvert}
+      onToggle={(e) => setOuvert((e.currentTarget as HTMLDetailsElement).open)}
+      aria-label={no + " " + titre}
+    >
       <summary>
         <span>{no}</span>
         {titre}
+        {alerte ? <b className="s2-pastille" title="Cette section demande votre attention">!</b> : null}
+        {!ouvert && resume ? <i className="s2-apercu">{resume}</i> : null}
         {phase ? <em>{phase}</em> : null}
       </summary>
       {children ? <div className="s2-corps">{children}</div> : null}
     </details>
   );
+}
+
+/** 09 et 10 sont optionnelles : même composant, fermé au départ. */
+function SectionOptionnelle(p: Parameters<typeof Section>[0]) {
+  return <Section {...p} ouvert={false} />;
 }
 
 export default function AppS2() {
@@ -706,6 +723,49 @@ export default function AppS2() {
   const presses = machinesFamille(s.machinesCalc, "presse");
   const valeurPresse = String(s.saisie(CELL_PRESSE) ?? "");
 
+  // ── résumés de la ligne de titre ───────────────────────────────────────────
+  // Ce qu'une section repliée doit encore laisser vérifier d'un coup d'œil. Le critère retenu :
+  // ce pour quoi on rouvrirait la section juste pour aller lire une valeur.
+  const sv = (c: string) => String(s.saisie(c) ?? "").trim();
+  const nv = (c: string) => toNum(s.saisie(c));
+  const joindre = (...x: (string | false | null | undefined)[]) => x.filter(Boolean).join(" · ");
+  const matieresChoisies = MATERIAUX.map(([, , cell]) => sv(cell)).filter(Boolean);
+  const nbPieces = piecesPresentes(s.entrees).length;
+
+  const resumes: Record<string, string> = {
+    "01": joindre(sv(IN.client), sv(CELL_PROP.contact)) || "à remplir",
+    "02": nbPieces > 1
+      ? nbPieces + " pièces"
+      : sv(IN.dimPceX)
+        ? sv(IN.dimPceX) + " × " + sv(IN.dimPceY) + " po"
+        : "à remplir",
+    "03": joindre(nv("X!CERT_UL") ? "UL" : "", nv("X!CERT_CSA") ? "CSA" : "", nv("X!CERT_FAIR") ? "FAIR" : "") || "aucune",
+    "04": joindre(
+      actif && nv(actif) ? nv(actif).toLocaleString("fr-CA") + " ex." : "",
+      "gâche " + Math.round(gache * 100) + " %",
+    ),
+    "05": seri
+      ? joindre(
+          nv(IN.couleursVisibles) ? nv(IN.couleursVisibles) + " coul." : "",
+          valeurPresse || "presse générique",
+          nv(IN.nbUp) ? nv(IN.nbUp) + " poses" : "",
+          nv(IN.dimMrxX) ? sv(IN.dimMrxX) + " × " + sv(IN.dimMrxY) + " po" : "",
+        )
+      : methode === "numerique"
+        ? "numérique"
+        : "découpe seule",
+    "06": matieresChoisies.length
+      ? matieresChoisies[0] + (matieresChoisies.length > 1 ? " + " + (matieresChoisies.length - 1) : "")
+      : "aucune matière",
+    "07": joindre(
+      nv(IN.zundCoupeC) ? "Zünd coupe" : "",
+      nv(IN.zundKisscutC) ? "Zünd mi-chair" : "",
+      nv(IN.platCoupeDie) ? "platine " + nv(IN.platCoupeDie) + "/" + nv(IN.platCoupeUp) : "",
+      nv(IN.guillotineQte) ? "guillotine" : "",
+    ) || "aucune découpe",
+    "08": joindre(sv("X!LIV_MODE"), sv("X!LIV_FORMAT")) || "à remplir",
+  };
+
   return (
     <div className="s2">
       <header className="s2-tete">
@@ -764,7 +824,7 @@ export default function AppS2() {
 
       <main className="s2-grille">
         <div className="s2-gauche">
-          <Section no="01" titre="Client">
+          <Section no="01" titre="Client" resume={resumes["01"]}>
             <div className="s2-champs">
               <Liste a={acces} label="Type de client" cell={CELL_TYPE_CLIENT} vide="Client existant" options={["Nouveau client"]} />
               {T("Date", IN.date, { type: "date" })}
@@ -776,14 +836,14 @@ export default function AppS2() {
             <Coordonnees a={acces} />
           </Section>
 
-          <Section no="02" titre="Pièces et fichier">
+          <Section no="02" titre="Pièces et fichier" resume={resumes["02"]}>
             <TableauPieces a={acces} entrees={s.entrees} />
             <Fichier a={acces} taux={s.params?.app?.TAUX_INFOGRAPHIE ?? 85} />
           </Section>
 
-          <Section no="03" titre="Certifications"><Certifications a={acces} /></Section>
+          <Section no="03" titre="Certifications" resume={resumes["03"]}><Certifications a={acces} /></Section>
 
-          <Section no="04" titre="Quantités">
+          <Section no="04" titre="Quantités" resume={resumes["04"]}>
             <table className="s2-table">
               <thead>
                 <tr><th>Retenue</th><th>Palier</th><th>Avec la gâche</th><th /></tr>
@@ -808,7 +868,7 @@ export default function AppS2() {
             <GrillePieces a={acces} entrees={s.entrees} paliers={paliers} />
           </Section>
 
-          <Section no="05" titre="Production">
+          <Section no="05" titre="Production" resume={resumes["05"]}>
             <div className="s2-methodes" role="radiogroup" aria-label="Méthode">
               {([["serigraphie", "Sérigraphie"], ["numerique", "Numérique"], ["decoupe", "Découpe numérique seulement"]] as [Methode, string][]).map(([m, l]) => (
                 <label key={m}><input type="radio" name="methode" checked={methode === m} onChange={() => changerMethode(m)} /> {l}</label>
@@ -858,7 +918,7 @@ export default function AppS2() {
             </>) : null}
           </Section>
 
-          <Section no="06" titre="Matériel et laminage">
+          <Section no="06" titre="Matériel et laminage" resume={resumes["06"]} alerte={!!adhesif && !toNum(s.saisie(adhesif.cellule))}>
             {seri ? (<>
             <div className="s2-champs large">
               {MATERIAUX.map(([label, champ, cell]) => (
@@ -877,7 +937,7 @@ export default function AppS2() {
             <Laminage a={acces} />
           </Section>
 
-          <Section no="07" titre="Finition et découpe">
+          <Section no="07" titre="Finition et découpe" resume={resumes["07"]}>
             {seri ? <div className="s2-champs">
               {C("Zünd, coupe", IN.zundCoupeC)}
               {C("Zünd, mi-chair", IN.zundKisscutC)}
@@ -888,8 +948,8 @@ export default function AppS2() {
             <Outillage a={acces} />
           </Section>
 
-          <Section no="08" titre="Livraison"><Livraison a={acces} /></Section>
-          <SectionOptionnelle no="09" titre="Sous-traitance et installation" phase={totAchats.prix + montantInst > 0 ? argent(totAchats.prix + montantInst) : undefined}>
+          <Section no="08" titre="Livraison" resume={resumes["08"]}><Livraison a={acces} /></Section>
+          <SectionOptionnelle no="09" titre="Sous-traitance et installation" alerte={manques09.length > 0} phase={totAchats.prix + montantInst > 0 ? argent(totAchats.prix + montantInst) : undefined}>
             <SousTraitance a={acces} entrees={s.entrees} liste={listeAchats} majoration={app?.MAJORATION_ST ?? MAJORATION_DEFAUT} onPO={(f) => { setPoSeul(f); setPopup("po"); }} />
             <Installation a={acces} entrees={s.entrees} />
             {manques09.length ? <ul className="s2-liste">{manques09.map((x) => <li key={x} className="s2-alerte">{x}</li>)}</ul> : null}

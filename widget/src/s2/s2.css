@@ -24,6 +24,26 @@
 .s2-section > h2 span, .s2-section > summary span { color: var(--orange-dk); font-variant-numeric: tabular-nums; }
 .s2-section em { margin-left: auto; font-size: 11px; font-weight: 400; color: var(--text-2); }
 .s2-section > summary b { margin-left: auto; }
+
+/* Repliage des sections (24 nov.) : toute la ligne de titre est cliquable et la flèche dit
+   l'état. Une section repliée ne cache que la vue — ses champs restent dans le DOM, donc rien
+   ne se vide et aucun contrôle ne s'éteint. Ce qu'on perd de l'œil, la ligne de titre le
+   résume ; ce qui cloche y met une pastille. */
+.s2-section > summary { list-style: none; }
+.s2-section > summary::-webkit-details-marker { display: none; }
+.s2-section > summary::before { content: "▾"; flex: none; width: 12px; font-size: 12px; line-height: 1; color: var(--orange-dk); }
+.s2-section:not([open]) > summary::before { content: "▸"; }
+.s2-section > summary:hover { filter: brightness(0.97); }
+.s2-section > summary b.s2-pastille {
+  margin-left: 6px; flex: none; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--orange); color: #fff; font-size: 11px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.s2-apercu {
+  margin-left: auto; max-width: 58%; font-style: normal; font-size: 11px; font-weight: 400;
+  color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.s2-apercu + em { margin-left: 8px; }
 .s2-corps { padding: 14px 16px; }
 .s2-corps h3 { margin: 16px 0 8px; font-size: 12px; color: var(--text-2); }
 
