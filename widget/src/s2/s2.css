@@ -13,6 +13,9 @@
 .s2 .btn:hover:not(:disabled) { border-color: var(--orange); }
 .s2 .btn.solid { background: var(--orange); border-color: var(--orange); color: #fff; }
 .s2 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.s2-caches p { margin: 0 0 6px; }
+.s2-caches ul { display: flex; flex-wrap: wrap; gap: 4px 22px; margin: 0; padding: 0; list-style: none; font-weight: 400; }
+.s2-sanseffet { margin: 0; padding: 8px 24px; overflow-wrap: anywhere; }
 .s2-repli { margin: 0; padding: 10px 24px; background: #fde8e4; color: #9c1f0c; font-weight: 600; }
 
 .s2-grille { display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 460px); gap: 18px; align-items: start; max-width: 1500px; margin: 0 auto; padding: 18px 24px; }

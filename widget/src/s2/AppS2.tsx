@@ -19,6 +19,7 @@ import {
   XTRA_PLACEHOLDER,
   cellContrat,
   cellVendu,
+  entreesVierges,
   listeCatalogue,
 } from "@/lib/modele";
 import { CATEGORIE_VERS_CHAMP } from "@/lib/parametres";
@@ -89,6 +90,7 @@ import { cellVenduPiece, infosPiece, modifsPiece, piecesPresentes, quantitePiece
 import { MAJORATION_DEFAUT, achats, installationRequise, manquesSection09, montantInstallation, totauxAchats } from "./soustraitance";
 import { CELL_MATIERE_NUM, chiffrerNumerique } from "./chiffrageNumerique";
 import { CONFIG_EMBARQUEE, chargerConfigNumerique } from "./configNumerique";
+import { comptesDoffice, valeursCachees } from "./caches";
 import {
   CELL_ORIGINE_S2,
   avecGache,
@@ -415,6 +417,27 @@ export default function AppS2() {
     const v = toNum(s.saisie(cellVenduPiece(k, c)));
     return v > 0 ? v : calcule;
   };
+
+  // ── valeurs sans case à l'écran ───────────────────────────────────────────
+  // Les cases sont lues dans la page elle-même : aucune liste à tenir à jour. Une section repliée
+  // garde ses champs dans le DOM, elle ne fausse donc rien.
+  const [visibles, setVisibles] = useState("");
+  useEffect(() => {
+    const l = [...document.querySelectorAll<HTMLElement>(".s2-grille [data-cell]")].map((x) => x.dataset.cell).sort().join(" ");
+    if (l !== visibles) setVisibles(l);
+  });
+  const { caches, doffice } = useMemo(() => {
+    if (!demarre || !seri || !visibles) return { caches: [], doffice: [] };
+    const vus = new Set([...visibles.split(" "), IN.quantite]); // la quantité retenue se choisit par les paliers
+    const total = (modifs: Record<string, CellValue>) =>
+      simulerScenario(differees, s.params, { ...s.overridesTaux, ...s.surchargesMach }, modifs).num(OUT.total);
+    return {
+      caches: valeursCachees(differees, vus, entreesVierges(s.params?.defauts), total),
+      doffice: comptesDoffice(differees, vus, total),
+    };
+  }, [demarre, seri, visibles, differees, s.params, s.overridesTaux, s.surchargesMach]);
+  const cachesPrix = caches.filter((x) => x.montant !== 0);
+  const cachesSansEffet = caches.filter((x) => x.montant === 0);
 
   // ── section 09 ────────────────────────────────────────────────────────────
   const listeAchats = useMemo(() => achats(s.entrees), [s.entrees]);
@@ -822,6 +845,25 @@ export default function AppS2() {
 
       {configNum.alerte && <p className="s2-repli" role="alert">{configNum.alerte}</p>}
 
+      {cachesPrix.length > 0 && (
+        <div className="s2-repli s2-caches" role="alert">
+          <p>
+            Cette soumission contient {cachesPrix.length > 1 ? cachesPrix.length + " réglages qui n'ont pas de case" : "un réglage qui n'a pas de case"} dans cet écran.
+            Le prix en tient compte ; pour les modifier, passez par l'écran actuel.
+          </p>
+          <ul>
+            {cachesPrix.map((x) => (
+              <li key={x.cellules[0]} title={x.detail}>
+                {x.libelle}{x.machine ? " : " + x.detail : ""} <b>{x.montant === null ? "montant non isolé" : (x.montant > 0 ? "+ " : "− ") + argent(Math.abs(x.montant))}</b>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {cachesSansEffet.length > 0 && (
+        <p className="s2-note s2-sanseffet">Aussi conservé, sans effet sur le total : {cachesSansEffet.map((x) => `${x.libelle} (${x.detail})`).join(" · ")}</p>
+      )}
+
       <main className="s2-grille">
         <div className="s2-gauche">
           <Section no="01" titre="Client" resume={resumes["01"]}>
@@ -1046,6 +1088,7 @@ export default function AppS2() {
                 <dt>Prix unitaire{plusieurs ? ", pièce 1" : ""}</dt><dd>{masque(nombre3(unitaire) + " $")}</dd>
                 <dt>Prix unitaire US</dt><dd>{unitaireUs > 0 ? masque(nombre3(unitaireUs) + " $") : "aucun taux saisi"}</dd>
               </dl>
+              {doffice.length ? <p className="s2-note">Compté d'office dans le total, sans case ici : {doffice.map((x) => `${x.libelle.toLowerCase()} ${argent(x.montant)}`).join(", ")}.</p> : null}
               <div className="s2-champs">{N("Facteur", IN.facteur, { pct: true })}{N("Transport", IN.transport, { unite: "$" })}</div>
               {approbations.length && (prixVisible || !seri) ? <ul className="s2-liste">{approbations.map((x) => <li key={x} className="s2-alerte">{x}</li>)}</ul> : null}
             </div>
