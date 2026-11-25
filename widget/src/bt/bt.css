@@ -490,3 +490,10 @@ input.hors-catalogue {
     --bt-discret: #94a3b8;
   }
 }
+
+/* Comparatif estime / realise — lu dans les pointages (25 nov.) */
+.bt-comparatif thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; opacity: .7; }
+.bt-comparatif .bt-total td { border-top: 2px solid currentColor; font-weight: 700; }
+.bt-comparatif .bt-depasse { color: #c2410c; font-weight: 700; }
+.bt-comparatif .bt-sous { color: #047857; font-weight: 700; }
+.bt-comparatif .bt-note { font-size: 11px; opacity: .7; margin: 6px 0 0; line-height: 1.5; }

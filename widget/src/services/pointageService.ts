@@ -206,6 +206,32 @@ export interface Referentiels {
   organisationId: string;
 }
 
+/** Lit la gamme seule. Le bon de travail en a besoin pour nommer et ordonner les opérations,
+ *  sans avoir à charger les sept référentiels du poste de pointage. */
+export async function chargerOperations(): Promise<Operation[]> {
+  if (!isZohoEnv()) return referentielsExemple().operations;
+  return lireOperations(await lignesSures(REPORT_OPERATIONS));
+}
+
+function lireOperations(ops: Record<string, unknown>[]): Operation[] {
+  return ops
+    .map((r) => ({
+      id: String(r.ID ?? ""),
+      code: String(r.Code ?? "").trim(),
+      nom: String(r.Nom ?? "").trim(),
+      departement: lookup(r.Departement).libelle,
+      ordre: num(r.Ordre),
+      categorieMachine: String(r.Categorie_machine ?? "").trim(),
+      // `Regle_declenchement` est le nom exact du champ, relevé dans l'export de l'application
+      // le 25 novembre. Les deux autres orthographes restent en secours.
+      regle: String(r.Regle_declenchement ?? r.Regle_de_declenchement ?? r.Regle ?? "").trim().toLowerCase(),
+      pointable: String(r.Pointable) !== "false",
+      actif: String(r.Actif) !== "false",
+    }))
+    .filter((o) => o.id)
+    .sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999) || a.nom.localeCompare(b.nom, "fr"));
+}
+
 export async function chargerReferentiels(): Promise<Referentiels | null> {
   if (!isZohoEnv()) return null;
   const [ops, res, mach, bts, deps, roles, orgs] = await Promise.all([
@@ -218,23 +244,7 @@ export async function chargerReferentiels(): Promise<Referentiels | null> {
     lignesSures("Organization_Report"),
   ]);
 
-  const operations: Operation[] = ops
-    .map((r) => ({
-      id: String(r.ID ?? ""),
-      code: String(r.Code ?? "").trim(),
-      nom: String(r.Nom ?? "").trim(),
-      departement: lookup(r.Departement).libelle,
-      ordre: num(r.Ordre),
-      categorieMachine: String(r.Categorie_machine ?? "").trim(),
-      // `Regle_declenchement` est le nom exact du champ, relevé dans l'export de l'application
-      // le 25 novembre. Les deux autres orthographes restent en secours : le champ a déjà été
-      // renommé une fois, et une liste vide ne se verrait qu'à la gamme qui se réduit en silence.
-      regle: String(r.Regle_declenchement ?? r.Regle_de_declenchement ?? r.Regle ?? "").trim().toLowerCase(),
-      pointable: String(r.Pointable) !== "false",
-      actif: String(r.Actif) !== "false",
-    }))
-    .filter((o) => o.id)
-    .sort((a, b) => (a.ordre ?? 999) - (b.ordre ?? 999) || a.nom.localeCompare(b.nom, "fr"));
+  const operations = lireOperations(ops);
 
   const ressources: Ressource[] = res
     .map((r) => ({

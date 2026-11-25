@@ -19,6 +19,14 @@ import {
   type SoumissionResume,
 } from "@/services/zohoService";
 import {
+  chargerOperations,
+  chargerPointages,
+  minutesEcoulees,
+  dureeCourte,
+  type Operation,
+  type Pointage,
+} from "@/services/pointageService";
+import {
   chargerBonsTravail,
   emballerDonnees,
   creerBonTravail,
@@ -163,6 +171,67 @@ export default function AppBT() {
   /** catalogue Couleurs (§11) — null tant que le formulaire Creator n'existe pas : la colonne
    *  COULEURS reste alors une saisie libre, comme avant. */
   const [couleurs, setCouleurs] = useState<Couleur[] | null>(null);
+  /** Gamme et pointages du bon ouvert, pour le comparatif estimé / réalisé. */
+  const [gamme, setGamme] = useState<Operation[]>([]);
+  const [pointages, setPointages] = useState<Pointage[]>([]);
+
+  // Les temps déclarés se lisent dans les POINTAGES, jamais dans la grille « Temps par
+  // opération » du bon. Trois raisons, toutes vérifiées le 25 novembre :
+  //   · la grille n'est semée qu'à la création du bon, et les bons créés avant ne l'ont pas ;
+  //   · elle ne porte que les opérations estimées — trois sur six pour une job de sérigraphie,
+  //     donc le décorticage ou l'emballage déclarés n'y apparaîtraient jamais ;
+  //   · c'est un report, et un report peut diverger de sa source.
+  useEffect(() => {
+    const id = bonCourant?.id ?? "";
+    if (!id) {
+      setPointages([]);
+      return;
+    }
+    let vivant = true;
+    Promise.all([chargerOperations(), chargerPointages()]).then(([ops, ps]) => {
+      if (!vivant) return;
+      setGamme(ops);
+      setPointages(ps.filter((p) => p.btId === id));
+    });
+    return () => {
+      vivant = false;
+    };
+  }, [bonCourant?.id]);
+
+  /** Une ligne par opération : celles qui ont une estimation, plus celles qu'on a déclarées.
+   *  Ordonnées par la gamme, de la soie à l'emballage. */
+  const comparatif = useMemo(() => {
+    const prevuParCode: [string, number][] = [
+      ["SOIE", toNum(bonCourant?.Temps_Soies_Min ?? 0)],
+      ["IMPR", toNum(bonCourant?.Temps_Impression_Min ?? 0)],
+      ["NUM", toNum(bonCourant?.Temps_Numerique_Min ?? 0)],
+      ["DEC_PLAT", toNum(bonCourant?.Temps_Decoupe_Min ?? 0)],
+      ["DEC_ZUND", toNum(bonCourant?.Temps_Zund_Min ?? 0)],
+    ];
+    const prevu = new Map(prevuParCode.filter(([, v]) => v > 0));
+    const maintenant = new Date();
+    const reelParOp = new Map<string, number>();
+    const nomParOp = new Map<string, string>();
+    for (const p of pointages) {
+      reelParOp.set(p.operationId, (reelParOp.get(p.operationId) ?? 0) + minutesEcoulees(p, maintenant));
+      if (p.operationNom) nomParOp.set(p.operationId, p.operationNom);
+    }
+    const lignes = gamme
+      .filter((o) => prevu.has(o.code) || reelParOp.has(o.id))
+      .map((o) => ({
+        id: o.id,
+        nom: o.nom,
+        prevu: prevu.get(o.code) ?? 0,
+        reel: reelParOp.get(o.id) ?? 0,
+      }));
+    // Un pointage sur une opération absente de la gamme chargée ne doit pas disparaître.
+    for (const [id, reel] of reelParOp) {
+      if (!lignes.some((l) => l.id === id)) {
+        lignes.push({ id, nom: nomParOp.get(id) ?? "Opération inconnue", prevu: 0, reel });
+      }
+    }
+    return lignes;
+  }, [gamme, pointages, bonCourant]);
 
   // ── amorçage : paramètres vivants + machines, puis listes ────────────────
   // On part d'une fiche VIERGE, pas du job d'exemple du classeur : celui-ci affichait
@@ -873,6 +942,49 @@ export default function AppBT() {
               </tbody>
             </table>
           </div>
+
+          {/* TEMPS DÉCLARÉS — comparatif estimé / réalisé */}
+          {bonCourant && comparatif.length > 0 && (
+            <div className="bt-bloc bt-comparatif">
+              <h2>TEMPS DÉCLARÉS PAR L'ATELIER</h2>
+              <table className="bt-t">
+                <thead>
+                  <tr>
+                    <th className="lab">Opération</th>
+                    <th className="ct">Prévu</th>
+                    <th className="ct">Réel</th>
+                    <th className="ct">Écart</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparatif.map((l) => {
+                    const compare = l.prevu > 0 && l.reel > 0;
+                    const ecart = l.reel - l.prevu;
+                    return (
+                      <tr key={l.id}>
+                        <td className="lab">{l.nom}</td>
+                        <td className="ct">{l.prevu > 0 ? dureeCourte(l.prevu) : "—"}</td>
+                        <td className="ct">{l.reel > 0 ? dureeCourte(l.reel) : "—"}</td>
+                        <td className={"ct" + (compare && ecart > 0 ? " bt-depasse" : compare ? " bt-sous" : "")}>
+                          {compare ? (ecart > 0 ? "+" : "−") + dureeCourte(Math.abs(ecart)) : l.prevu > 0 ? "pas déclaré" : "sans estimation"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  <tr className="bt-total">
+                    <td className="lab">Total</td>
+                    <td className="ct">{dureeCourte(comparatif.reduce((n, l) => n + l.prevu, 0))}</td>
+                    <td className="ct">{dureeCourte(comparatif.reduce((n, l) => n + l.reel, 0))}</td>
+                    <td className="ct" />
+                  </tr>
+                </tbody>
+              </table>
+              <p className="bt-note">
+                Lu dans les pointages d'atelier, pas dans la grille du bon : une opération déclarée
+                sans estimation y figure quand même.
+              </p>
+            </div>
+          )}
 
           {/* PRODUCTION DÉCOUPE */}
           <div className="bt-bloc">
