@@ -267,6 +267,43 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Pourquoi le bon de travail paraissait froid, et ce qui a changé *(Youssef + Claude)*
+**Youssef : *« je l'aime pas beaucoup… change-moi les couleurs, comme ce qui reflète la soumission
+et le logo »*.** Il a raison, et trois causes se cumulaient — aucune n'était une question de
+typographie.
+
+**1. La palette ne venait de nulle part.** Le bleu-gris du bon de travail (`#334155` d'en-tête,
+`#2563eb` d'accent, `#e9eef2` de fond) ne reprenait **ni le logo, ni l'écran de soumission**.
+`styles.css` porte pourtant depuis le début l'habillage Groupe Canva : charbon et orange, papier
+chaud `#f4f2ee`, orange `#e8730a`, filets `#e6e0d6`. Le bon de travail est désormais aligné dessus.
+
+**2. Une barre noire pleine sur chaque en-tête de bloc.** Neuf bandes empilées : c'est elle qui
+faisait « tableur ». Un fond clair et un **filet orange** nomment la section sans l'encadrer de
+noir.
+
+**3. Les blocs s'étiraient à la hauteur du plus haut de leur rangée**, et les courts se
+remplissaient de blanc. **C'était la vraie cause du « blanc à droite, blanc à gauche »** — pas
+l'espacement. `align-items: start` les laisse finir où finit leur contenu, et `grid-auto-flow: dense`
+referme les trous qu'un bloc absent laissait dans la rangée.
+
+Commit `87bcc17`.
+
+#### Ce que j'en pense, puisque la question est posée
+L'écran souffrait de **trois défauts d'origines différentes qu'on prenait pour un seul**. La
+densité (réglée hier soir), la géométrie de papier (réglée ensuite) et l'habillage (réglé ici) ne se
+voyaient pas séparément : on voyait « c'est moche ». Chacune demandait un geste différent, et
+corriger la typographie seule ne pouvait pas suffire — c'est pour ça que la première passe n'a rien
+changé à l'impression générale.
+
+#### Ce qui reste, honnêtement
+- **La rangée du haut reste à trois colonnes** alors que le bloc des quantités est devenu court.
+  Deux colonnes iraient mieux.
+- **Instructions et Procédure** réservent encore de la hauteur d'avance.
+- **Les drapeaux de PRODUCTION DÉCOUPE** restent une vingtaine de pastilles alignées au fil de
+  l'eau ; un rangement par famille les rendrait lisibles.
+- **Aucun bloc ne se masque quand il est vide** : `dense` referme les trous de grille, mais un bloc
+  présent et sans contenu s'affiche toujours.
+
 ### 25 nov. — La géométrie du bon de travail a cédé *(Claude)*
 **Commit `7cdd2cb`** sur `tableau-atelier`. Les trois grilles à lignes fixes montrent désormais ce
 qui existe, plus une ligne vide pour saisir la suivante.
