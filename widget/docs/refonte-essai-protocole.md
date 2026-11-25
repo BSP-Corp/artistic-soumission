@@ -65,7 +65,10 @@ justifierait de tout arrêter.
 > Soufiane l'a fait sur cinq soumissions et elles tombaient juste. L'intérêt, c'est que tu en
 > choisisses une qu'il n'a pas prise.
 
-### ☐ 3. Enregistrer, fermer, rouvrir
+### ☑ 3. Enregistrer, fermer, rouvrir — **passé le 25 novembre**
+
+> Enregistrée, « Nouvelle soumission », rouverte : **les chiffres n'ont pas bougé.** La refonte
+> est exempte du défaut corrigé lundi dans l'écran de production.
 
 Enregistre ta soumission. Fais « Nouvelle soumission ». Puis « Ouvrir » et reprends-la.
 

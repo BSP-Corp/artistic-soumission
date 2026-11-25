@@ -267,6 +267,41 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Essai 3 passé, et le bon de travail déployé a cinq semaines de retard *(Youssef + Claude)*
+**Essai 3 : réussi.** Youssef a enregistré sa soumission, fait « Nouvelle soumission », puis l'a
+rouverte : *« les chiffres sont toujours les bons »*. C'est le défaut corrigé lundi dans l'écran de
+production ; la refonte en est exempte. **Trois des quatre essais qui comptent sont passés** — il ne
+reste que le document client (essai 4).
+
+**Le seuil de revalidation a été saisi dans Creator** par Youssef, sans déploiement, le jour même où
+Roberto l'a donné.
+
+#### Le bon de travail tourne sur un build du 20 octobre
+Relevé sur les captures de l'écran de production : le bandeau du widget de bon de travail dit
+**`build 2026-10-20 15:29 UTC`**. Or la source a bougé depuis : `61646ad` du **3 novembre**
+(« Distinguer les quatre causes du message *Hors Creator* ») n'est donc **pas en ligne**.
+
+C'est le même angle mort que le dépôt a déjà connu : on sait ce qui est commité, pas ce qui est
+déployé, et seul le bandeau le dit. **Les trois autres widgets ont été redéployés depuis ; celui-là
+non.**
+
+⚠️ **Conséquence à vérifier, et elle compte pour le comparatif estimé / réalisé.** Le semis de la
+grille « Temps par opération » (`semerTempsOperations`) tourne à la **création** du bon. Si le build
+déployé est antérieur à ce code, **les bons créés en production n'ont pas de lignes**, et le temps
+réel déclaré par l'atelier n'a nulle part où se poser. L'historique du dépôt ne tranche pas : la
+fonction est présente dès le premier commit (27 oct.), qui est un import de travail antérieur.
+
+**Seule une lecture dans Creator tranche** : ouvrir un `bon_travail` par son **formulaire ou son
+rapport** — pas par le widget, qui n'affiche pas cette grille — et regarder si « Temps par
+opération » porte des lignes avec un `Temps_prevu_min` rempli.
+
+#### Deux cellules sans libellé, une piste
+Le widget signale depuis un moment que `FT!R43` et `FT!W48` portent des valeurs (24 et 48) sans
+libellé identifiable. Sur la capture de BT-1000, la première ligne de matériaux est **« Lexan Clair
+,005x24x48 »**. 24 et 48 sont donc très probablement **les dimensions de la feuille de matière
+choisie**, reprises du catalogue. À faire confirmer par Roberto — c'est une question d'une phrase,
+et ça fermerait un « à nommer » qui traîne.
+
 ### 25 nov. — Le comparatif estimé / réalisé est déjà à moitié construit *(Claude)*
 **Correction de l'entrée précédente.** J'avais écrit qu'il fallait vérifier si
 `bon_travail_Report` expose les cinq champs `Temps_*_Min`. C'est la mauvaise question : il existe
