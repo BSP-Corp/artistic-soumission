@@ -429,6 +429,26 @@ export default function AppBT() {
   const catalogue = useMemo(() => (couleurs ? couleursSelectionnables(couleurs) : []), [couleurs]);
   const parCode = useMemo(() => indexParCode(catalogue), [catalogue]);
 
+  // ── grilles à lignes fixes ────────────────────────────────────────────────
+  // Le classeur réserve sept lignes de quantités, dix de couleurs et onze de matériaux parce
+  // qu'une feuille imprimée ne peut pas grandir. À l'écran, elle peut : on montre ce qui est
+  // rempli, plus une ligne vide pour saisir la suivante, et un bouton révèle la suivante.
+  //
+  // Rien n'est créé. Les cellules FT existent toujours, le moteur les lit toujours : on ne
+  // touche qu'au rendu. « Ajouter » dévoile une cellule qui était déjà là.
+  const [qtesRevelees, setQtesRevelees] = useState(0);
+  const [couleursRevelees, setCouleursRevelees] = useState(0);
+
+  /** Jusqu'où afficher : la dernière ligne remplie, plus une vide, plus ce qu'on a révélé. */
+  const aMontrer = <T,>(lignes: readonly T[], remplie: (l: T) => boolean, revelees: number): T[] => {
+    let dernier = -1;
+    lignes.forEach((l, i) => {
+      if (remplie(l)) dernier = i;
+    });
+    return lignes.slice(0, Math.min(lignes.length, Math.max(dernier + 2, 1) + revelees));
+  };
+  const vide = (cell: string) => String(valeurBrute(cell) ?? "").trim() === "";
+
   const lignesCouleur = useMemo(() => {
     const base = FT_COULEURS.map((c, i) => ({ ...c, rang: i + 1, supprimable: false }));
     const supp: (ReturnType<typeof ligneCouleurSupp> & { supprimable: boolean })[] = [];
@@ -440,6 +460,13 @@ export default function AppBT() {
   }, [entrees]);
 
   const ajouterCouleur = () => {
+    // Tant qu'il reste une ligne du classeur masquée, on la dévoile : inutile d'aller
+    // chercher une ligne supplémentaire avant d'avoir épuisé les dix d'origine.
+    const visibles = aMontrer(lignesCouleur, (l) => !vide(l.m) || !vide(l.couleur) || !vide(l.film), couleursRevelees);
+    if (visibles.length < FT_COULEURS.length) {
+      setCouleursRevelees((n) => n + 1);
+      return;
+    }
     for (let n = 1; n <= MAX_COULEURS - FT_COULEURS.length; n++) {
       const l = ligneCouleurSupp(n);
       if (!entrees[l.m] && !entrees[l.couleur] && !entrees[l.film]) {
@@ -761,7 +788,7 @@ export default function AppBT() {
                 <col />
               </colgroup>
               <tbody>
-                {FT_QTE.map((q) => (
+                {aMontrer(FT_QTE, (q) => !vide(q.qte) || !vide(q.exp), qtesRevelees).map((q) => (
                   <tr key={q.rang}>
                     <td className="lab">QTÉ.{q.rang}</td>
                     {J(q.qte, { num: true, aide: `Quantité livraison ${q.rang}` })}
@@ -769,6 +796,16 @@ export default function AppBT() {
                     {J(q.exp, { aide: `Expédition ${q.rang}` })}
                   </tr>
                 ))}
+                {aMontrer(FT_QTE, (q) => !vide(q.qte) || !vide(q.exp), qtesRevelees).length < FT_QTE.length && (
+                  <tr>
+                    <td colSpan={4} className="coul-ajout-cell">
+                      <button type="button" className="coul-ajout" onClick={() => setQtesRevelees((n) => n + 1)}>
+                        + une quantité
+                      </button>
+                      <span className="coul-src">{FT_QTE.length} livraisons possibles</span>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -841,12 +878,18 @@ export default function AppBT() {
                   <td className="lab">DESCRIPTION</td>
                   <td className="lab ct">INV.</td>
                 </tr>
-                {FT_MATERIAUX.map((m) => (
-                  <tr key={m.ligne}>
-                    {C(m.nom)}
-                    {m.inv ? C(m.inv, { classe: "rt" }) : <td className="calc" />}
-                  </tr>
-                ))}
+                {/* Repris de la soumission, donc jamais saisissable : pas de bouton ici. On
+                    retire seulement les lignes vides, y compris celles qui trouaient la liste. */}
+                {(() => {
+                  const pleines = FT_MATERIAUX.filter((m) => String(V(m.nom) ?? "").trim() !== "");
+                  const lignes = pleines.length ? pleines : FT_MATERIAUX.slice(0, 1);
+                  return lignes.map((m) => (
+                    <tr key={m.ligne}>
+                      {C(m.nom)}
+                      {m.inv ? C(m.inv, { classe: "rt" }) : <td className="calc" />}
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
@@ -866,7 +909,7 @@ export default function AppBT() {
                   <td className="lab ct">COULEURS</td>
                   <td className="lab ct">FILM</td>
                 </tr>
-                {lignesCouleur.map((c) => {
+                {aMontrer(lignesCouleur, (l) => !vide(l.m) || !vide(l.couleur) || !vide(l.film), couleursRevelees).map((c) => {
                   const choisie = trouverCouleur(parCode, valeurBrute(c.couleur));
                   const saisi = String(valeurBrute(c.couleur) ?? "").trim();
                   const inconnue = catalogue.length > 0 && saisi !== "" && !choisie;
