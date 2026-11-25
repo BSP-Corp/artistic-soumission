@@ -132,6 +132,54 @@ Christian), sur l'avancement et sur le partage du travail avec Jose, qui monte d
 son côté. Un état du projet leur part aujourd'hui. Rien à préparer, mais le contexte explique
 pourquoi les deux points ci-dessus pressent.
 
+### 25 nov. — Quatre champs acceptent n'importe quel nombre alors qu'ils ne valent que 1 ou vide *(Youssef + Claude)*
+**Youssef, en remplissant l'essai :** « il y a des valeurs qui sont à 1… je pense que sur l'ancienne
+soumission, c'est plus des cases à cocher ». Vérifié : son instinct est bon, même si la cause n'est
+pas celle qu'il croyait.
+
+`lib/controles.ts` tient une liste `INDICATEURS` — dix-sept cellules qui **ne valent que 1 ou vide**.
+Le commentaire est sans ambiguïté : *« Le classeur met le prix unitaire à zéro dès qu'un indicateur
+dépasse 1. »* Quatre d'entre elles sont offertes dans le nouvel écran comme de **simples champs
+numériques**, sans rien qui le dise :
+
+| Champ (section 05 / 07) | Cellule | Rendu |
+|---|---|---|
+| Séparateur avant | S!D9 | champ libre |
+| Séparateur après | S!E9 | champ libre |
+| Recto / verso après | S!E13 | champ libre |
+| Guillotine | S!E29 | champ libre |
+
+**Le cas le plus traître est le recto/verso.** « Recto / verso avant » (S!D13) est une vraie
+quantité ; « Recto / verso après » (S!E13) ne vaut que 1 ou vide. Les deux champs sont côte à côte,
+identiques à l'œil, et obéissent à des règles opposées.
+
+**Ce n'est pas une régression : l'écran actuel a exactement le même défaut** (`App.tsx` les rend
+aussi avec `N()`). Mais la refonte reconstruit l'interface — c'est l'occasion de le corriger, pas de
+le recopier. Une case à cocher dit la règle au lieu de la cacher.
+
+Le contrôle bloquant reste utile comme filet pour les soumissions déjà enregistrées qui portent une
+valeur > 1, mais il arrive après coup : il rattrape l'erreur au lieu de l'empêcher.
+
+**Et le cas inverse, à confirmer avec Soufiane :** « Adhésif laminé » et « Adhésif régistre »
+(`IN.adhesifLamine`, `IN.adhesifRegistre`) sont des **champs numériques dans l'écran actuel** et des
+**cases à cocher dans le nouveau**. Ils ne figurent pas dans `INDICATEURS`. Si le classeur les
+multiplie, une job qui demande deux passes ne peut plus le dire, et une soumission rouverte qui
+porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
+raison et ils devraient rejoindre la liste.
+
+### 25 nov. — Le repliage des sections n'est toujours pas fait *(Claude)*
+Rien de poussé depuis le 24 novembre : `origin/refonte-soumission` en est toujours à « Refonte,
+première version complète ». La demande du repliage (entrée du 24 nov.) est enregistrée, pas
+implémentée.
+
+En l'état, les sections **09 Sous-traitance** et **10 Notes** se replient déjà — elles sont bâties
+en `<details>` (`SectionOptionnelle`). Les sections **01 à 08** ne se replient pas : elles sont des
+`<section>` ordinaires. C'est donc une seule ligne de structure à changer, pas une refonte.
+
+Rappel de ce qui a été arbitré : **repliables mais ouvertes par défaut**, titre entier cliquable,
+une section repliée résume son contenu sur la ligne de titre, et replier ne doit ni vider un champ
+ni désactiver un contrôle.
+
 ### 25 nov. — Essai : il ne reste qu'une seule ligne de finition dans le nouvel écran *(Youssef + Claude)*
 **Troisième trou du même genre, trouvé en cherchant l'origine d'un écart de prix.** La section 07 du
 nouvel écran n'expose qu'une seule opération de finition, la **guillotine**. L'écran actuel en a
