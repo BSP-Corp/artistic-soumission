@@ -671,7 +671,9 @@ export default function AppBT() {
 
       <div className="bt-fiche">
         {/* ── rangée 1 : entête ───────────────────────────────────────── */}
-        <div className="bt-grille c3">
+        {/* Celle-ci reste une vraie rangée : les trois blocs d'identification se lisent
+            ensemble, de gauche à droite, et aucun n'est assez haut pour creuser un trou. */}
+        <div className="bt-rangee">
           {/* identification */}
           <div className="bt-bloc">
             <table className="bt-t">
@@ -863,8 +865,12 @@ export default function AppBT() {
           </table>
         </div>
 
-        {/* ── rangée 3 : matériaux / impression / découpe ──────────────── */}
-        <div className="bt-grille c3" style={{ marginTop: 6 }}>
+        {/* ── le corps de la fiche : six blocs qui coulent ─────────────── */}
+        {/* Un seul conteneur plutôt que deux rangées figées. Une rangée place un bloc par
+            cellule, donc quatre blocs dans trois colonnes laissaient deux cellules vides —
+            le grand rectangle blanc. Ici les blocs se répartissent d'eux-mêmes selon leur
+            hauteur, et il n'en reste aucun trou. */}
+        <div className="bt-flux" style={{ marginTop: 8 }}>
           {/* MATÉRIAUX */}
           <div className="bt-bloc">
             <h2>MATÉRIAUX</h2>
@@ -1091,10 +1097,7 @@ export default function AppBT() {
               />
             </div>
           </div>
-        </div>
-
-        {/* ── rangée 4 : instructions + quantités ─────────────────────── */}
-        <div className="bt-grille c2" style={{ marginTop: 6 }}>
+          {/* INSTRUCTIONS */}
           <div className="bt-bloc">
             <h2>INSTRUCTIONS</h2>
             <div className="bt-zone">

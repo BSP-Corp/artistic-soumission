@@ -121,20 +121,47 @@ body {
   padding: 6px;
 }
 
-.bt-grille {
+/* Les blocs COULENT, ils ne sont plus ranges en cases.
+   Une grille place un bloc par cellule : quatre blocs dans trois colonnes laissaient donc deux
+   cellules vides, et c'est le grand rectangle blanc qu'on voyait a cote de PRODUCTION DECOUPE.
+   « align-items: start » avait supprime l'etirement, « dense » ne pouvait rien : il n'y avait
+   plus rien a deplacer.
+   En multi-colonnes, les blocs se repartissent d'eux-memes et le quatrieme vient se loger sous
+   le plus court. Aucun trou ne subsiste, quel que soit leur nombre ou leur hauteur. */
+/* La rangee d'entete : trois blocs courts qui se lisent ensemble, de gauche a droite. */
+.bt-rangee {
   display: grid;
-  gap: 8px;
-  /* Un bloc finit ou finit son contenu : sans ça, le plus haut de la rangee imposait sa
-     hauteur a tous, et les courts se remplissaient de blanc. C'etait la cause du « blanc a
-     droite, blanc a gauche ». « dense » referme en prime les trous laisses par un bloc absent. */
-  align-items: start;
-  grid-auto-flow: row dense;
-}
-.bt-grille.c2 {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-}
-.bt-grille.c3 {
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 8px;
+  align-items: start;
+}
+
+/* Le corps de la fiche : les blocs COULENT, ils ne sont plus ranges en cases.
+   Une grille place un bloc par cellule, donc quatre blocs dans trois colonnes laissaient deux
+   cellules vides — le grand rectangle blanc qu'on voyait a cote de PRODUCTION DECOUPE.
+   En multi-colonnes, le navigateur repartit les six blocs selon leur hauteur : le plus haut
+   prend une colonne a lui, les courts se succedent dans les autres, et il ne reste aucun trou
+   quel que soit leur nombre. */
+.bt-flux {
+  columns: 3;
+  column-gap: 8px;
+  orphans: 1;
+  widows: 1;
+}
+.bt-flux > .bt-bloc {
+  /* un bloc ne se coupe jamais en deux entre deux colonnes */
+  break-inside: avoid;
+  -webkit-column-break-inside: avoid;
+  margin: 0 0 8px;
+  display: flow-root;
+}
+@media (max-width: 1100px) {
+  .bt-flux { columns: 2; }
+  .bt-rangee { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .bt-flux { columns: 1; }
+  .bt-rangee { grid-template-columns: minmax(0, 1fr); }
 }
 
 .bt-bloc {
