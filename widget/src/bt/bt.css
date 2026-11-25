@@ -556,3 +556,11 @@ ol.bt-frise span {
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 ol.bt-frise li.faite span { color: var(--bt-texte); font-weight: 600; }
+
+/* Recherche dans la liste des bons (25 nov.) : dix-neuf bons aujourd'hui, des milliers en
+   production. Le champ filtre la liste deroulante sans la remplacer — on garde la selection
+   au clavier et le comportement natif, on lui enleve seulement le defilement interminable. */
+.bt-chercher { display: inline-flex; gap: 4px; align-items: stretch; min-width: 0; }
+.bt-chercher-champ { width: 150px; min-width: 0; }
+.bt-chercher-champ::-webkit-search-cancel-button { cursor: pointer; }
+@media (max-width: 760px) { .bt-chercher-champ { width: 110px; } }

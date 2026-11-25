@@ -436,6 +436,10 @@ export default function AppBT() {
   //
   // Rien n'est créé. Les cellules FT existent toujours, le moteur les lit toujours : on ne
   // touche qu'au rendu. « Ajouter » dévoile une cellule qui était déjà là.
+  /** Filtre de la liste des bons. Dix-neuf aujourd'hui, des milliers en production : une
+   *  liste déroulante nue devient inutilisable bien avant. On filtre sur tout ce que
+   *  l'étiquette affiche — n° de bon, client, n° de pièce, statut, n° de soumission. */
+  const [filtreBon, setFiltreBon] = useState("");
   const [qtesRevelees, setQtesRevelees] = useState(0);
   const [couleursRevelees, setCouleursRevelees] = useState(0);
 
@@ -566,22 +570,46 @@ export default function AppBT() {
           </span>
         </span>
 
-        <select
-          className="bt-btn"
-          value={bonCourant?.id ?? ""}
-          onChange={(e) => {
-            const b = bons?.find((x) => x.id === e.target.value);
-            if (b) ouvrirBon(b);
-          }}
-          aria-label="Bons de travail"
-        >
-          <option value="">— bons enregistrés —</option>
-          {bonsVisibles.map(({ bon: b, jumeaux }) => (
-            <option key={b.id} value={b.id}>
-              {etiquetteBon(b, jumeaux)}
-            </option>
-          ))}
-        </select>
+        <span className="bt-chercher">
+          <input
+            className="bt-btn bt-chercher-champ"
+            type="search"
+            value={filtreBon}
+            onChange={(e) => setFiltreBon(e.target.value)}
+            placeholder="Chercher un bon…"
+            aria-label="Chercher un bon de travail"
+          />
+          {(() => {
+            const q = filtreBon.trim().toLowerCase();
+            const liste = q
+              ? bonsVisibles.filter((v) => etiquetteBon(v.bon, v.jumeaux).toLowerCase().includes(q))
+              : bonsVisibles;
+            return (
+              <select
+                className="bt-btn"
+                value={bonCourant?.id ?? ""}
+                onChange={(e) => {
+                  const b = bons?.find((x) => x.id === e.target.value);
+                  if (b) ouvrirBon(b);
+                }}
+                aria-label="Bons de travail"
+              >
+                <option value="">
+                  {q
+                    ? liste.length
+                      ? `— ${liste.length} bon${liste.length > 1 ? "s" : ""} trouvé${liste.length > 1 ? "s" : ""} —`
+                      : "— aucun bon ne correspond —"
+                    : "— bons enregistrés —"}
+                </option>
+                {liste.map(({ bon: b, jumeaux }) => (
+                  <option key={b.id} value={b.id}>
+                    {etiquetteBon(b, jumeaux)}
+                  </option>
+                ))}
+              </select>
+            );
+          })()}
+        </span>
 
         <select
           className="bt-btn"
