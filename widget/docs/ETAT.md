@@ -267,6 +267,64 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le montage mixte se construit sans attendre les réponses *(Youssef + Claude)*
+**Je me corrige.** J'avais présenté les deux questions sans réponse comme bloquantes. Elles ne le
+sont pas, et c'est l'idée de Youssef qui le montre : **si la règle devient un paramètre, la réponse
+ne débloque plus un développement, elle choisit une valeur.** Il suffit de l'appliquer un cran plus
+haut que là où il l'avait mise — au **placement**, pas seulement à la répartition du coût.
+
+Un courriel part quand même à Roberto ce soir, pour que les valeurs par défaut soient les bonnes.
+Mais la construction ne l'attend pas.
+
+#### Deux paramètres, et le contrat qui va avec
+| Code `Taux_Calcul` | Valeurs | Défaut |
+|---|---|---|
+| `APP_MONTAGE_MIXTE` | `aucun` · `bandes` · `libre` | **`aucun`** — le comportement d'aujourd'hui |
+| `APP_REPARTITION_MIXTE` | `surface` · `poses` · `principale` | `surface` |
+
+`parametres.ts` lit déjà n'importe quel `APP_*` sans qu'on touche à rien. Le défaut `aucun` garantit
+que **rien ne change tant que personne n'active quoi que ce soit** — donc aucun risque pour la
+démonstration de l'essai 2.
+
+⚠️ **Les deux valeurs doivent être inscrites sur la soumission à l'enregistrement**, en
+pseudo-cellules (`X!MIXTE_MODE`, `X!MIXTE_REPART`), comme `X!MONTAGEFORMAT` l'est déjà. Sinon,
+changer le paramètre rechiffrerait en silence toutes les soumissions déjà envoyées : exactement la
+famille de défauts trouvée deux fois aujourd'hui.
+
+#### Dans l'ordre, du livrable au chantier
+**1. L'éligibilité de chaque pièce.** Règle de Roberto : une pièce sort du montage mixte si elle a
+des découpes intérieures (« Cut O », `S!E39-41`) ou un protecteur fenêtre (`S!E27`). Affichée dans
+le bloc des pièces : « montage mixte possible » / « feuilles séparées — fenêtre ». **Ne touche aucun
+prix**, donc livrable seul et sans risque. C'est aussi ce qui met la règle sous les yeux de Roberto
+pour qu'il la corrige si on l'a mal lue.
+
+**2. Les deux paramètres et leur inscription sur la soumission.** Petit, et c'est le socle du reste.
+
+**3. Le placement en bandes.** `montage.ts` sait aujourd'hui remplir une feuille d'**un** rectangle
+répété : `upParAxe` donne combien tiennent sur un axe, `evaluerFormat` croise les deux. Une bande,
+c'est ce même calcul restreint à une hauteur allouée. Donc : découper la feuille en N bandes, une
+par pièce, chacune gardant la formule existante. Le choix du format ne change pas — toujours le
+moins de feuilles, puis le plus petit format.
+
+**4. Les deux régimes de quantité.** 500 de A et 250 de B : mixte tant que les deux roulent, puis
+solo pour le reliquat de A. **Ce n'est pas une hypothèse, c'est ce qui arrive** — il n'y a rien à
+arbitrer, juste à compter juste. Attention : ça touche la grille des paliers, la partie la plus
+délicate de l'écran.
+
+**5. Les trois répartitions.** Surface, poses, pièce principale. Petit une fois le 3 fait.
+
+**6. Les cas de référence dans `verif:s2`.** Un jeu par répartition. Sans ça, « revendable » veut
+dire « trois branches à moitié testées ». Le critère de la refonte est l'exactitude ; il ne se
+relâche pas parce qu'on ajoute des options.
+
+#### Ce qui est honnêtement présentable demain 13 h
+Les points **1 et 2** : l'éligibilité affichée et les paramètres en place dans l'Administration. Ça
+montre que la réponse de Roberto est arrivée, comprise et déjà dans l'outil.
+
+Le point **3** si le temps le permet, en lecture seule — le bloc propose un montage en bandes et
+l'affiche, sans encore le répercuter sur le prix. **Les points 4 et 5 ne seront pas prêts**, et il
+vaut mieux le dire que de montrer un prix qu'on ne peut pas défendre.
+
 ### 25 nov. — Rendre la règle de répartition paramétrable plutôt que d'attendre l'arbitrage *(Youssef)*
 **Proposition de Youssef :** coder les trois hypothèses de répartition du coût d'une feuille
 partagée, les rendre sélectionnables dans l'Administration, et laisser le client choisir. On avance
