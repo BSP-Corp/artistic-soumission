@@ -66,6 +66,15 @@ Une fois l'essai concluant, téléverser le **même zip** dans l'entrée **`bont
 
 ---
 
+## Il apporte aussi le comparatif, depuis le 25 novembre au soir
+
+La branche `tableau-atelier` ajoute à cet écran un bloc **« TEMPS DÉCLARÉS PAR L'ATELIER »**,
+sous les temps estimés : une ligne par opération, avec le prévu, le réel et l'écart, plus un
+total. Il lit les **pointages**, jamais la grille du bon — donc il fonctionne sur les bons
+existants, sans lignes, et montre aussi les opérations déclarées qui n'ont aucune estimation.
+
+Le zip construit depuis cette branche contient les deux : le semis et le comparatif.
+
 ## Ce que le redéploiement apporte, et ce qu'on ne sait pas
 
 **Ce qu'on sait :** une seule modification du dépôt touche cet écran depuis sa création —
