@@ -217,6 +217,50 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Recommandation BSP : **B**, avec le détail de A et les champs de C *(Claude)*
+Youssef a demandé un avis tranché plutôt qu'un comparatif. Le voici, avec ce qui le fonde et ce qui
+le renverserait.
+
+**La recommandation :** le **tableau de l'atelier (B)** comme écran principal ; la **grosse carte
+de A** comme vue de détail quand on ouvre une opération à son poste ; les **champs de C**
+— quantité et rebut — demandés au moment de terminer ; et la **grille de C** gardée comme voie de
+correction, jamais comme mode principal.
+
+**Pourquoi B.**
+1. **Le client l'a déjà dit, sur un autre écran.** Le 9 novembre il refusait le repliage des
+   sections : *« on aime mieux tout voir pour être sûr qu'on n'a rien oublié »*. Et il a redemandé
+   que le total reste visible pendant la saisie. Deux fois la même culture : voir l'état, tout le
+   temps. B est cette culture appliquée à l'atelier.
+2. **Chez Artistic, la job passe par beaucoup de mains.** Préparation d'écrans, impression, séchage,
+   découpe, décorticage, laminage, assemblage, vérification, emballage. Le fil continu, c'est le bon
+   de travail, pas la personne. B suit ce fil ; A suit la personne.
+3. **B monte en charge, A exige du matériel.** Le même tableau tourne sur un écran au mur ou sur dix
+   tablettes de poste. A n'a de sens qu'avec un appareil par personne — c'est un achat avant d'être
+   un logiciel.
+4. **C'est le seul des trois qui sert le but réel.** Le prochain chantier est le comparatif estimé /
+   réalisé. B affiche le prévu **pendant** le travail : l'écart se voit au moment où il se creuse,
+   pas dans un rapport trois semaines plus tard. Un rapport informe ; un chiffre à l'écran corrige.
+
+**Pourquoi pas A seul.** Le poste actuel *est* déjà A. Le refaire plus beau donne la même chose en
+mieux dessiné, et on aura dépensé un chantier à ne rien changer de ce que le client peut constater.
+
+**Pourquoi pas C seul.** Des temps déclarés sont des temps *de mémoire*. Valider les temps de
+soumission contre le souvenir qu'en ont les opérateurs est circulaire : on ne mesure plus rien, on
+confirme une estimation par une autre. En revanche ses **champs** sont indispensables — sans la
+quantité et les rebuts, on compare des heures à des heures au lieu de comparer des coûts unitaires.
+
+**Ce qui renverserait l'avis, et c'est une question pour Roberto :** *combien d'opérations un
+opérateur fait-il dans un quart, et change-t-il de job ?* Si chacun reste sur sa machine toute la
+journée pour une seule longue opération, A gagne et cette recommandation est fausse. La question est
+bon marché et décisive — à poser avant de construire.
+
+**Un risque à nommer avant de le découvrir :** un tableau partagé rend le rythme de chacun visible
+de tous. Dans certains ateliers ça motive, dans d'autres ça se vit comme de la surveillance et les
+gens le contournent. Philippe et Roberto savent lequel des deux est le leur.
+
+**Ce qu'on fait jeudi :** présenter **B**, montrer A comme la vue de poste, et poser la question de
+Roberto. Présenter trois options à un comité produit rarement une décision.
+
 ### 25 nov. — Prochain chantier : la déclaration des temps, trois maquettes *(Youssef + Claude)*
 **Youssef ouvre le chantier suivant :** le poste de pointage actuel « n'est pas beau », et il faut
 le refaire en pensant à l'atelier. Trois maquettes jouables ont été produites, à montrer jeudi, pour
