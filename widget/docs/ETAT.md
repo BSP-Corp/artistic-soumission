@@ -267,6 +267,40 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Confirmé : le pointage n'écrit rien dans la grille du bon de travail *(Youssef)*
+**Cycle complet refait sur BT-1001**, un bon neuf — démarrer, pause, reprise, terminer. Le pointage
+est bien enregistré : le tableau d'atelier affiche *Fabrication des écrans (soie) · 2 min / 32 min*
+et la job passe à 1 / 6, −30 min.
+
+**Et la grille « Temps par operation » du bon de travail reste vide.** Vérifiée avant le pointage,
+pendant, et après la clôture : aucune ligne. *« Je te confirme que même à la fin, quand j'ai fait
+terminer, je suis revenu dans le bon travail, j'ai rien trouvé dans la partie opération. »*
+
+**C'est cohérent avec ce que le code annonce**, et ça clôt la question. Le commentaire de
+`bonTravailService` est explicite : *« le pointage d'atelier ne sait que METTRE À JOUR une ligne
+existante : Deluge ne peut pas en rattacher une à un bon déjà créé »*. Les lignes sont censées être
+semées **à la création du bon** ; elles ne l'ont pas été ; le pointage n'a donc rien à mettre à jour
+et n'écrit nulle part.
+
+**Conséquence : la grille est inexploitable en l'état**, pour tous les bons existants — BT-1000 à
+BT-1003 compris. La décision de faire lire les **pointages** plutôt que la grille au futur bloc
+comparatif n'est plus une préférence de conception, c'est la seule voie praticable sans
+réensemencer.
+
+#### Où lire quoi — la confusion à lever
+Les deux choses ne vivent pas au même endroit, et c'est ce qui a fait chercher au mauvais endroit :
+
+| Ce qu'on cherche | Où ça vit |
+|---|---|
+| Les temps déclarés, avec `Pause_debut` et `Pause_cumulee_min` | le formulaire **`Pointage_Atelier`**, rapport **`Pointage_Atelier_Vue`** |
+| Le report par opération sur le bon | la grille `Temps_par_operation` du formulaire `bon_travail` — **vide** |
+
+Le tableau d'atelier lit le premier, jamais le second. C'est pour ça qu'il affiche 2 min alors que
+le bon de travail n'affiche rien : **les pointages existent, le report n'existe pas.**
+
+La question de la pause se tranche donc dans `Pointage_Atelier_Vue`, sur l'enregistrement du
+pointage lui-même — pas dans le bon de travail.
+
 ### 25 nov. — Correction : la pause est peut-être déjà traitée par Creator *(Youssef + Claude)*
 **J'avais conclu trop vite.** L'entrée précédente affirmait que `Duree_reelle_min` comptait la pause
 comme du travail. **Cette conclusion reposait sur une séquence que j'avais supposée** — démarrer,
