@@ -267,6 +267,40 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le comparatif estimé / réalisé est déjà à moitié construit *(Claude)*
+**Correction de l'entrée précédente.** J'avais écrit qu'il fallait vérifier si
+`bon_travail_Report` expose les cinq champs `Temps_*_Min`. C'est la mauvaise question : il existe
+beaucoup mieux, et personne ne l'avait relevé dans le journal.
+
+**Chaque bon de travail porte déjà une grille « Temps par opération ».** `bonTravailService.ts`
+l'ensemence **à la création du bon**, une ligne par opération qui a un temps estimé :
+
+| Colonne | Contenu |
+|---|---|
+| `Operation` | l'ID lu dans `Operations_Liste`, par son code |
+| `Temps_prevu_min` | le temps estimé venu de la soumission |
+| `Temps_reel_min` | 0 au départ |
+| `Ecart_min` | `-prevu` au départ |
+
+La correspondance code → temps est déjà écrite (`TEMPS_VERS_OPERATION`) : `SOIE`, `IMPR`, `NUM`,
+`DEC_PLAT`, `DEC_ZUND`. Et le commentaire du code dit pourquoi le semis se fait à la création :
+*« le pointage d'atelier ne sait que METTRE À JOUR une ligne existante »* — donc **le pointage écrit
+déjà le temps réel dans cette grille**.
+
+**Ce que ça change.**
+1. Le tableau d'atelier (approche B) n'a rien à reconstruire : prévu, réel et écart par opération
+   sont là, par bon de travail. C'est exactement sa matière première.
+2. Le **comparatif estimé / réalisé** — annoncé comme « prochain chantier » dans le document remis
+   au client — est **déjà à moitié fait**. Il manque l'écran qui le montre, pas les données.
+3. Les opérations sans estimation (laminage, œillets, QC, décorticage, emballage…) n'ont pas de
+   ligne : leurs pointages s'enregistrent mais n'apparaissent pas dans la grille. Le tableau devra
+   les afficher sans prévu plutôt que de les cacher.
+
+**La bonne vérification, pour Youssef, et elle prend trente secondes :** ouvrir un bon de travail
+récent dans Creator et regarder la grille « Temps par opération ». Si elle porte des lignes avec un
+`Temps_prevu_min` rempli, tout est en place. Si elle est vide, c'est que le semis n'a pas tourné sur
+les bons déjà créés — et il faudra les réensemencer, ce qui est un autre petit travail.
+
 ### 25 nov. — Le montage mixte se construit sans attendre les réponses *(Youssef + Claude)*
 **Je me corrige.** J'avais présenté les deux questions sans réponse comme bloquantes. Elles ne le
 sont pas, et c'est l'idée de Youssef qui le montre : **si la règle devient un paramètre, la réponse
