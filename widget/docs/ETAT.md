@@ -267,6 +267,37 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — La géométrie du bon de travail a cédé *(Claude)*
+**Commit `7cdd2cb`** sur `tableau-atelier`. Les trois grilles à lignes fixes montrent désormais ce
+qui existe, plus une ligne vide pour saisir la suivante.
+
+| Bloc | Avant | Après, fiche vierge |
+|---|---|---|
+| Quantités / expéditions | 7 lignes, 14 cellules | **1 ligne** + « + une quantité » |
+| Couleurs | 10 lignes vides **et** le bouton d'ajout | **1 ligne** + le bouton |
+| Matériaux | 11 lignes, trous compris | **les lignes réelles**, sans trous |
+
+**Le bouton des couleurs était le pire cas** : l'écran affichait les dix lignes vides *et*
+« + Ajouter une couleur ». Il dévoile maintenant d'abord les lignes du classeur, et ne va chercher
+une ligne supplémentaire qu'une fois les dix épuisées.
+
+**Les matériaux n'ont pas de bouton** : ils sont repris de la soumission, jamais saisissables ici.
+On retire seulement les lignes vides, y compris celles qui trouaient la liste au milieu.
+
+**Rien n'a bougé dans le modèle.** `aMontrer` ne touche qu'au rendu ; les cellules `FT!T5` à `T11`,
+`H23` à `R32` et les onze lignes de matériaux existent toujours et le moteur les lit toujours.
+« Ajouter » dévoile une cellule déjà là. La propriété sur laquelle tout repose — *le classeur
+reproduit à l'identique* — n'est pas entamée.
+
+#### Ce qui reste sur la présentation
+- **Le haut de l'écran est maintenant inégal** : le bloc des quantités est devenu court pendant que
+  ses voisins restent hauts. C'est une conséquence normale de blocs qui finissent où finit leur
+  contenu, mais la rangée gagnerait à être repensée en deux colonnes plutôt qu'en trois.
+- **Instructions et Procédure** réservent toujours de la hauteur d'avance.
+- **Les drapeaux de PRODUCTION DÉCOUPE** restent un mur d'une vingtaine de pastilles, dont la
+  plupart éteintes. Les laisser visibles est un choix — le client veut tout voir — mais ils
+  pourraient être rangés par famille plutôt qu'alignés au fil de l'eau.
+
 ### 25 nov. — Le vrai défaut du bon de travail : il réserve la place d'un papier *(Youssef + Claude)*
 **Youssef, en voyant le résultat : *« j'aime pas la présentation, les écrans sont éparpillés, du
 blanc à droite, du blanc à gauche »*.** Il a raison, et je dois le reconnaître : **j'ai fait une
