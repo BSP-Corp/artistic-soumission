@@ -267,6 +267,43 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Recommandation BSP sur le bon de travail : C, pas B *(Claude)*
+**D'abord une correction, et elle m'est due.** Le récapitulatif du 16 novembre dit déjà :
+*« Boucle fermée en réel validée (BT-1017, 2,23 min) »*, et liste comme seul manque de ce chantier
+le **« widget atelier (écran de pointage tablette) à concevoir »**. Le comparatif n'était donc pas
+« à moitié construit » : il était **validé depuis deux semaines**, et ce qui manquait était l'écran
+de pointage — celui qu'on a livré ce soir — plus un endroit pour l'afficher. Le dossier contenait la
+réponse ; j'ai refait le chemin. À ne pas refaire une troisième fois.
+
+#### Ce que le dossier dit des attentes sur le bon de travail
+- **Il va à l'atelier.** La question en attente pour Roberto — *« l'atelier a-t-il besoin de voir le
+  sens de pose sur le bon de travail ? »* — n'a de sens que si l'atelier le lit.
+- **Il s'imprime.** Le bouton « Imprimer » est là depuis le début.
+- **Il porte, il ne recalcule pas** : couleurs, matériaux, temps prévus, découpes, montage retenu.
+- **Philippe a demandé s'il ne pouvait pas être retapé**, en rencontre.
+- Et le client a tranché une fois, le 9 novembre, contre le repliage : *« on aime mieux tout voir
+  pour être sûr qu'on n'a rien oublié »*.
+
+#### La recommandation : **C**, augmentée de la frise de B. Pas B comme écran séparé.
+1. **C d'abord.** La FT est *leur* document — l'écran en est une mauvaise restitution, pas une
+   mauvaise idée. La rendre lisible, aligner les colonnes, et surtout **distinguer les cases qu'on
+   saisit de celles qui se calculent** : aujourd'hui rien ne le dit. C'est ce que « retaper » veut
+   dire au sens propre, et c'est le risque le plus faible.
+2. **Prendre la frise d'avancement de B** et la poser en tête de C. Elle répond à « où en est cette
+   job » sans rien replier — donc sans heurter la décision du 9 novembre.
+3. **Le comparatif est déjà dedans.** C'était la meilleure idée de B, et elle est livrée ce soir
+   dans l'écran existant. B n'apporte, au-delà, que le repliage — c'est-à-dire la partie contestée.
+4. **A ensuite, comme vue séparée et imprimable.** Le dossier confirme que l'atelier lit et imprime
+   le bon, et l'écran actuel ne s'imprime pas lisiblement. Mais une question doit précéder :
+   **est-ce que l'atelier travaille encore avec le bon sur papier ?** Si oui, A est urgent ; s'il le
+   lit à un poste, A devient un écran et B redevient intéressant.
+5. **Ne pas construire B comme écran séparé.** Trois écrans pour un bon de travail, c'est l'erreur
+   qu'on vient de diagnostiquer, à l'envers.
+
+**Ce qui renverserait l'avis :** si « retaper » voulait dire, dans la bouche de Philippe, *« je veux
+voir où en sont mes jobs »* plutôt que *« cette feuille est illisible »*, alors B est la réponse et
+C n'est que du soin. Une question à lui poser demain, en une phrase.
+
 ### 25 nov. — Le comparatif est en ligne, et trois maquettes pour refaire le bon de travail *(Youssef + Claude)*
 **Le bloc « TEMPS DÉCLARÉS PAR L'ATELIER » est déployé** sur `Bon_De_Travail_Essai` et affiche les
 pointages du bon ouvert. **Un défaut relevé au premier coup d'œil et corrigé** (`dfdee45`) : il
