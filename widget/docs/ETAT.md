@@ -267,6 +267,44 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Rendre la règle de répartition paramétrable plutôt que d'attendre l'arbitrage *(Youssef)*
+**Proposition de Youssef :** coder les trois hypothèses de répartition du coût d'une feuille
+partagée, les rendre sélectionnables dans l'Administration, et laisser le client choisir. On avance
+sans attendre, et l'application devient revendable avec une autre politique de prix.
+
+**L'idée est bonne, et la plomberie est déjà là.** `parametres.ts` lit n'importe quel code
+`APP_<NOM>` de `Taux_Calcul` de façon générique (`t.code.match(/^APP_([A-Z0-9_]+)$/)`), et
+`PopupAdministration` a déjà ses sections et ses cartes. Ajouter `APP_REPARTITION_MIXTE` ne demande
+aucune plomberie : une ligne dans `Taux_Calcul`, un branchement dans le chiffrage. C'est le même
+patron que `APP_SEUIL_DOUBLE_CHECK`.
+
+**Mais la répartition n'est qu'un des trois morceaux, et c'est le plus petit.**
+
+| Morceau | Est-ce une hypothèse ? | Effort |
+|---|---|---|
+| **Le placement** — quelles pièces sur quelle feuille, et comment disposées | **Non.** Un algorithme qui doit exister | moyen à grand |
+| **Les quantités qui ne tombent pas juste** — 500 de A, 250 de B : régime mixte puis régime solo | **Non.** Une mécanique à modéliser | moyen, et il touche la grille des prix |
+| **La répartition du coût** — surface, poses, ou pièce principale | **Oui.** Les trois hypothèses de Youssef | petit, une fois le reste fait |
+
+**La question qui peut réduire le chantier de moitié, et elle est pour Roberto :** *est-ce qu'on
+groupe en **bandes** ou librement ?* Si l'atelier divise la feuille en bandes — une bande par type
+de pièce, chacune à son propre pas — alors `montage.ts` s'étend naturellement : `upParAxe` calcule
+déjà combien tiennent sur un axe, et une bande n'est que ça, restreint à une dimension. Si au
+contraire les pièces s'imbriquent librement, c'est un vrai placement 2D : un autre problème, et
+probablement pas ce que fait l'atelier.
+
+**Un piège à éviter, du même genre que ceux trouvés aujourd'hui.** Un paramètre qui change **le prix
+vu par le client** ne se comporte pas comme un seuil. S'il est seulement lu à l'affichage, le
+changer rechiffrerait en silence toutes les soumissions déjà envoyées. **L'hypothèse en vigueur doit
+être inscrite sur la soumission au moment de l'enregistrement**, comme `X!MONTAGEFORMAT` l'est déjà
+pour le format retenu, pour qu'une soumission rouverte se rechiffre comme elle a été vendue.
+
+**Et le prix de la revendabilité :** trois chemins de calcul vivants, c'est trois fois la surface de
+test. Le seul critère de validation de la refonte est l'exactitude, et `verif:s2` la tient. Chaque
+hypothèse doit y arriver avec ses propres cas de référence, pas seulement avec un sélecteur dans
+l'écran — sinon « revendable » veut dire « trois branches à moitié testées », ce qui vaut moins
+qu'une seule bien tenue.
+
 ### 25 nov. — Ce que les réponses de Roberto changent dans la soumission *(Youssef + Claude)*
 **Trois choses à écrire, deux qui tiennent avant demain, et une qui ne tient pas.** Détail des
 réponses dans l'entrée précédente.
