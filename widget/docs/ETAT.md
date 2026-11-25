@@ -166,7 +166,7 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
 ### 25 nov. — Le repliage est en ligne, et un contrôle montre les valeurs sans case *(Soufiane + Claude)*
-**En ligne sur `Soumission_essai`, build `2026-11-25 15:47 UTC`** (branche `refonte-soumission`).
+**En ligne sur `Soumission_essai`, build `2026-11-25 15:51 UTC`** (branche `refonte-soumission`, `064a241`).
 Relu dans Creator : 01 à 08 ouvertes, 09 et 10 fermées, cinq soumissions au même prix que l'écran
 actuel, et FC-940 à 62 723,50 $ tout replié comme tout ouvert. Un ajustement : la pastille de la
 section 06 ne s'allume plus hors sérigraphie, où son message n'existe pas.
