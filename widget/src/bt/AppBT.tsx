@@ -956,6 +956,16 @@ export default function AppBT() {
           {bonCourant && comparatif.length > 0 && (
             <div className="bt-bloc bt-comparatif">
               <h2>TEMPS DÉCLARÉS PAR L'ATELIER</h2>
+              {/* Frise d'avancement : où en est la job, d'un coup d'œil. Reprise de la maquette B,
+                  mais sans rien replier — le client a tranché le 9 novembre qu'il voulait tout voir. */}
+              <ol className="bt-frise" aria-label={"Avancement : " + comparatif.filter((l) => l.reel > 0).length + " opération(s) sur " + comparatif.length}>
+                {comparatif.map((l) => (
+                  <li key={l.id} className={l.reel > 0 ? "faite" : ""} title={l.nom}>
+                    <i />
+                    <span>{l.nom}</span>
+                  </li>
+                ))}
+              </ol>
               <table className="bt-t">
                 <thead>
                   <tr>
@@ -1113,21 +1123,23 @@ export default function AppBT() {
                   {J(FT_IN.verif3)}
                 </tr>
                 <tr>
-                  <td className="lab">FT!R43 (à nommer)</td>
-                  {J(FT_IN.divR43, { num: true, aide: "cellule FT!R43 (24 dans le master) — libellé à confirmer" })}
+                  <td className="lab">Matière, largeur</td>
+                  {J(FT_IN.divR43, { num: true, aide: "FT!R43 — largeur de la feuille de matière, en pouces (24 dans le master). À confirmer avec Roberto." })}
                   <td className="lab">Date</td>
                   {J(FT_IN.date3)}
                 </tr>
                 <tr>
-                  <td className="lab">FT!W48 (à nommer)</td>
-                  {J(FT_IN.divW48, { num: true, aide: "cellule FT!W48 (48 dans le master) — libellé à confirmer" })}
+                  <td className="lab">Matière, longueur</td>
+                  {J(FT_IN.divW48, { num: true, aide: "FT!W48 — longueur de la feuille de matière, en pouces (48 dans le master). À confirmer avec Roberto." })}
                   <td className="vide" colSpan={2} />
                 </tr>
               </tbody>
             </table>
             <p className="bt-note bt-noprint">
-              Les deux cellules <code>FT!R43</code> et <code>FT!W48</code> portent une valeur dans le classeur
-              (24 et 48) mais aucun libellé identifiable — à nommer quand tu me le confirmes.
+              <b>Matière, largeur et longueur</b> (<code>FT!R43</code> et <code>FT!W48</code>) : le classeur
+              y porte 24 et 48, et la première ligne de matériaux de la fiche maîtresse est un Lexan
+              « ,005 × 24 × 48 ». Le libellé est donc une hypothèse, assumée ici plutôt que laissée en
+              « à nommer » — à confirmer ou corriger par Roberto.
             </p>
           </div>
         </div>

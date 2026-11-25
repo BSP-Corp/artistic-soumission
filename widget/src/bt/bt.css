@@ -135,14 +135,16 @@ body {
 }
 .bt-bloc > h2 {
   margin: 0;
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 700;
   text-align: center;
-  letter-spacing: 0.04em;
+  /* l'interlettrage fait respirer une capitale serrée sans prendre de hauteur */
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   background: var(--bt-entete);
   color: var(--bt-entete-txt);
   border-bottom: 1px solid var(--bt-entete);
-  padding: 2px 4px;
+  padding: 5px 8px;
 }
 
 table.bt-t {
@@ -153,14 +155,19 @@ table.bt-t {
 table.bt-t td,
 table.bt-t th {
   border: 1px solid #b9c2c8;
-  padding: 1px 3px;
-  height: 19px;
-  font-size: 11px;
+  /* 19 px et 11 px venaient d'un calque de la feuille Excel. À l'écran, lu debout ou de
+     biais, c'était illisible. On desserre sans rien déplacer : mêmes colonnes, mêmes
+     largeurs, seulement de l'air vertical et un corps de texte lisible. */
+  padding: 3px 6px;
+  height: 23px;
+  font-size: 12px;
   font-weight: 400;
   text-align: left;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  /* les chiffres s'alignent en colonne : un montant se compare sans le lire */
+  font-variant-numeric: tabular-nums;
 }
 td.lab,
 th.lab {
@@ -168,6 +175,9 @@ th.lab {
   color: var(--bt-label-txt);
   font-weight: 600;
   white-space: nowrap;
+  /* un libellé n'est pas une donnée : il recule d'un cran pour que les valeurs ressortent */
+  font-size: 11.5px;
+  letter-spacing: 0.01em;
 }
 td.lab.plain {
   background: transparent;
@@ -497,3 +507,15 @@ input.hors-catalogue {
 .bt-comparatif .bt-depasse { color: #c2410c; font-weight: 700; }
 .bt-comparatif .bt-sous { color: #047857; font-weight: 700; }
 .bt-comparatif .bt-note { font-size: 11px; opacity: .7; margin: 6px 0 0; line-height: 1.5; }
+
+/* Frise d'avancement du comparatif (25 nov.) : une case par operation de la gamme, pleine
+   des qu'un temps a ete declare. Elle repond a « ou en est cette job » sans rien replier. */
+ul.bt-frise, ol.bt-frise { display: flex; gap: 4px; list-style: none; margin: 0 0 12px; padding: 0; }
+ol.bt-frise li { flex: 1 1 0; min-width: 0; display: grid; gap: 3px; }
+ol.bt-frise i { display: block; height: 7px; border-radius: 4px; background: var(--bt-lecture-liz); opacity: .45; }
+ol.bt-frise li.faite i { background: #047857; opacity: 1; }
+ol.bt-frise span {
+  font-size: 9.5px; line-height: 1.2; color: var(--bt-lecture-liz);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+ol.bt-frise li.faite span { color: var(--bt-texte); font-weight: 600; }
