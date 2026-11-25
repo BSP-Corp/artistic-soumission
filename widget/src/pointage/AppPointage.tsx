@@ -28,7 +28,6 @@ import {
   creerRessource,
   gammeDuBon,
   operationsAjoutables,
-  reelMin,
   referentielsExemple,
   pointagesExemple,
   minutesEcoulees,
@@ -87,6 +86,8 @@ export default function AppPointage() {
   const [recherche, setRecherche] = useState("");
   const [statutFiltre, setStatutFiltre] = useState(() => memoire(CLE_STATUT));
   const [dernierOperateur, setDernierOperateur] = useState(() => memoire(CLE_OPERATEUR));
+  /** Quand on a vu un pointage passer en pause, faute de `Pause_debut` côté Creator. */
+  const [pauseVue, setPauseVue] = useState<Record<string, number>>({});
 
   // ajout d'un opérateur absent de la liste
   const [ajoutOuvert, setAjoutOuvert] = useState(false);
@@ -117,6 +118,41 @@ export default function AppPointage() {
       setPret(true);
     })();
   }, [rafraichir]);
+
+  // Le workflow Creator est censé poser `Pause_debut` quand le statut passe en pause. Tant
+  // qu'il ne le fait pas, le compteur continuerait de courir alors que le travail est arrêté.
+  // On retient donc nous-mêmes l'instant où on voit la pause : le chrono se fige à l'écran,
+  // même si la durée exacte reste celle que Creator calculera.
+  useEffect(() => {
+    const sansDebut = pointages.filter(
+      (p) => p.statut === "En pause" && !p.pauseDebut && !pauseVue[p.id],
+    );
+    if (!sansDebut.length) return;
+    setPauseVue((v) => {
+      const n = { ...v };
+      for (const p of sansDebut) n[p.id] = Date.now();
+      return n;
+    });
+  }, [pointages, pauseVue]);
+
+  /** L'instant auquel lire un pointage : maintenant, ou le début de sa pause. */
+  const instantDe = useCallback(
+    (p: Pointage) => {
+      if (p.statut !== "En pause") return maintenant;
+      const t = p.pauseDebut?.getTime() ?? pauseVue[p.id];
+      return t ? new Date(t) : maintenant;
+    },
+    [maintenant, pauseVue],
+  );
+
+  /** Le temps déclaré sur une opération, chaque pointage lu à son propre instant. */
+  const reelDe = useCallback(
+    (bonId: string, opId: string) =>
+      pointages
+        .filter((p) => p.btId === bonId && p.operationId === opId)
+        .reduce((somme, p) => somme + minutesEcoulees(p, instantDe(p)), 0),
+    [pointages, instantDe],
+  );
 
   // Un seul battement pour tous les chronos de la page.
   useEffect(() => {
@@ -364,7 +400,7 @@ export default function AppPointage() {
             return (
               <div key={p.id} className={"pt-encours" + (pause ? " pt-pause" : "")}>
                 <div className="pt-encours-qui">{p.ressourceNom || "sans nom"}</div>
-                <div className="pt-encours-temps">{dureeLisible(minutesEcoulees(p, maintenant))}</div>
+                <div className="pt-encours-temps">{dureeLisible(minutesEcoulees(p, instantDe(p)))}</div>
                 <div className="pt-sous">
                   Début {heureLisible(p.punchIn)}
                   {p.pauseCumuleeMin > 0 && <> · pause {dureeLisible(p.pauseCumuleeMin)}</>}
@@ -513,7 +549,7 @@ export default function AppPointage() {
             return ps.length > 0 && ps.every((p) => p.statut === "Termine");
           }).length;
           const ecart = gamme.reduce((s, g) => {
-            const r = reelMin(bon.id, g.operation.id, pointages, maintenant);
+            const r = reelDe(bon.id, g.operation.id);
             return s + (r > 0 && g.prevuMin > 0 ? r - g.prevuMin : 0);
           }, 0);
 
@@ -547,14 +583,15 @@ export default function AppPointage() {
                     (p) => p.statut === "En cours" || p.statut === "En pause",
                   );
                   const fait = ps.length > 0 && !ouverts.length;
-                  const reel = reelMin(bon.id, op.id, pointages, maintenant);
-                  const etat = ouverts.length ? "cours" : fait ? "fait" : "afaire";
+                  const enPause = ouverts.length > 0 && ouverts.every((p) => p.statut === "En pause");
+                  const reel = reelDe(bon.id, op.id);
+                  const etat = ouverts.length ? (enPause ? "pause" : "cours") : fait ? "fait" : "afaire";
                   const retard = reel > 0 && prevuMin > 0 && reel > prevuMin;
 
                   let detail: string;
                   if (ouverts.length) {
                     const qui = ouverts.map((p) => p.ressourceNom || "?").join(", ");
-                    detail = "▶ " + qui + " · " + dureeLisible(reel);
+                    detail = (enPause ? "⏸ " : "▶ ") + qui + " · " + dureeLisible(reel);
                   } else if (fait) {
                     detail = prevuMin > 0
                       ? dureeCourte(reel) + " / " + dureeCourte(prevuMin)
