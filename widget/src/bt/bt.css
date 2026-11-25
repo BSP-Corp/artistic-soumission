@@ -7,33 +7,36 @@
    ajoutees ici passent par box-shadow interne ou couleur, jamais par une bordure ou un
    contenu supplementaire qui modifierait la largeur ou la hauteur d'une cellule. */
 :root {
+  /* Palette alignee sur l'ecran de soumission — « charbon + orange », les couleurs de
+     Groupe Canva. Le bleu-gris d'origine venait de nulle part : il ne reprenait ni le logo
+     ni l'autre ecran, et donnait a la fiche un air de tableur d'entreprise. */
   --bt-fond: #ffffff;
-  --bt-texte: #1f2937;
-  --bt-trait: #aab4bf; /* grille de la fiche, adoucie */
+  --bt-texte: #1b1b1b;
+  --bt-trait: #ded7cb; /* grille de la fiche, en neutre chaud */
 
   /* repris de la soumission : lecture seule */
-  --bt-lecture: #f4f6f9;
-  --bt-lecture-liz: #94a3b8;
-  --bt-lecture-txt: #1f2937;
+  --bt-lecture: #f6f1ea;
+  --bt-lecture-liz: #cbab80;
+  --bt-lecture-txt: #1b1b1b;
 
   /* a remplir en atelier */
   --bt-saisie-fond: #ffffff;
-  --bt-saisie-bord: #cbd5e1;
-  --bt-accent: #2563eb;
+  --bt-saisie-bord: #e2d3bd;
+  --bt-accent: #e8730a;
 
   /* libelles et en-tetes de section */
-  --bt-label-txt: #475569;
-  --bt-entete: #334155;
-  --bt-entete-txt: #ffffff;
+  --bt-label-txt: #6b6660;
+  --bt-entete: #2a2520;
+  --bt-entete-txt: #f4f2ee;
 
   /* chrome de la page : barre d'outils, fond, boutons */
-  --bt-page-fond: #e9eef2;
+  --bt-page-fond: #f4f2ee;
   --bt-barre-fond: #ffffff;
-  --bt-barre-bord: #c8d2da;
-  --bt-btn-fond: #f4f8fa;
-  --bt-btn-bord: #9db3c2;
-  --bt-btn-survol: #e6eff4;
-  --bt-discret: #5a6b78;
+  --bt-barre-bord: #e6e0d6;
+  --bt-btn-fond: #faf8f5;
+  --bt-btn-bord: #d8d2c6;
+  --bt-btn-survol: #fff4e8;
+  --bt-discret: #6b6660;
 
   /* anciens noms conserves : du CSS plus bas y fait encore reference */
   --bt-bleu: var(--bt-lecture);
@@ -120,7 +123,12 @@ body {
 
 .bt-grille {
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  /* Un bloc finit ou finit son contenu : sans ça, le plus haut de la rangee imposait sa
+     hauteur a tous, et les courts se remplissaient de blanc. C'etait la cause du « blanc a
+     droite, blanc a gauche ». « dense » referme en prime les trous laisses par un bloc absent. */
+  align-items: start;
+  grid-auto-flow: row dense;
 }
 .bt-grille.c2 {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -141,10 +149,12 @@ body {
   /* l'interlettrage fait respirer une capitale serrée sans prendre de hauteur */
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  background: var(--bt-entete);
-  color: var(--bt-entete-txt);
-  border-bottom: 1px solid var(--bt-entete);
-  padding: 5px 8px;
+  /* La barre pleine sur chaque bloc etait ce qui faisait « tableur ». Un filet orange et un
+     fond clair suffisent a nommer la section sans l'encadrer de noir. */
+  background: var(--bt-hdr, #f3ede4);
+  color: var(--bt-texte);
+  border-bottom: 2px solid var(--bt-accent);
+  padding: 6px 10px;
 }
 
 table.bt-t {
