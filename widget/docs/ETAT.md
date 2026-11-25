@@ -267,6 +267,34 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le cycle complet tourne dans Creator, et la pause y est comptée comme du travail *(Youssef)*
+**Cycle éprouvé sur `Pointage_essai`, sur un vrai enregistrement**, opération « Préparation des
+encres (coloriste) » du bon BT-1000 (BSP) :
+
+| Étape | Ce que l'écran a montré |
+|---|---|
+| Démarrage | pastille **verte**, `▶ Test bsp · 0 min 03 s`, chrono qui tourne |
+| Pause | pastille **ambre**, `⏸ Test bsp · 1 min 04 s`, **chrono figé** |
+| Fin | pastille **grise**, `2 min · sans estimation`, avancement 1 / 6 → **2 / 6** |
+
+**Ce qui est validé :** l'écriture dans Creator fonctionne de bout en bout, le correctif de la pause
+se comporte en production exactement comme au banc, et l'avancement de la job suit. Le tableau
+d'atelier est opérationnel.
+
+**Ce qui est confirmé par la mesure :** le travail réel a duré **une minute environ** — le chrono
+s'est figé à 1 min 04 s. La pause a duré une minute de plus. **Creator a enregistré 2 min.**
+
+Autrement dit, `Duree_reelle_min` vaut le **temps écoulé**, pas le **temps de travail** : la pause
+est comptée comme de la production. C'est la confirmation chiffrée de ce qu'on soupçonnait — il
+manque bien les trois blocs décrits dans `pointage-workflow-pause.md`.
+
+**L'écart de la job n'a pas bougé** (−32 min), ce qui est juste : « Préparation des encres » n'a pas
+d'estimation, donc elle ne peut contribuer à aucun écart. Le comportement attendu.
+
+**À noter pour la suite :** tant que ce workflow n'est pas écrit, tout temps déclaré sur une
+opération mise en pause est surévalué. Cela vaut pour le tableau d'atelier comme pour le futur
+comparatif du bon de travail — les deux lisent la même durée.
+
 ### 25 nov. — La pause ne faisait rien : un défaut à moi, et un manque côté Creator *(Youssef + Claude)*
 **Youssef, en éprouvant le cycle complet sur `Pointage_essai` :** *« quand j'appuie sur le bouton
 pause, il ne s'est rien passé, le compteur a continué »*. Deux causes, une de chaque côté.
