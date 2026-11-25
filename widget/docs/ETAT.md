@@ -267,6 +267,36 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Qui fait quoi : deux pistes, aucun fichier en commun *(Youssef + Claude)*
+**Question de Youssef :** le tableau d'atelier et le bloc comparatif touchent le pointage et le bon
+de travail — est-ce que c'est encore à Soufiane, ou à nous ?
+
+**À nous.** Pas parce qu'il ne saurait pas, mais parce que **les deux pistes ne partagent aucun
+fichier** et qu'il a déjà le morceau le plus lourd du projet.
+
+| | Soufiane | Nous |
+|---|---|---|
+| **Widget** | `soumission2` (la refonte) | `pointage` et `bontravail` |
+| **Fichiers** | `src/s2/`, `src/lib/controles.ts`, `src/lib/modele.ts` | `src/pointage/`, `src/bt/`, `src/services/pointageService.ts`, `src/services/bonTravailService.ts` |
+| **En cours** | le montage mixte, le prix minimum, le suffixe R1/R2, les quatre champs 1-ou-vide, « Gâche » → « Perte » | le tableau d'atelier, le bloc comparatif dans le bon de travail |
+| **Déploiement** | `pack:s2`, par Soufiane | `pack:pointage` et `pack:bt`, par Youssef |
+
+**Trois raisons.**
+1. **Le montage mixte est le plus gros morceau du projet**, et c'est le seul avec une échéance
+   client. Lui ajouter le pointage, c'est garantir que ni l'un ni l'autre n'avance.
+2. **Aucun fichier n'est partagé.** Deux widgets Creator distincts, deux déploiements distincts.
+   On peut travailler en parallèle sans se marcher dessus, ce qui n'était pas vrai du repliage.
+3. **Youssef déploie lui-même** les widgets `pointage` et `bontravail` : un `pack:*` et un
+   téléversement dans Paramètres → Widgets. Notre piste n'a donc aucune dépendance à Soufiane.
+
+**La seule règle à tenir :** si l'un de nous doit toucher `src/lib/` ou un service de l'autre, il le
+dit ici avant. C'est le seul endroit où les deux pistes peuvent se croiser.
+
+**Ce que Soufiane a poussé aujourd'hui**, pour mémoire : la fusion du repliage (`155dc8d`), la
+pastille de la section 06 restreinte à la sérigraphie (`ef76c44`), le contrôle des valeurs sans case
+avec leur montant (`5ac99af`) et leur remontée au sommaire (`064a241`). Il n'a pas encore vu les
+réponses de Roberto ni le plan du montage mixte — ils sont arrivés après sa dernière poussée.
+
 ### 25 nov. — La gamme des 16 opérations, et ce qu'elle débloque *(Youssef + Claude)*
 Youssef a exporté `Operations_Liste`. **Les cinq codes attendus par le semis y sont tous** — `SOIE`,
 `IMPR`, `NUM`, `DEC_PLAT`, `DEC_ZUND`. La cause de la grille vide n'est donc pas là : il reste le
