@@ -4,7 +4,7 @@
 > courriels entre nous. Chacun le met à jour **par un commit**, pas par un message : ce qui n'est
 > pas ici n'existe pas, et personne n'a à demander « où on en est ».
 >
-> Mis à jour en dernier : **25 novembre 2026** — BSP.
+> Mis à jour en dernier : **25 novembre 2026** — Soufiane.
 
 ---
 
@@ -14,7 +14,7 @@
 > qui en sort, dans l'ordre où ça presse. Le détail de chaque point est dans le Journal, plus bas.
 > **La rencontre client est jeudi 13 h.**
 
-**1. Déployer le repliage des sections.** Fait et testé : branche `repliage-sections`, commit
+**1. Déployer le repliage des sections.** ✅ *En ligne (Soufiane, 25 nov.), voir le Journal.* Fait et testé : branche `repliage-sections`, commit
 `4eb766b`, partie de `refonte-soumission`. Il reste à fusionner, `npm run pack:s2`, et téléverser
 dans Creator — c'est la seule étape qu'on ne pouvait pas faire. Les dix sections se replient, 01 à
 08 ouvertes par défaut, et une section repliée résume son contenu sur sa ligne de titre. `build:s2`
@@ -24,7 +24,8 @@ et `verif:s2` passent. Ne touche que `s2/AppS2.tsx` et `s2/s2.css`.
 écrans donnent **534,32 $ de coût, 667,90 $ de total, 13,36 $ l'unité et 5 h 47**, au cent et à la
 minute. Rien à corriger.
 
-**3. Des champs manquent au nouvel écran, et leur absence est silencieuse.** Trois lignes de platine
+**3. Des champs manquent au nouvel écran, et leur absence est silencieuse.** ✅ *Contrôle en ligne
+(Soufiane, 25 nov.). À corriger ici : le prix n'est pas recalculé sans eux, voir le Journal.* Trois lignes de platine
 (adhésif, kiss-cut, embossage), six opérations de finition (protecteur fenêtre, slit, assemblage,
 décorticage, vérification, emballage), deux champs de perte (`S!Y22`, `S!Z22`). Une soumission
 existante qui les porte est rechiffrée sans elles, sans un mot.
@@ -163,6 +164,33 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 ## Journal
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
+
+### 25 nov. — Le repliage est en ligne, et un contrôle montre les valeurs sans case *(Soufiane + Claude)*
+**En ligne sur `Soumission_essai`, build `2026-11-25 15:47 UTC`** (branche `refonte-soumission`).
+Relu dans Creator : 01 à 08 ouvertes, 09 et 10 fermées, cinq soumissions au même prix que l'écran
+actuel, et FC-940 à 62 723,50 $ tout replié comme tout ouvert. Un ajustement : la pastille de la
+section 06 ne s'allume plus hors sérigraphie, où son message n'existe pas.
+
+**Point 3, une correction : rien n'est perdu à la réouverture.** Une soumission rouverte garde toutes
+ses cellules et le moteur les chiffre. Mesuré sur banc : les 47 soumissions chiffrées, plus les onze
+champs cités ajoutés un par un à FC-940, donnent le même coût et le même total sur les deux écrans
+(deux autres sont masquées « à vérifier » des deux côtés). Le défaut réel : ces valeurs comptent sans
+qu'on les voie ni qu'on puisse les changer, et une fiche neuve ne peut pas les saisir.
+
+**Le contrôle général est fait** (`s2/caches.ts`). Il compare les cellules de la soumission à celles
+affichées dans la page, sans liste à tenir à jour, et donne ce que chacune pèse dans le total. Sept
+des 49 soumissions en portent : Zünd adhésif et cut-out, protecteur, slit, multi-up, over laminating,
+premask, Xtra 1 (3 202,26 $ sur une), sous-contrat. Les choix de machine (Zünd, platine…) sont
+signalés sans montant. Limite : contrôle en sérigraphie seulement, sur la pièce 1.
+« Protecteur fenêtre » à 1, seul, ne change pas le prix, sur aucun des deux écrans.
+
+**À savoir :** la vérification et l'emballage sont comptés d'office sur toute fiche neuve (687,50 $ et
+343,75 $ sur FC-940, prix du banc) sans case à l'écran. C'est maintenant écrit au sommaire.
+
+**Point 7 : le bouton existe déjà, c'est « Ouvrir ».** Il reprend une soumission de l'écran actuel avec
+tous ses réglages, en copie ; l'originale reste intacte. Les huit réglages à la main étaient évitables.
+
+**Pas touchés, comme convenu pour vendredi :** 4, 5, 6 et 8. BT-1013 et BT-1014 ne sont pas supprimés.
 
 ### 24 nov. — L'alerte est corrigée ; deux choses à confirmer *(Youssef + Claude)*
 **Le correctif de l'adhésif est complet et fusionné** (`b3fb839`, puis `d1a5ab1`). La note suit
