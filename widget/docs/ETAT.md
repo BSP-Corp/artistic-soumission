@@ -27,7 +27,12 @@ Ce qu'il faut en retenir pour demain :
 - **Montage mixte autorisé pour les pièces pleines, interdit dès qu'il y a une fenêtre.**
   ⚠️ **L'hypothèse de la refonte est donc fausse** : elle chiffre les pièces comme s'imprimant
   toujours séparément. Ce bloc est à refaire — c'est un chantier, pas une correction, et ce n'est
-  pas pour demain.
+  pas pour demain — les deux questions de **chiffrage** restent sans réponse (comment répartir le
+  coût d'une feuille partagée, et que faire quand les quantités ne tombent pas juste).
+
+→ **Les demandes précises, chiffrées en effort, sont dans le Journal** : deux petits travaux pour ce
+soir (prix minimum, suffixe de révision), un affichage d'éligibilité livrable demain, et le montage
+mixte lui-même mis en attente des deux arbitrages.
 
 **1. Le repliage des sections.** ✅ **Fait et en ligne** — Soufiane a fusionné, construit et
 téléversé le 25 novembre, build `2026-11-25 15:47 UTC`. Plus rien à faire ici. Écrit sur la branche
@@ -261,6 +266,57 @@ valeur > 1, mais il arrive après coup : il rattrape l'erreur au lieu de l'empê
 multiplie, une job qui demande deux passes ne peut plus le dire, et une soumission rouverte qui
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
+
+### 25 nov. — Ce que les réponses de Roberto changent dans la soumission *(Youssef + Claude)*
+**Trois choses à écrire, deux qui tiennent avant demain, et une qui ne tient pas.** Détail des
+réponses dans l'entrée précédente.
+
+#### Pour ce soir, si tu peux — petit et sans risque
+**1. Le prix minimum de commande : 250 $.** Il n'existe nulle part dans le code. Un contrôle au même
+endroit que les autres (`lib/controles.ts`), de type confirmation plutôt que bloquant : *« cette
+soumission est sous le minimum de commande de 250 $ »*. Paramétrable comme le seuil de double-check,
+pour qu'on n'ait plus à redéployer quand le chiffre bouge — `APP_PRIX_MINIMUM` dans `Taux_Calcul`.
+
+**2. Les révisions : R1, R2, R3…** à la fin de la séquence, donc `S-2026-0000R1`. Roberto n'a pas
+confirmé explicitement le format `S-2026-0000` lui-même, seulement le suffixe ; on le lui fait dire
+en une phrase à la rencontre. Écris le suffixe, laisse la séquence telle qu'elle est.
+
+**3. Rien à faire pour le seuil de 3 000 $ ni pour les taux.** Le seuil est le paramètre
+`APP_SEUIL_DOUBLE_CHECK` (4 000 → 3 000), une saisie dans Creator que Youssef fait lui-même. Les
+taux du classeur sont validés par la production : il n'y a qu'à cesser de dire qu'ils sont
+provisoires.
+
+#### Le montage mixte — débloqué, mais pas pour demain, et voici pourquoi
+Roberto a répondu à la question de **production** (« peut-on les monter ensemble ? » — oui, sauf
+fenêtre). Il n'a pas répondu aux deux questions de **chiffrage**, qui sont celles dont la soumission
+a besoin :
+
+1. **Comment se répartit le coût d'une feuille partagée ?** Une feuille porte 3 pièces A et 5 pièces
+   B. La grille affiche un prix *par pièce*. Au prorata de la surface, au prorata du nombre de
+   poses, ou la feuille appartient-elle à la pièce principale ? Chaque réponse donne un prix
+   différent **au client**. C'est un arbitrage de Philippe, pas une ligne de code.
+2. **Que fait-on quand les quantités ne tombent pas juste ?** 500 de A et 250 de B : au bout de
+   250 feuilles, B est finie et A continue seule. Deux régimes, mixte puis solo — et la grille a
+   cinq paliers par pièce, chacun avec son propre mélange.
+
+**Et une contrainte technique à ne pas sous-estimer.** `lib/montage.ts` calcule une **grille
+régulière** : `upHorizontal × upVertical` d'un seul rectangle répété, en inversant la formule
+`FT!AF39` du classeur. « 3 de A et 5 de B sur une feuille » ne s'écrit pas comme ça — c'est un
+placement de rectangles différents, un autre algorithme, pas un paramètre de plus.
+
+**Le vrai risque de précipiter.** Le seul critère de validation de la refonte à ce jour, c'est
+*« les mêmes prix que l'écran actuel, au cent »* — démontré aujourd'hui sur la job de Youssef. Le
+montage mixte produit volontairement des prix **différents**. Le livrer à moitié demain détruirait
+la seule preuve qu'on a.
+
+#### Ce qui, lui, est livrable demain et montre qu'on a compris
+**Afficher l'éligibilité, sans toucher aux prix.** Dans le bloc des pièces multiples : marquer
+chaque pièce « montage mixte possible » ou « feuilles séparées — fenêtre », selon la règle de
+Roberto (découpes intérieures `S!E39-41` « Cut O », ou protecteur fenêtre `S!E27`). Le chiffrage
+reste en feuilles séparées et on le dit.
+
+Ça prouve que la réponse est arrivée et comprise, ça met la règle sous les yeux de Roberto pour
+qu'il la corrige si on l'a mal lue, et ça n'engage aucun prix.
 
 ### 25 nov. — Roberto répond aux quatre questions *(Youssef, courriel de Roberto)*
 **Les quatre décisions attendues depuis le 20 novembre sont prises.** Réponses reçues par courriel,
