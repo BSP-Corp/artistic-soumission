@@ -267,6 +267,56 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov., au soir — Ce qui reste, par propriétaire *(Youssef + Claude)*
+**La recherche dans la liste des bons est faite** (`6c8321a`) : un champ filtre sur le n° de bon, le
+client, le n° de pièce, le statut et le n° de soumission, et l'entête dit combien correspondent.
+
+Voici l'inventaire complet au soir du 25, puisque la question est posée.
+
+#### Pour Soufiane — la soumission
+| | Quoi | Taille |
+|---|---|---|
+| ☐ | **Prix minimum 250 $**, en contrôle paramétrable (`APP_PRIX_MINIMUM`) | petit |
+| ☐ | **Suffixe de révision R1, R2** à la fin de la séquence | petit |
+| ☐ | **Quatre champs 1-ou-vide** → cases à cocher (séparateurs, recto/verso après, guillotine) | petit |
+| ☐ | **Adhésif laminé / registre** : quantité ou drapeau ? arbitrage, puis conséquence | arbitrage |
+| ☐ | **« Gâche » → « Perte »** | une ligne |
+| ☐ | **Bouton « reprendre cette soumission dans le nouvel écran »** | moyen |
+| ☐ | **Montage mixte** — plan écrit, deux paramètres, placement en bandes | **le gros** |
+| ☐ | **BT-1013 et BT-1014** à supprimer (rattachés à l'essai YDOUAA) | une minute |
+
+#### Pour nous — pointage et bon de travail
+| | Quoi | Taille |
+|---|---|---|
+| ☐ | **Vue de détail d'une job** dans le tableau d'atelier — ce que l'opérateur doit faire | moyen, **c'est la suite** |
+| ☐ | Instructions et Procédure qui réservent de la hauteur | petit |
+| ☐ | Drapeaux de découpe à ranger par famille | petit |
+| ☐ | Masquer un bloc présent mais vide | petit |
+| ☐ | **Redéployer le bon de travail en production**, une fois l'essai jugé | téléversement |
+
+#### Dans Creator — données et contraintes
+| | Quoi |
+|---|---|
+| ☐ | **`No_BT` sans contrainte d'unicité** → sept `BT-1000`. Nettoyer puis cocher « pas de doublons » |
+| ☐ | **BT-1018 annonce 268 h d'impression** contre 2 h 38 sur la même pièce — donnée aberrante à regarder |
+| ☐ | Confirmer que `APP_SEUIL_DOUBLE_CHECK` lit bien **3000** et non 4000 |
+
+#### À demander au client
+| | Quoi | À qui |
+|---|---|---|
+| ☐ | **Qui approuve** au-delà de 3 000 $ | Philippe |
+| ☐ | Confirmer le format **S-2026-0000** | Roberto |
+| ☐ | « Fenêtre » = découpe intérieure ? | Roberto |
+| ☐ | **Matière largeur / longueur** (`FT!R43`, `FT!W48`) — le libellé est maintenant à l'écran | Roberto |
+| ☐ | Groupe-t-on **en bandes ou librement** ? | Roberto |
+| ☐ | Comment se **répartit le coût d'une feuille partagée** | Philippe |
+| ☐ | Les deux feuilles produit et les machines numériques | Roberto, *« je te reviens avec les specs »* |
+
+#### Et le document remis au client
+Il porte deux choses périmées : la réserve sur les taux (**levée** — Roberto les a validés) et le
+comparatif estimé / réalisé annoncé comme « prochain chantier » (**il tourne**). À corriger avant de
+le remontrer.
+
 ### 25 nov. — Le décalage venait de la grille elle-même *(Youssef + Claude)*
 **Youssef, après la palette : *« toujours le même problème, toujours décalé »*.** Il avait raison,
 et j'avais traité deux symptômes avant d'atteindre la cause.
