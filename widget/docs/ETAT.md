@@ -158,12 +158,28 @@ le reste en silence. Boucher les trous un par un ne suffira pas ; il faut le con
 proposé plus haut, qui compare les cellules d'une soumission rouverte à celles que l'écran sait
 afficher.
 
-**Où en est la comparaison des deux écrans** (job d'essai : pièce 7 × 1,4, 2 couleurs, feuille
-8 × 9,5, 4 poses, platine coupe 1/4) : une fois la quantité (50), le facteur (25 %) et la gâche
-(10 %) alignés des deux côtés, il reste **194,68 $ de coût et 2 h 36 de temps** d'écart —
-339,64 $ / 3 h 11 dans le nouvel écran contre 534,32 $ / 5 h 47 dans l'actuel. Le facteur, lui,
-tombe juste des deux côtés. L'écart est donc entièrement dans le coût de revient, et le temps dit
-où chercher : c'est une opération longue qui manque ou qui se compte autrement. À suivre.
+**Résultat de l'essai 2 — les deux écrans tombent d'accord.** Job d'essai : pièce 7 × 1,4 po,
+2 couleurs, feuille 8 × 9,5, 4 poses, platine coupe 1/4, séparateurs 1/1, ajustement additionnel 5,
+encre 100 %, gâche 10 %, facteur 25 %, quantité 50.
+
+| | Écran actuel | Nouvel écran |
+|---|---|---|
+| Temps | 5 h 47 | **5 h 47** |
+| Coût de revient | 534,32 $ | 544,32 $ |
+| Total | 667,90 $ | 680,40 $ |
+
+**Le temps est identique à la minute.** C'est la sortie de plusieurs dizaines de formules — presse,
+mise en train, roulement, découpe, finition — et il ne tombe pas juste par hasard. Le coût diffère
+de **exactement 10,00 $**, et le total de 12,50 $, soit 10,00 × 1,25 : un montant fixe, pas une
+dérive proportionnelle. Suspect : le **transport** (`S!E51`), que le nouvel écran met à 30 $ — le
+défaut demandé par Artistic le 26 octobre — et que l'écran actuel porte probablement à 20 $. À
+confirmer, mais l'essai le plus important du protocole est pour l'essentiel passé.
+
+**Tous les écarts trouvés en chemin venaient de la saisie, jamais du calcul** : quantité, facteur,
+gâche, ligne de platine, séparateurs, ajustement additionnel, couverture d'encre. Rassurant sur le
+moteur, instructif sur l'écran — il a fallu aligner sept réglages à la main pour reproduire une
+seule job, donc sept occasions de se tromper. Un bouton « reprendre cette soumission dans le nouvel
+écran » vaudrait mieux que n'importe quelle consigne écrite.
 
 ### 25 nov. — Essai : la gâche porte deux noms, et deux pertes manquent *(Youssef + Claude)*
 **Youssef, qui connaît le système, n'a pas trouvé où saisir la perte dans le nouvel écran.** Elle y
