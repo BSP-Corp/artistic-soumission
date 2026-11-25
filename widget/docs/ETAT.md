@@ -132,6 +132,39 @@ Christian), sur l'avancement et sur le partage du travail avec Jose, qui monte d
 son côté. Un état du projet leur part aujourd'hui. Rien à préparer, mais le contexte explique
 pourquoi les deux points ci-dessus pressent.
 
+### 25 nov. — Essai : il ne reste qu'une seule ligne de finition dans le nouvel écran *(Youssef + Claude)*
+**Troisième trou du même genre, trouvé en cherchant l'origine d'un écart de prix.** La section 07 du
+nouvel écran n'expose qu'une seule opération de finition, la **guillotine**. L'écran actuel en a
+sept. Relevé cellule par cellule dans `s2/` :
+
+| Opération | Cellule | Écran actuel | Nouvel écran |
+|---|---|---|---|
+| Guillotine | S!E29 | ✓ | ✓ |
+| Protecteur fenêtre | S!E27 | ✓ | **absent** |
+| Slit | S!E28 | ✓ | **absent** |
+| Assemblage | S!E30 | ✓ | **absent** |
+| Décorticage | S!E43 | ✓ | **absent** |
+| Vérification / comptage | S!E44 | ✓ | **absent** |
+| Emballage | S!E49 | ✓ | **absent** |
+
+Les valeurs par défaut restent appliquées — l'emballage, par exemple, est à 1 d'office. Donc le
+prix n'est pas faux sur une job qui n'a aucune de ces opérations. Mais **une job qui décortique,
+assemble ou compte ne peut pas le dire**, et une soumission existante qui les porte sera rechiffrée
+sans elles.
+
+**C'est le troisième cas identique en deux jours** : trois lignes de platine, deux champs de perte,
+six opérations de finition. Le motif ne change pas — le nouvel écran couvre le cas courant et perd
+le reste en silence. Boucher les trous un par un ne suffira pas ; il faut le contrôle général
+proposé plus haut, qui compare les cellules d'une soumission rouverte à celles que l'écran sait
+afficher.
+
+**Où en est la comparaison des deux écrans** (job d'essai : pièce 7 × 1,4, 2 couleurs, feuille
+8 × 9,5, 4 poses, platine coupe 1/4) : une fois la quantité (50), le facteur (25 %) et la gâche
+(10 %) alignés des deux côtés, il reste **194,68 $ de coût et 2 h 36 de temps** d'écart —
+339,64 $ / 3 h 11 dans le nouvel écran contre 534,32 $ / 5 h 47 dans l'actuel. Le facteur, lui,
+tombe juste des deux côtés. L'écart est donc entièrement dans le coût de revient, et le temps dit
+où chercher : c'est une opération longue qui manque ou qui se compte autrement. À suivre.
+
 ### 25 nov. — Essai : la gâche porte deux noms, et deux pertes manquent *(Youssef + Claude)*
 **Youssef, qui connaît le système, n'a pas trouvé où saisir la perte dans le nouvel écran.** Elle y
 est : c'est le champ **« Gâche »**, à côté du bouton « + Ajouter un palier », section 04. L'écran
