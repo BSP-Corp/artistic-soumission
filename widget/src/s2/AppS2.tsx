@@ -860,9 +860,6 @@ export default function AppS2() {
           </ul>
         </div>
       )}
-      {cachesSansEffet.length > 0 && (
-        <p className="s2-note s2-sanseffet">Aussi conservé, sans effet sur le total : {cachesSansEffet.map((x) => `${x.libelle} (${x.detail})`).join(" · ")}</p>
-      )}
 
       <main className="s2-grille">
         <div className="s2-gauche">
@@ -1088,6 +1085,7 @@ export default function AppS2() {
                 <dt>Prix unitaire{plusieurs ? ", pièce 1" : ""}</dt><dd>{masque(nombre3(unitaire) + " $")}</dd>
                 <dt>Prix unitaire US</dt><dd>{unitaireUs > 0 ? masque(nombre3(unitaireUs) + " $") : "aucun taux saisi"}</dd>
               </dl>
+              {cachesSansEffet.length ? <p className="s2-note s2-sanseffet">Conservé sans case ici, sans effet sur le total : {cachesSansEffet.map((x) => `${x.libelle} (${x.detail})`).join(" · ")}</p> : null}
               {doffice.length ? <p className="s2-note">Compté d'office dans le total, sans case ici : {doffice.map((x) => `${x.libelle.toLowerCase()} ${argent(x.montant)}`).join(", ")}.</p> : null}
               <div className="s2-champs">{N("Facteur", IN.facteur, { pct: true })}{N("Transport", IN.transport, { unite: "$" })}</div>
               {approbations.length && (prixVisible || !seri) ? <ul className="s2-liste">{approbations.map((x) => <li key={x} className="s2-alerte">{x}</li>)}</ul> : null}
