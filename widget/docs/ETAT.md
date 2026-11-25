@@ -132,6 +132,26 @@ Christian), sur l'avancement et sur le partage du travail avec Jose, qui monte d
 son côté. Un état du projet leur part aujourd'hui. Rien à préparer, mais le contexte explique
 pourquoi les deux points ci-dessus pressent.
 
+### 25 nov. — Essai : la gâche porte deux noms, et deux pertes manquent *(Youssef + Claude)*
+**Youssef, qui connaît le système, n'a pas trouvé où saisir la perte dans le nouvel écran.** Elle y
+est : c'est le champ **« Gâche »**, à côté du bouton « + Ajouter un palier », section 04. L'écran
+actuel l'appelle **« Perte »** et la place en haut, près de la quantité. Même cellule (`S!I2`), deux
+noms, deux endroits. Si le chargé de projet ne la trouve pas, personne ne la trouvera.
+
+À faire : reprendre le mot de l'écran actuel, « Perte ». Le vocabulaire d'Artistic prime sur le
+nôtre, et la refonte ne doit pas forcer à réapprendre des mots.
+
+**Plus sérieux : deux champs de perte n'existent pas dans le nouvel écran.** `perteMat` (S!Y22,
+« Perte matériaux ») et `perteAdh` (S!Z22, « Perte adhésif ») sont saisissables dans l'écran actuel
+et absents de la refonte. Leur défaut est zéro, donc une soumission neuve tombe juste — mais **une
+soumission existante qui les porte sera rechiffrée sans elles**, en silence, exactement comme les
+trois lignes de platine manquantes.
+
+C'est le même motif qui revient : le nouvel écran couvre le cas courant et perd les champs du cas
+particulier, sans jamais le dire. La question à trancher avec Soufiane n'est plus champ par champ —
+**il faut un contrôle qui compare les cellules d'une soumission rouverte à celles que l'écran sait
+afficher, et qui crie quand une valeur non nulle n'a pas de case.**
+
 ### 24 nov. — Essai de la refonte : la platine n'a qu'une paire au lieu de quatre *(Youssef + Claude)*
 **Relevé en saisissant une job de référence dans `Soumission_essai`.** La section 07 du nouvel écran
 offre **une seule paire** « Platine, matrices » / « Platine, poses ». L'écran actuel en a **quatre**,
