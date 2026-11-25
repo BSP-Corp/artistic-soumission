@@ -1,4 +1,12 @@
-# Le workflow de pause du pointage — marche à suivre
+# Le workflow de pause du pointage — spécification
+
+> ⚠️ **Périmé le 25 novembre au soir : il n'y a rien à appliquer.** L'export de l'application a
+> montré que `Pointage_Atelier_Success` fait déjà tout ce qui est décrit ici, y compris le cas
+> « terminer sans reprendre ». Mesuré sur BT-1001 : 3 min 10 s d'écoulé, 1,13 de pause,
+> **2,04 de durée réelle**.
+>
+> Ce document reste comme description de ce qui doit se passer, et comme plan d'essai. Les
+> consignes d'écriture ci-dessous ne s'appliquent pas.
 
 > **Pourquoi.** Le widget de pointage n'écrit qu'un `Statut`, par conception : les heures et les
 > durées sont posées par Creator. Aujourd'hui, le passage en pause n'est pas traité — une opération

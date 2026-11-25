@@ -267,6 +267,63 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — L'export de l'application tranche tout : le workflow est bon, c'est le semis qui manque *(Youssef + Claude)*
+**Youssef a exporté l'application** (`.ds`, lu hors dépôt — le dépôt est public). Quatre questions
+ouvertes se ferment d'un coup.
+
+#### 1. Le workflow de pause est complet et correct — rien à écrire
+`Pointage_Atelier_Success`, déclenché *on add or edit*. Son cœur :
+
+```deluge
+if(statut == "En pause") {
+    if(pauseDebut == null) { pointage.Pause_debut = maintenant; }
+}
+else if(pauseDebut != null) {
+    // Reprise ou fin : toute pause ouverte est refermée et comptabilisée.
+    pauseCumul = (pauseCumul + ((maintenant - pauseDebut)) / 60000.0).round(2);
+    pointage.Pause_cumulee_min = pauseCumul;
+    pointage.Pause_debut = null;
+}
+```
+
+**Le `else if` couvre la reprise *et* la fin** — donc le cas « terminer sans reprendre », que je
+croyais oublié, est traité. Et `Duree_reelle_min` déduit bien `pauseCumul`.
+
+**Mesuré sur le pointage de BT-1001 :** Punch in 13:14:30, Punch out 13:17:40, soit 3 min 10 s ;
+pause cumulée 1,13 ; durée réelle **2,04**. Les trois chiffres s'accordent au centième.
+
+→ **`pointage-workflow-pause.md` est inutile.** Il reste comme spécification de ce qui doit se
+passer, mais il n'y a rien à appliquer. Mon diagnostic initial était faux sur toute la ligne.
+
+#### 2. Le report vers le bon de travail existe aussi
+Le même workflow cherche, dans la grille `Temps_par_operation` du bon, la ligne qui porte
+l'opération, et y écrit le **cumul de tous les pointages terminés** du bon pour cette opération,
+plus l'écart. Plusieurs opérateurs ou plusieurs séances s'additionnent au lieu de s'écraser.
+
+Son commentaire dit lui-même pourquoi ça ne marche pas aujourd'hui :
+*« Si aucune ligne ne porte cette operation, on ne cree rien ici : Deluge ne sait pas rattacher une
+ligne a la grille. Les lignes d'un bon de travail sont posees a sa creation, par l'API. »*
+
+**Donc le seul maillon cassé est le semis**, et il est dans le widget de bon de travail — celui qui
+tourne encore sur un build du **20 octobre**. **Le redéployer suffit** : les bons créés ensuite
+auront leurs lignes, et la chaîne entière fonctionnera, report compris.
+
+#### 3. Le champ de la règle s'appelle `Regle_declenchement`
+Sans le « de ». La chaîne de secours du service a rattrapé le coup, d'où la gamme correcte à
+l'écran. Remis dans le bon ordre (`c527382`), les autres orthographes gardées en secours.
+
+#### 4. `No_BT` n'a aucune contrainte d'unicité
+```
+No_BT ( type = text   initial value = "BT-0001" )
+```
+Du texte simple. **Rien n'empêche deux bons de porter le même numéro** — d'où les sept `BT-1000`.
+Le widget prévoit pourtant une renumérotation en cas de collision, mais elle ne se déclenche que sur
+l'erreur d'unicité de Creator, qui n'arrive jamais.
+
+→ **Une case à cocher sur le champ `No_BT` du formulaire `bon_travail`** : « ne pas autoriser les
+doublons ». À faire avant la mise en production, et à faire précéder d'un nettoyage des doublons
+existants, sinon Creator refusera d'appliquer la contrainte.
+
 ### 25 nov. — Confirmé : le pointage n'écrit rien dans la grille du bon de travail *(Youssef)*
 **Cycle complet refait sur BT-1001**, un bon neuf — démarrer, pause, reprise, terminer. Le pointage
 est bien enregistré : le tableau d'atelier affiche *Fabrication des écrans (soie) · 2 min / 32 min*
