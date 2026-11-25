@@ -267,6 +267,54 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le vrai défaut du bon de travail : il réserve la place d'un papier *(Youssef + Claude)*
+**Youssef, en voyant le résultat : *« j'aime pas la présentation, les écrans sont éparpillés, du
+blanc à droite, du blanc à gauche »*.** Il a raison, et je dois le reconnaître : **j'ai fait une
+passe de typographie, pas de disposition.** Plus d'air, des chiffres alignés, des en-têtes qui
+respirent — mais la géométrie est restée celle du tableur.
+
+#### Le compte, sur BT-1019
+| Bloc | Cellules réservées | Remplies |
+|---|---|---|
+| Quantités / expéditions (`FT!T5-T11`, `X5-X11`) | **14** | 0 |
+| Couleurs (`FT!H23-32`, `J`, `R`) | **30** | 0 |
+| Matériaux (11 lignes × 2) | **22** | 4 |
+| | **66** | **4** |
+
+**Soixante-six cellules affichées pour quatre remplies.** Voilà le blanc à droite et à gauche :
+ce n'est pas une question d'espacement, c'est que l'écran réserve la place de ce qui *pourrait*
+exister.
+
+**Et c'est un héritage de papier.** Excel réserve sept lignes de quantités parce qu'une feuille
+imprimée ne peut pas grandir. Un écran, si. La fidélité au classeur nous a fait recopier une
+contrainte qui n'existe plus.
+
+#### Le principe à poser
+> **L'écran montre ce qui existe et propose d'en ajouter. Il ne réserve pas de place pour ce qui
+> pourrait exister.**
+
+C'est exactement ce que Youssef demande pour les quantités : *« plus une liste déroulante sur
+laquelle je pourrais sortir les échéances, ou la possibilité d'ajouter des quantités »*.
+
+#### Ce qui rend la chose sûre — et c'est le point important
+**Rien ne change dans le modèle.** Les cellules `FT!T5` à `T11` existent toujours, le moteur les
+lit toujours, le classeur reste intact. On ne touche qu'au **rendu** : afficher les lignes jusqu'à
+la dernière remplie, plus une vide, et un bouton qui en révèle une de plus jusqu'au maximum du
+classeur. « Ajouter » ne crée rien — ça dévoile la cellule suivante, qui était déjà là.
+
+La propriété sur laquelle tout le projet repose — *le classeur reproduit à l'identique* — n'est pas
+entamée.
+
+#### Le plan
+1. **Quantités et échéances** : 14 cellules → la liste de ce qui est saisi, plus « + une quantité ».
+2. **Couleurs** : 30 cellules → les couleurs choisies, plus le bouton « + Ajouter une couleur » qui
+   existe déjà. Aujourd'hui l'écran montre **les dix lignes vides ET le bouton** : le pire des deux.
+3. **Matériaux** : 22 cellules → les quatre lignes réelles, plus un bouton, et sans les trous entre
+   elles.
+4. **Rééquilibrer les colonnes** une fois les blocs rétrécis : le blanc disparaît de lui-même,
+   parce qu'il venait de hauteurs figées.
+5. **Instructions et Procédure** : de la hauteur à la demande, pas réservée d'avance.
+
 ### 25 nov. — Des tablettes à l'atelier, et plus de papier : A devient un écran *(Youssef)*
 **Fait de projet qui n'était écrit nulle part, et qui tranche la question posée plus haut.** Artistic
 prévoit d'**acheter des tablettes pour l'atelier**, pour que les opérateurs y voient ce qu'ils ont à
