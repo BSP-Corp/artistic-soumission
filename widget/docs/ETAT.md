@@ -267,6 +267,44 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le comparatif est en ligne, et trois maquettes pour refaire le bon de travail *(Youssef + Claude)*
+**Le bloc « TEMPS DÉCLARÉS PAR L'ATELIER » est déployé** sur `Bon_De_Travail_Essai` et affiche les
+pointages du bon ouvert. **Un défaut relevé au premier coup d'œil et corrigé** (`dfdee45`) : il
+annonçait « sans estimation » pour la fabrication des écrans alors que le bloc Temps affichait
+32 min deux colonnes plus loin. Les champs `Temps_*_Min` de l'enregistrement ne sont pas toujours
+lus ; le prévu vient maintenant des **cellules FT du moteur**, la même source que le bloc d'à côté.
+Les deux ne peuvent donc plus diverger.
+
+#### Les maquettes
+**Philippe avait demandé en rencontre si le bon de travail ne pouvait pas être refait.** Trois
+propositions, sur les données réelles de BT-1019 :
+`claude.ai/artifact/GKhEVru3a1KJJyi6amkjzb` (page privée), source dans
+`docs/maquettes-bon-travail/`.
+
+Le constat de départ : **l'écran actuel essaie d'être trois choses à la fois** — un formulaire de
+saisie, une consigne d'atelier et un relevé de ce qui s'est passé. Ces trois-là n'ont ni le même
+lecteur ni la même forme.
+
+| | Son lecteur | Le parti pris |
+|---|---|---|
+| **A · La fiche de production** | l'atelier, feuille en main | la job se lit **dans l'ordre du travail**, de la soie à l'expédition, une étape par ligne avec son temps prévu. S'imprime et se signe. |
+| **B · Le suivi de job** | chargé de projet, directeur de production | le bon devient **vivant** : avancement en frise, comparatif estimé/réel au centre, et le détail du classeur replié dessous. C'est la maison naturelle du bloc qu'on vient de brancher. |
+| **C · La feuille, en lisible** | ceux qui connaissent la FT | **rien ne change de place**, mais vraie typographie, colonnes alignées, et les cases à saisir distinguées de celles qui se calculent. Le moins risqué. |
+
+#### Ce qu'il faut trancher
+1. **Une feuille ou deux ?** A et B ne s'opposent pas : l'un s'imprime, l'autre se consulte. Les
+   faire tous les deux coûte moins cher que d'en faire un qui essaie d'être les deux.
+2. **Où se fait la saisie ?** Matrice n°, quantité produite, feuilles corrigées : au crayon sur la
+   feuille, ou à l'écran ? La réponse décide si A suffit.
+3. **Le bon s'imprime-t-il encore ?** Si oui, A n'est pas une option mais une nécessité : l'écran
+   actuel ne s'imprime pas lisiblement.
+4. **Que valent les opérations sans estimation ?** Le classeur n'en chiffre que cinq sur seize.
+   Tant que c'est le cas, le comparatif de B restera partiel.
+
+**Au passage, la maquette C nomme `FT!R43` et `FT!W48`** — 24 et 48, les dimensions de la feuille de
+Lexan. L'hypothèse est posée à l'écran plutôt que dans une note : Roberto la confirmera ou la
+corrigera en la voyant.
+
 ### 25 nov. — Le comparatif estimé / réalisé fonctionne de bout en bout *(Youssef)*
 **Pointage fait sur BT-1019 depuis `Pointage_essai`, puis bon rouvert dans Creator.** La grille
 s'est remplie toute seule :
