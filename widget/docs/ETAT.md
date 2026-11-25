@@ -267,6 +267,43 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le comparatif estimé / réalisé fonctionne de bout en bout *(Youssef)*
+**Pointage fait sur BT-1019 depuis `Pointage_essai`, puis bon rouvert dans Creator.** La grille
+s'est remplie toute seule :
+
+| Opération | Temps prévu | Temps réel | Écart |
+|---|---|---|---|
+| **Fabrication des écrans (soie)** | 32 | **1,07** | **−30,93** |
+| Impression sérigraphie | 157,94 | 0 | −157,94 |
+| Découpe platine | 52,38 | 0 | −52,38 |
+
+Et le tableau d'atelier dit la même chose : *1 / 6 · −31 min*, avec « soie · 1 min / 32 min ».
+
+**La chaîne complète tourne : la soumission estime, l'atelier déclare, le bon de travail compare.**
+Sans qu'une ligne de Deluge ait été écrite — tout existait déjà, il manquait un écran pour déclarer
+et un bon correctement semé.
+
+**C'est le chantier que le document remis au client annonce comme « le prochain ».** Il est fait,
+au sens du mécanisme. À corriger avant de remontrer ce document.
+
+#### Ce qui reste, exactement
+Trois choses, aucune n'est un obstacle de fond :
+
+1. **Redéployer le widget de bon de travail.** Les bons créés depuis cet écran — build du
+   20 octobre — naissent encore sans lignes. Le paquet est prêt, la marche à suivre est dans
+   `redeploiement-bon-travail.md`. Les bons créés depuis une soumission fonctionnent déjà.
+2. **Les opérations sans estimation n'ont nulle part où se poser.** Coloriste, contrôle qualité,
+   emballage : leur temps sera déclaré et n'apparaîtra pas dans la grille. Le bloc comparatif à
+   écrire lira donc les pointages, où tout est présent.
+3. **Aucun écran ne montre encore ce comparatif à un utilisateur.** Il n'est visible que dans le
+   formulaire Creator. C'est précisément le bloc à ajouter au bon de travail — et il a maintenant
+   des données réelles à afficher, ce qui n'était pas vrai il y a deux heures.
+
+#### Ce qu'on peut dire demain
+Que le comparatif estimé / réalisé n'est plus un projet : **il tourne sur une vraie job**, 1,07 min
+déclaré contre 32 estimé. Et que ce chiffre-là est ce qui permettra, à terme, de valider les temps
+de soumission d'Artistic avec les chiffres d'Artistic.
+
 ### 25 nov. — Trois lignes au bon de travail, six opérations à l'atelier *(Youssef + Claude)*
 **Question de Youssef :** pourquoi le bon de travail n'affiche que trois opérations alors que le
 tableau d'atelier en montre six pour la même job ?
