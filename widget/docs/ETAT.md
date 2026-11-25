@@ -267,6 +267,39 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Le semis fonctionne : c'est bien le build du bon de travail qui est en cause *(Youssef)*
+**Bon créé depuis `Soumission_essai`** (soumission S-2026-0002) → **BT-1019**, et sa grille
+« Temps par operation » porte **trois lignes, avant tout pointage** :
+
+| Opération | Temps prévu | Temps réel | Écart |
+|---|---|---|---|
+| Fabrication des écrans (soie) | 32 | 0 | −32 |
+| Impression sérigraphie | 157,94 | 0 | −157,94 |
+| Découpe platine | 52,38 | 0 | −52,38 |
+
+**L'hypothèse est confirmée.** Le semis marche dans le code actuel. Les bons sans lignes —
+BT-1000 à BT-1003 — ont été créés depuis l'écran de bon de travail, figé au **20 octobre**, qui ne
+sait pas encore le faire. **Le redéploiement décrit dans `redeploiement-bon-travail.md` est donc la
+bonne réponse, et la seule nécessaire.**
+
+Deux détails qui valent d'être notés :
+
+- **Les temps prévus arrivent au centième** — 157,94 et 52,38, pas 158 et 52. Le semis transporte la
+  valeur calculée, pas un arrondi. Le comparatif sera donc juste à la minute près sans rien perdre.
+- **Seules trois opérations sur six ont une ligne.** Coloriste, contrôle qualité et emballage n'en
+  ont pas, faute d'estimation — exactement ce que la gamme annonçait. Leur temps réel existera dans
+  les pointages mais n'aura rien à quoi se comparer. C'est la même limite, vue d'un autre angle :
+  **onze opérations sur seize se font sans être chiffrées.**
+
+#### Ce qui reste à éprouver, et c'est l'aboutissement
+Pointer sur BT-1019 depuis `Pointage_essai`, terminer, puis rouvrir le bon. Les colonnes
+**« Temps reel »** et **« Ecart »** doivent se remplir toutes seules — le workflow
+`Pointage_Atelier_Success` cumule tous les pointages terminés de l'opération et écrit le résultat
+dans la ligne.
+
+Si ça passe, **le comparatif estimé / réalisé fonctionne de bout en bout** : la soumission estime,
+l'atelier déclare, le bon de travail compare. Sans qu'on ait écrit une ligne de Deluge.
+
 ### 25 nov. — L'export de l'application tranche tout : le workflow est bon, c'est le semis qui manque *(Youssef + Claude)*
 **Youssef a exporté l'application** (`.ds`, lu hors dépôt — le dépôt est public). Quatre questions
 ouvertes se ferment d'un coup.
