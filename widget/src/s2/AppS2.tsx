@@ -918,7 +918,7 @@ export default function AppS2() {
             </>) : null}
           </Section>
 
-          <Section no="06" titre="Matériel et laminage" resume={resumes["06"]} alerte={!!adhesif && !toNum(s.saisie(adhesif.cellule))}>
+          <Section no="06" titre="Matériel et laminage" resume={resumes["06"]} alerte={seri && !!adhesif && !toNum(s.saisie(adhesif.cellule))}>
             {seri ? (<>
             <div className="s2-champs large">
               {MATERIAUX.map(([label, champ, cell]) => (
