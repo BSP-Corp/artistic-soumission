@@ -217,6 +217,38 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Prochain chantier : la déclaration des temps, trois maquettes *(Youssef + Claude)*
+**Youssef ouvre le chantier suivant :** le poste de pointage actuel « n'est pas beau », et il faut
+le refaire en pensant à l'atelier. Trois maquettes jouables ont été produites, à montrer jeudi, pour
+en choisir une.
+
+Elles ne se distinguent pas par leur apparence — c'est le **geste** qui change, et avec lui
+l'atelier qu'on suppose :
+
+| | Le geste | Où ça vit | Ce qu'on capture en plus |
+|---|---|---|---|
+| **A · Je pointe** | une job, une opération, démarrer ; l'écran est un gros chrono | une tablette par poste | la quantité, demandée au moment de terminer |
+| **B · Le tableau de l'atelier** | j'appuie sur l'opération que je commence, je dis qui je suis | un écran partagé au mur | l'avancement de chaque job, prévu contre réalisé en direct |
+| **C · La feuille de poste** | en fin de quart je tape mes durées au pavé numérique | n'importe où, après coup | les quantités **et les rebuts**, et rien n'est perdu si on oublie de pointer |
+
+**Ce qu'il faut trancher, et qui n'est pas une question de maquette :**
+1. **Temps mesuré ou temps déclaré ?** A et B mesurent, C fait confiance. Le comparatif estimé /
+   réalisé ne vaudra que ce que vaut cette décision.
+2. **Qui déclare la quantité produite ?** Sans elle on compare des heures à des heures ; avec elle
+   on compare des coûts unitaires, et c'est là que les temps de soumission se valident.
+3. **Que fait-on d'un pointage oublié ?** Un chrono qui tourne toute la nuit fausse tout.
+4. **Combien d'opérations un opérateur fait-il dans un quart ?** Deux longues ou quinze courtes —
+   la réponse départage A et C à elle seule. C'est une question pour Roberto.
+
+**Point technique, pour Soufiane.** `AppPointage.tsx` pose une règle explicite : *« le widget
+n'horodate RIEN : il envoie un changement de statut, le workflow Creator pose les heures »*.
+L'approche **C écrit des durées directement** — c'est un autre contrat avec Creator, pas une
+variante d'écran. À valider avant de la choisir.
+
+Les maquettes sont publiées comme page privée (`claude.ai/artifact/LGN9YNGUmkafr1JTcJhaSk`) et leur
+source est dans le dossier local `docs/maquettes-pointage/`. Elles tournent sur des données
+fictives ; les opérations, elles, sont celles de la gamme.
+
 ### 25 nov. — Le repliage est fait, sur la branche `repliage-sections` *(Youssef + Claude)*
 **Rien n'avait été poussé par Soufiane depuis le 24 novembre**, et Youssef a demandé qu'on avance
 sans attendre. C'est fait : commit `4eb766b` sur `repliage-sections`, partie de
