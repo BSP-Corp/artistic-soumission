@@ -201,13 +201,22 @@ export default function AppBT() {
   /** Une ligne par opération : celles qui ont une estimation, plus celles qu'on a déclarées.
    *  Ordonnées par la gamme, de la soie à l'emballage. */
   const comparatif = useMemo(() => {
-    const prevuParCode: [string, number][] = [
-      ["SOIE", toNum(bonCourant?.Temps_Soies_Min ?? 0)],
-      ["IMPR", toNum(bonCourant?.Temps_Impression_Min ?? 0)],
-      ["NUM", toNum(bonCourant?.Temps_Numerique_Min ?? 0)],
-      ["DEC_PLAT", toNum(bonCourant?.Temps_Decoupe_Min ?? 0)],
-      ["DEC_ZUND", toNum(bonCourant?.Temps_Zund_Min ?? 0)],
-    ];
+    // Le prévu se lit dans le MOTEUR, pas dans l'enregistrement du bon. C'est la même source
+    // que le bloc « Temps » affiché juste au-dessus, donc les deux ne peuvent pas diverger —
+    // et ça marche même quand le rapport n'expose pas les champs `Temps_*_Min`, ce qui était
+    // le cas au premier essai : le comparatif annonçait « sans estimation » pour une opération
+    // dont le bon affichait 32 min deux colonnes plus loin.
+    const CODE_PAR_TEMPS: Record<string, string> = {
+      soies: "SOIE",
+      impression: "IMPR",
+      numerique: "NUM",
+      decoupe: "DEC_PLAT",
+      zund: "DEC_ZUND",
+    };
+    const prevuParCode: [string, number][] = FT_TEMPS.map((x) => [
+      CODE_PAR_TEMPS[x.cle],
+      s.num(x.h) * 60 + s.num(x.m),
+    ]);
     const prevu = new Map(prevuParCode.filter(([, v]) => v > 0));
     const maintenant = new Date();
     const reelParOp = new Map<string, number>();
