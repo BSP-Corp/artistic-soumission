@@ -158,28 +158,35 @@ le reste en silence. Boucher les trous un par un ne suffira pas ; il faut le con
 proposé plus haut, qui compare les cellules d'une soumission rouverte à celles que l'écran sait
 afficher.
 
-**Résultat de l'essai 2 — les deux écrans tombent d'accord.** Job d'essai : pièce 7 × 1,4 po,
-2 couleurs, feuille 8 × 9,5, 4 poses, platine coupe 1/4, séparateurs 1/1, ajustement additionnel 5,
-encre 100 %, gâche 10 %, facteur 25 %, quantité 50.
+**Résultat de l'essai 2 — les deux écrans donnent exactement le même prix.** Job d'essai : pièce
+7 × 1,4 po, 2 couleurs, feuille 8 × 9,5, 4 poses, platine coupe 1/4, séparateurs 1/1, ajustement
+additionnel 5, encre 100 %, gâche 10 %, facteur 25 %, transport 20 $, quantité 50.
 
 | | Écran actuel | Nouvel écran |
 |---|---|---|
+| Coût de revient | 534,32 $ | **534,32 $** |
+| Total | 667,90 $ | **667,90 $** |
+| Unitaire | 13,36 $ | **13,36 $** |
 | Temps | 5 h 47 | **5 h 47** |
-| Coût de revient | 534,32 $ | 544,32 $ |
-| Total | 667,90 $ | 680,40 $ |
 
-**Le temps est identique à la minute.** C'est la sortie de plusieurs dizaines de formules — presse,
-mise en train, roulement, découpe, finition — et il ne tombe pas juste par hasard. Le coût diffère
-de **exactement 10,00 $**, et le total de 12,50 $, soit 10,00 × 1,25 : un montant fixe, pas une
-dérive proportionnelle. Suspect : le **transport** (`S!E51`), que le nouvel écran met à 30 $ — le
-défaut demandé par Artistic le 26 octobre — et que l'écran actuel porte probablement à 20 $. À
-confirmer, mais l'essai le plus important du protocole est pour l'essentiel passé.
+**Au cent et à la minute.** C'est l'essai que le protocole désignait comme le plus important, et le
+seul dont l'échec aurait justifié d'arrêter la refonte. Il est passé sur une job que Soufiane
+n'avait pas prise.
 
-**Tous les écarts trouvés en chemin venaient de la saisie, jamais du calcul** : quantité, facteur,
-gâche, ligne de platine, séparateurs, ajustement additionnel, couverture d'encre. Rassurant sur le
-moteur, instructif sur l'écran — il a fallu aligner sept réglages à la main pour reproduire une
-seule job, donc sept occasions de se tromper. Un bouton « reprendre cette soumission dans le nouvel
-écran » vaudrait mieux que n'importe quelle consigne écrite.
+Le dernier écart, 10,00 $ de coût et 12,50 $ de total, venait du **transport** (`S!E51`) : 30 $ dans
+le nouvel écran — le défaut demandé par Artistic le 26 octobre — contre 20 $ saisis dans l'écran
+actuel. Rien à corriger : c'est le nouvel écran qui porte la bonne valeur par défaut.
+
+**Tous les écarts rencontrés en chemin venaient de la saisie, jamais du calcul** : quantité, facteur,
+gâche, ligne de platine, séparateurs, ajustement additionnel, couverture d'encre, transport. Huit
+réglages à aligner à la main pour reproduire une seule job, par quelqu'un qui connaît le système.
+Rassurant sur le moteur, instructif sur l'écran : **un bouton « reprendre cette soumission dans le
+nouvel écran »**, qui recopie les cellules, vaudrait mieux que n'importe quelle consigne écrite — et
+c'est aussi ce qui permettrait de rejouer les 51 soumissions existantes en lot plutôt qu'une à une.
+
+Au passage, le Sommaire du nouvel écran affiche la **marge réelle** (20,00 % pour un facteur de
+25 %) à côté du facteur. L'écran actuel ne montre que le facteur. C'est le genre de petite chose à
+montrer à Philippe.
 
 ### 25 nov. — Essai : la gâche porte deux noms, et deux pertes manquent *(Youssef + Claude)*
 **Youssef, qui connaît le système, n'a pas trouvé où saisir la perte dans le nouvel écran.** Elle y

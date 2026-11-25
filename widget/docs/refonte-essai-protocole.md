@@ -46,7 +46,12 @@ mesure que les champs obligatoires se remplissent.
 > Le compte entre parenthèses, c'est le nombre de contrôles encore en attente. Clique dessus pour
 > voir lesquels.
 
-### ☐ 2. Le même travail dans l'écran actuel
+### ☑ 2. Le même travail dans l'écran actuel — **passé le 25 novembre**
+
+> **534,32 $ de coût, 667,90 $ de total, 13,36 $ l'unité, 5 h 47 — identiques des deux côtés.**
+> Huit réglages ont dû être alignés à la main avant d'y arriver : quantité, facteur, gâche, ligne
+> de platine, séparateurs, ajustement additionnel, couverture d'encre, transport. Aucun écart ne
+> venait du calcul. Détail dans `ETAT.md`.
 
 **C'est l'essai le plus important de tous.** Ouvre l'écran de production dans un autre onglet et
 saisis exactement la même job.
