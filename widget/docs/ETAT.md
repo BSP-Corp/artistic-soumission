@@ -267,6 +267,45 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Principe : ce que l'utilisateur doit voir passe par un widget *(Youssef)*
+**Youssef, en apprenant que la grille « Temps par opération » n'est lisible que dans Creator :**
+*« est-ce qu'il va falloir à chaque fois que j'ouvre Creator pour le voir ? … je veux quelque chose
+toujours lié à des widgets ».*
+
+**C'est la bonne règle, et elle manquait au dépôt.** Les formulaires et rapports natifs de Creator
+sont de la plomberie : ils servent à paramétrer et à dépanner, pas à travailler. Tout ce qu'un
+chargé de projet, un directeur de production ou un opérateur doit consulter dans sa journée
+appartient à un widget. Si une donnée n'existe que dans un formulaire Creator, elle n'existe pas
+pour l'utilisateur.
+
+#### Le cas qui l'a révélé
+`Temps_par_operation` est **écrite et jamais relue**. `bonTravailService.ts` la sème à la création du
+bon (l. 372) ; aucune fonction ne la recharge. Et `AppBT.tsx` n'affiche que `FT_TEMPS` — les quatre
+temps **prévus** à plat, en heures et minutes.
+
+Donc : **le temps réel que l'atelier déclare n'est visible nulle part**, et l'écart non plus. Le
+comparatif estimé / réalisé existe dans la base et sur aucun écran.
+
+Ce n'était pas un choix : le commentaire du code explique seulement pourquoi le semis se fait à la
+création (Deluge ne sait pas rattacher une ligne à un bon déjà créé). L'affichage n'a simplement
+jamais été écrit, parce que le comparatif était rangé comme « chantier suivant ».
+
+#### Ce que ça change pour la feuille de route
+**Le comparatif estimé / réalisé n'est pas un chantier, c'est un bloc à ajouter à un écran qui
+existe.** Trois choses :
+
+1. **Relire la grille** — `bonTravailService` l'écrit déjà ; il lui manque la lecture.
+2. **L'afficher dans le bon de travail** — un bloc opération / prévu / réel / écart, avec le total.
+   À côté des quatre temps prévus déjà présents, au même endroit.
+3. **Redéployer le widget de bon de travail** — en retard depuis le 20 octobre de toute façon.
+
+Avec le tableau d'atelier qui écrit le réel d'un côté et ce bloc qui le montre de l'autre, la boucle
+est fermée. C'est aussi ce qui permettra enfin de valider les temps de soumission avec les chiffres
+d'Artistic plutôt que de les supposer justes.
+
+**À corriger dans le document remis au client :** le comparatif y est annoncé comme le prochain
+chantier, au même rang que la facturation. Il est beaucoup plus près que ça.
+
 ### 25 nov. — Essai 3 passé, et le bon de travail déployé a cinq semaines de retard *(Youssef + Claude)*
 **Essai 3 : réussi.** Youssef a enregistré sa soumission, fait « Nouvelle soumission », puis l'a
 rouverte : *« les chiffres sont toujours les bons »*. C'est le défaut corrigé lundi dans l'écran de
