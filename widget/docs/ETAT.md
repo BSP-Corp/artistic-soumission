@@ -267,6 +267,31 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Comment on met un écran à l'essai sans toucher à la production *(Youssef + Claude)*
+**La convention, telle qu'elle existe déjà** pour la refonte de la soumission :
+
+| | Production | À l'essai |
+|---|---|---|
+| **Page Creator** | `Soumission` | `Soumission_essai` (admins seulement) |
+| **Entrée widget** | `canevas` | `soumission2` |
+| **Dossier du dépôt** | `widget/canevas/` | `widget/soumission2/` |
+
+Donc, pour le tableau d'atelier : **page `Pointage_essai`**, réservée aux administrateurs, et
+**entrée widget `pointage2`**.
+
+⚠️ **Le piège, et il est facile à rater.** L'entrée widget est l'unité de déploiement, pas la page.
+Téléverser le nouveau zip dans l'entrée **`pointage` existante** remplacerait l'écran **partout où
+ce widget est posé**, y compris sur la page de production. Il faut **créer une seconde entrée**
+dans Paramètres → Widgets et y téléverser le zip ; l'ancienne garde son build du 19 octobre.
+
+Le zip est autonome : deux entrées peuvent porter deux versions différentes du même code. Aucune
+modification du dépôt n'est nécessaire pour ça.
+
+**Et c'est pour ça que la branche reste une branche.** `main` porte toujours l'ancien poste de
+pointage ; `tableau-atelier` porte le nouveau. Tant que le tableau n'est pas accepté, un
+`pack:pointage` lancé depuis `main` produit l'ancien écran — ce qui est exactement le filet qu'on
+veut. On ne fusionne qu'une fois la décision prise.
+
 ### 25 nov. — Le tableau d'atelier est écrit, branche `tableau-atelier` *(Claude)*
 **Commit `a39afb5`, partie de `main`.** L'approche B des trois maquettes, celle recommandée.
 `build:pointage` compile, les types passent, et l'écran a été manipulé dans le navigateur :
