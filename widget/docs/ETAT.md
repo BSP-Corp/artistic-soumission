@@ -167,18 +167,39 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
-### 25 nov. — Le repliage des sections n'est toujours pas fait *(Claude)*
-Rien de poussé depuis le 24 novembre : `origin/refonte-soumission` en est toujours à « Refonte,
-première version complète ». La demande du repliage (entrée du 24 nov.) est enregistrée, pas
-implémentée.
+### 25 nov. — Le repliage est fait, sur la branche `repliage-sections` *(Youssef + Claude)*
+**Rien n'avait été poussé par Soufiane depuis le 24 novembre**, et Youssef a demandé qu'on avance
+sans attendre. C'est fait : commit `4eb766b` sur `repliage-sections`, partie de
+`origin/refonte-soumission`. **Il reste à construire et à téléverser dans Creator** — c'est la seule
+partie qui ne nous appartient pas.
 
-En l'état, les sections **09 Sous-traitance** et **10 Notes** se replient déjà — elles sont bâties
-en `<details>` (`SectionOptionnelle`). Les sections **01 à 08** ne se replient pas : elles sont des
-`<section>` ordinaires. C'est donc une seule ligne de structure à changer, pas une refonte.
+**Ce qui change.** `Section` est devenu un `<details>` piloté par un état local, et
+`SectionOptionnelle` n'est plus qu'un `Section` fermé au départ : 09 et 10 se comportent donc
+exactement comme avant. Les dix sections se replient, **01 à 08 sont ouvertes à l'arrivée**. Titre
+entier cliquable, chevron qui dit l'état.
 
-Rappel de ce qui a été arbitré : **repliables mais ouvertes par défaut**, titre entier cliquable,
-une section repliée résume son contenu sur la ligne de titre, et replier ne doit ni vider un champ
-ni désactiver un contrôle.
+Les deux consignes du client tiennent ensemble : « on aime mieux tout voir pour être sûr qu'on n'a
+rien oublié » (9 nov.) reste vrai à l'ouverture, et « réduire chaque sous-formulaire… comme ça j'ai
+seulement les écrans sur lesquels je travaille » (24 nov.) devient possible.
+
+**Une section repliée résume son contenu sur sa ligne de titre** — le client, les dimensions ou le
+nombre de pièces, les certifications, la quantité retenue et la gâche, les couleurs et la presse, la
+matière, les opérations de découpe, le mode d'expédition. Le critère retenu : ce pour quoi on
+rouvrirait la section juste pour aller lire une valeur. Tout replié, l'écran devient une liste de
+dix lignes qui tient d'un coup d'œil.
+
+**Replier ne démonte rien.** Les champs restent dans le DOM, les valeurs dans l'état, le moteur
+continue de calculer et `controles.ts` travaille sur les entrées, jamais sur l'affichage. Vérifié
+dans le navigateur : replier puis rouvrir les huit sections laisse la saisie et la barre du bas
+inchangées. Et une **pastille** sur la ligne de titre signale une section qui porte une alerte
+(adhésif non posé, sous-traitance incomplète), pour qu'un repli ne cache jamais un problème.
+
+`build:s2` et `verif:s2` passent.
+
+**Pour Soufiane :** la branche ne touche que `s2/AppS2.tsx` et `s2/s2.css`, et seulement le
+composant `Section` plus les neuf lignes d'appel. Si tu as des modifications en cours sur AppS2.tsx,
+le conflit sera petit et localisé. Au passage, la classe `.s2-resume` était déjà prise par la liste
+`dt`/`dd` du Sommaire — la ligne de titre utilise `.s2-apercu`.
 
 ### 25 nov. — Essai : il ne reste qu'une seule ligne de finition dans le nouvel écran *(Youssef + Claude)*
 **Troisième trou du même genre, trouvé en cherchant l'origine d'un écart de prix.** La section 07 du
