@@ -267,6 +267,46 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — Correction : la pause est peut-être déjà traitée par Creator *(Youssef + Claude)*
+**J'avais conclu trop vite.** L'entrée précédente affirmait que `Duree_reelle_min` comptait la pause
+comme du travail. **Cette conclusion reposait sur une séquence que j'avais supposée** — démarrer,
+mettre en pause, terminer — alors que Youssef a fait autre chose : démarrer, mettre en pause,
+**reprendre**, laisser tourner jusqu'à 2 minutes, puis terminer.
+
+Avec la vraie séquence, l'arithmétique ne dit plus rien : les 2 minutes enregistrées peuvent être
+2 minutes de travail, pause déjà déduite. **Le test est muet sur la question**, et je l'avais
+présenté comme une preuve.
+
+**Et son observation penche dans l'autre sens.** Il note qu'à la reprise, *« il a repris par rapport
+au moment où j'ai arrêté la première fois »* — le compteur a continué depuis 1 min 04 s au lieu de
+sauter. Or c'est un indice fort, à cause de la façon dont l'écran calcule :
+
+```
+affiché = (maintenant − Punch_in) − Pause_cumulee_min
+```
+
+Si `Pause_cumulee_min` était resté à zéro, la reprise aurait fait **bondir** le compteur de toute la
+durée de la pause. Il n'a pas bondi. **Donc quelque chose a bien écrit `Pause_cumulee_min`** — et
+c'est forcément le workflow Creator, puisque le widget n'écrit que le statut.
+
+**Autrement dit : le workflow de pause existe probablement déjà et fonctionne.** Le seul défaut réel
+était le mien — l'écran ne distinguait pas une opération en pause d'une opération en cours — et il
+est corrigé.
+
+#### Ce qui tranche, en trente secondes
+Ouvrir le pointage de l'essai dans Creator et lire deux champs :
+
+| Champ | Si le workflow fait son travail | Sinon |
+|---|---|---|
+| `Pause_cumulee_min` | **≈ 1** | 0 ou vide |
+| `Pause_debut` | vide (la pause a été fermée) | une heure restée là |
+
+Tant que ces deux valeurs ne sont pas lues, **`pointage-workflow-pause.md` reste une marche à suivre
+conditionnelle** : à appliquer seulement si le workflow ne fait pas déjà le travail. Il garde sa
+valeur comme spécification de ce qui doit se passer, et comme plan d'essai — en particulier le cas
+qu'on oublie toujours : **terminer sans reprendre**, où la pause ouverte doit quand même être
+comptée. Celui-là n'a pas été éprouvé.
+
 ### 25 nov. — Le cycle complet tourne dans Creator, et la pause y est comptée comme du travail *(Youssef)*
 **Cycle éprouvé sur `Pointage_essai`, sur un vrai enregistrement**, opération « Préparation des
 encres (coloriste) » du bon BT-1000 (BSP) :
