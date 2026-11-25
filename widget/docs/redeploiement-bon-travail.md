@@ -19,19 +19,25 @@
 | Qui | Fichier | Build en ligne |
 |---|---|---|
 | L'écran de soumission — « Envoyer vers le bon de travail » | `src/App.tsx` | **20 novembre** ✅ |
+| La refonte, `Soumission_essai` — même bouton | `src/s2/AppS2.tsx` | **25 novembre** ✅ |
 | L'écran de bon de travail — « Créer le bon » | `src/bt/AppBT.tsx` | **20 octobre** ⚠️ |
 
-Les deux appellent le même `creerBonTravail`, et ce code sème les lignes **depuis le 27 octobre**.
-Donc l'écran de soumission devrait déjà les semer, et seul l'écran de bon de travail en serait
-incapable.
+Les trois appellent le même `creerBonTravail`, et ce code sème les lignes **depuis le 27 octobre**.
+Donc les deux écrans de soumission devraient déjà les semer, et seul l'écran de bon de travail en
+serait incapable.
 
-**L'essai :** créer un bon **depuis l'écran de soumission** (« Envoyer vers le bon de travail »),
-puis ouvrir ce bon dans Creator et regarder la grille.
+**L'essai :** créer un bon depuis **`Soumission_essai`** — son build date d'aujourd'hui, donc aucun
+doute sur la version du code, et ça ne touche pas la production. Puis ouvrir ce bon dans Creator et
+regarder la grille.
+
+> La refonte crée **un bon par pièce**, en statut « Brouillon ». C'est normal, et sans conséquence
+> pour l'essai.
 
 - **Des lignes apparaissent** → l'hypothèse est confirmée. Le seul coupable est le widget de bon de
   travail, et le redéploiement ci-dessous règle tout.
 - **La grille reste vide** → le semis échoue pour une autre raison, et il ne faut rien redéployer
-  avant de savoir laquelle. Le code avale les erreurs de semis par conception (*« un semis raté ne
+  avant de savoir laquelle. **Inutile de pointer dessus** : on sait déjà qu'un pointage n'écrit rien
+  dans une grille vide, BT-1001 l'a montré. Ça n'apprendrait rien de plus. Le code avale les erreurs de semis par conception (*« un semis raté ne
   doit pas empêcher la création du bon »*) : ouvrir la console du navigateur pendant la création
   montrera le `console.warn`.
 
