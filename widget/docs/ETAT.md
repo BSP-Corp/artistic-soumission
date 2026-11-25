@@ -29,9 +29,11 @@ Ce qu'il faut en retenir pour demain :
   toujours séparément. Ce bloc est à refaire — c'est un chantier, pas une correction, et ce n'est
   pas pour demain.
 
-**1. Déployer le repliage des sections.** ✅ *En ligne (Soufiane, 25 nov.), voir le Journal.* Fait et testé : branche `repliage-sections`, commit
-`4eb766b`, partie de `refonte-soumission`. Il reste à fusionner, `npm run pack:s2`, et téléverser
-dans Creator — c'est la seule étape qu'on ne pouvait pas faire. Les dix sections se replient, 01 à
+**1. Le repliage des sections.** ✅ **Fait et en ligne** — Soufiane a fusionné, construit et
+téléversé le 25 novembre, build `2026-11-25 15:47 UTC`. Plus rien à faire ici. Écrit sur la branche
+`repliage-sections`, commit
+`4eb766b`, partie de `refonte-soumission`. Il restait à fusionner, `npm run pack:s2` et téléverser
+dans Creator : c'est fait. Les dix sections se replient, 01 à
 08 ouvertes par défaut, et une section repliée résume son contenu sur sa ligne de titre. `build:s2`
 et `verif:s2` passent. Ne touche que `s2/AppS2.tsx` et `s2/s2.css`.
 
@@ -483,6 +485,12 @@ prix n'est pas faux sur une job qui n'a aucune de ces opérations. Mais **une jo
 assemble ou compte ne peut pas le dire**, et une soumission existante qui les porte sera rechiffrée
 sans elles.
 
+**Correction du 25 nov. au soir, par Soufiane :** j'avais écrit qu'une soumission rouverte serait
+« rechiffrée sans elles ». C'est faux. Il l'a mesuré sur les 47 soumissions chiffrées : une
+soumission rouverte garde toutes ses cellules et le moteur les compte. Le défaut réel est plus
+étroit — **ces valeurs pèsent sur le prix sans qu'on les voie ni qu'on puisse les changer**, et une
+soumission neuve ne peut pas les saisir. Son contrôle `s2/caches.ts` les débusque désormais.
+
 **C'est le troisième cas identique en deux jours** : trois lignes de platine, deux champs de perte,
 six opérations de finition. Le motif ne change pas — le nouvel écran couvre le cas courant et perd
 le reste en silence. Boucher les trous un par un ne suffira pas ; il faut le contrôle général
@@ -533,6 +541,11 @@ nôtre, et la refonte ne doit pas forcer à réapprendre des mots.
 et absents de la refonte. Leur défaut est zéro, donc une soumission neuve tombe juste — mais **une
 soumission existante qui les porte sera rechiffrée sans elles**, en silence, exactement comme les
 trois lignes de platine manquantes.
+
+**Correction du 25 nov. au soir, par Soufiane :** « rechiffrée sans elles » est faux, il l'a mesuré
+sur les 47 soumissions chiffrées. Une soumission rouverte garde toutes ses cellules et le moteur
+les compte. Le défaut réel est plus étroit — ces valeurs pèsent sur le prix sans qu'on les voie ni
+qu'on puisse les changer, et une soumission neuve ne peut pas les saisir.
 
 C'est le même motif qui revient : le nouvel écran couvre le cas courant et perd les champs du cas
 particulier, sans jamais le dire. La question à trancher avec Soufiane n'est plus champ par champ —
