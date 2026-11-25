@@ -4,7 +4,57 @@
 > courriels entre nous. Chacun le met à jour **par un commit**, pas par un message : ce qui n'est
 > pas ici n'existe pas, et personne n'a à demander « où on en est ».
 >
-> Mis à jour en dernier : **17 novembre 2026** — BSP.
+> Mis à jour en dernier : **25 novembre 2026** — BSP.
+
+---
+
+## Pour Soufiane — 25 novembre, après l'essai de la refonte
+
+> Youssef a passé l'après-midi dans `Soumission_essai` avec une vraie job sous les yeux. Voici ce
+> qui en sort, dans l'ordre où ça presse. Le détail de chaque point est dans le Journal, plus bas.
+> **La rencontre client est jeudi 13 h.**
+
+**1. Déployer le repliage des sections.** Fait et testé : branche `repliage-sections`, commit
+`4eb766b`, partie de `refonte-soumission`. Il reste à fusionner, `npm run pack:s2`, et téléverser
+dans Creator — c'est la seule étape qu'on ne pouvait pas faire. Les dix sections se replient, 01 à
+08 ouvertes par défaut, et une section repliée résume son contenu sur sa ligne de titre. `build:s2`
+et `verif:s2` passent. Ne touche que `s2/AppS2.tsx` et `s2/s2.css`.
+
+**2. L'essai 2 est passé — bonne nouvelle, à savoir avant jeudi.** Sur la job de Youssef, les deux
+écrans donnent **534,32 $ de coût, 667,90 $ de total, 13,36 $ l'unité et 5 h 47**, au cent et à la
+minute. Rien à corriger.
+
+**3. Des champs manquent au nouvel écran, et leur absence est silencieuse.** Trois lignes de platine
+(adhésif, kiss-cut, embossage), six opérations de finition (protecteur fenêtre, slit, assemblage,
+décorticage, vérification, emballage), deux champs de perte (`S!Y22`, `S!Z22`). Une soumission
+existante qui les porte est rechiffrée sans elles, sans un mot.
+
+→ **Plutôt que de boucher trou par trou : un contrôle qui compare les cellules d'une soumission
+rouverte à celles que l'écran sait afficher, et qui alerte sur toute valeur non nulle sans case.**
+C'est le même défaut qui est revenu trois fois en deux jours ; il y en a sûrement d'autres.
+
+**4. Quatre champs libres pour des cellules qui ne valent que 1 ou vide** — séparateur avant,
+séparateur après, recto/verso après, guillotine. Le classeur met le prix unitaire à zéro dès qu'un
+indicateur dépasse 1 (`INDICATEURS` dans `controles.ts`). Des cases à cocher diraient la règle au
+lieu de la cacher. Le pire est le recto/verso : « avant » est une quantité, « après » un drapeau,
+les deux côte à côte et identiques à l'œil. L'écran actuel a le même défaut — ce n'est pas une
+régression, c'est l'occasion de le corriger.
+
+**5. À trancher : « Adhésif laminé » et « Adhésif régistre »** sont des champs numériques dans
+l'écran actuel et des cases à cocher dans le nouveau. Peuvent-ils dépasser 1 ? Si oui, la case à
+cocher perd de l'information ; si non, ils devraient rejoindre `INDICATEURS`.
+
+**6. Renommer « Gâche » en « Perte ».** Même cellule (`S!I2`), deux noms selon l'écran. Youssef ne
+l'a pas trouvée. Le vocabulaire d'Artistic prime sur le nôtre.
+
+**7. Une suggestion, pas une demande : un bouton « reprendre cette soumission dans le nouvel
+écran ».** Il a fallu aligner **huit réglages à la main** — quantité, facteur, gâche, ligne de
+platine, séparateurs, ajustement additionnel, couverture d'encre, transport — pour rejouer une
+seule job. Recopier les cellules vaudrait mieux que n'importe quelle consigne écrite, et
+permettrait de rejouer les 51 soumissions existantes en lot plutôt qu'une à une.
+
+**8. Reste de lundi :** supprimer BT-1013 et BT-1014, attachés à la soumission d'essai « YDOUAA ».
+Youssef a confirmé que les trois soumissions douteuses sont des essais.
 
 ---
 
