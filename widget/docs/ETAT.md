@@ -267,6 +267,38 @@ multiplie, une job qui demande deux passes ne peut plus le dire, et une soumissi
 porte 2 sera réécrite à 1. Si au contraire ils ne valent que 0/1, c'est la case à cocher qui a
 raison et ils devraient rejoindre la liste.
 
+### 25 nov. — L'approche C est construite *(Claude)*
+**Commit `36a3e52`** sur `tableau-atelier`. Trois changements, aucun ne déplace quoi que ce soit.
+
+**1. Une frise d'avancement** en tête du comparatif : une case par opération de la gamme, pleine dès
+qu'un temps a été déclaré. Elle répond à « où en est cette job » **sans rien replier** — le client a
+tranché le 9 novembre qu'il voulait tout voir, et cette réponse-là ne lui demande pas de revenir sur
+sa décision. C'est la seule idée de la maquette B qu'on retient, l'autre — le comparatif — étant
+déjà livrée.
+
+**2. `FT!R43` et `FT!W48` reçoivent un nom** : *Matière, largeur* et *Matière, longueur*. Le classeur
+y porte 24 et 48, et la première ligne de matériaux de la fiche maîtresse est un Lexan
+« ,005 × 24 × 48 ». **L'hypothèse est assumée à l'écran** plutôt que laissée en « à nommer » : Roberto
+la confirmera ou la corrigera en la voyant, ce qu'une note dans un coin ne permettait pas. L'aide de
+chaque champ porte la cellule d'origine et la réserve.
+
+**3. La densité est desserrée.** 19 px de hauteur de ligne et 11 px de corps venaient d'un calque de
+la feuille Excel ; à l'écran, lus debout ou de biais, ils étaient illisibles. Désormais 23 px et
+12 px, un peu d'air horizontal, des **chiffres tabulaires** qui s'alignent en colonne, et des
+en-têtes de bloc qui respirent. **Mêmes colonnes, mêmes largeurs, aucune valeur tronquée.**
+
+⚠️ **Cela relâche volontairement une contrainte écrite.** Le commentaire en tête de `bt.css` posait
+le 1er octobre : *« aucun changement de DISPOSITION »*. Elle servait une refonte de palette où l'on
+ne voulait rien déplacer — pas une interdiction de principe. Philippe a depuis demandé que la
+feuille soit retapée ; la densité redevient donc discutable. L'esprit est respecté : rien ne change
+de place.
+
+#### Ce qui reste sur ce volet
+- **L'approche A**, la fiche de production imprimable, **en attente d'une réponse** : est-ce que
+  l'atelier travaille encore avec le bon sur papier ? Si oui elle est nécessaire, sinon elle devient
+  un écran et la question se repose.
+- **Faire confirmer les deux libellés** par Roberto, maintenant qu'ils sont visibles.
+
 ### 25 nov. — Recommandation BSP sur le bon de travail : C, pas B *(Claude)*
 **D'abord une correction, et elle m'est due.** Le récapitulatif du 16 novembre dit déjà :
 *« Boucle fermée en réel validée (BT-1017, 2,23 min) »*, et liste comme seul manque de ce chantier
