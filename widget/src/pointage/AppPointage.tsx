@@ -597,7 +597,13 @@ export default function AppPointage() {
         lignes: [
           ["Presse", f.noPresse],
           ["Cadre", f.noCadre],
-          ["Codes", [f.code, f.codeM, f.codeR, f.codeE].filter(Boolean).join(" · ")],
+          // `Code` (FT!C11) vaut 4010 dans le master : c'est une constante du classeur, pas une
+          // donnée de la job. Affichée sous un libellé « Codes », juste sous une ligne Presse
+          // manquante, elle se lisait comme un numéro de presse. On ne montre que les trois
+          // codes que l'atelier saisit vraiment.
+          ["Code M", f.codeM],
+          ["Code R", f.codeR],
+          ["Code E", f.codeE],
           ["Surplus", f.surplus],
           ["Protection", f.protectionPct > 0 ? mesure(f.protectionPct) + " %" : ""],
         ],
