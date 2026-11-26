@@ -12,6 +12,7 @@
 // E40 (Qté Produite) ; E43 (Nbre mrcx feuille) → E44 (Nbre de Feuilles) → P47 (MX À IMPR.).
 
 import type { CellValue, Moteur } from "@/lib/moteur";
+import { IN } from "@/lib/modele";
 import type { ChampsPlatsBT, StatutBT } from "@/services/bonTravailService";
 import { d4, ent, dateCreator, nbOuNull } from "@/services/bonTravailService";
 
@@ -220,6 +221,50 @@ export function presseFT(m: Moteur, saisies: Record<string, CellValue> = {}): st
   return v === LIBELLE_L4 ? "" : v;
 }
 
+/** La quantité commandée du bon — `FT!E38`.
+ *
+ *  C'est une cellule JAUNE : vide dans le classeur, saisie par l'atelier. Mais le nombre est
+ *  déjà connu bien avant l'atelier — la soumission a chiffré la job sur cette quantité-là
+ *  (`S!E2`). Le laisser vide à la création du bon obligeait l'atelier à le retaper, et laissait
+ *  toute la cascade à zéro : E39 (protection), E41 (maximum), E44 (nbre de feuilles) et P47
+ *  (mx à imprimer) dépendent toutes de E38. Un bon fraîchement créé n'annonçait donc aucune
+ *  quantité, sur le bon de travail comme sur la fiche d'atelier.
+ *
+ *  Ordre de préférence, du plus précis au plus général :
+ *    1. ce que l'atelier a tapé — il corrige, il a le dernier mot ;
+ *    2. la cellule du classeur si elle porte déjà une valeur ;
+ *    3. la quantité de la soumission.
+ *
+ *  Renvoie 0 quand rien n'est connu — un bon créé depuis l'écran de bon de travail, sans
+ *  soumission derrière, n'a effectivement aucune quantité à annoncer. */
+export function qteCommandeeFT(m: Moteur, saisies: Record<string, CellValue> = {}): number {
+  const saisie = nbOuNull(s(saisies[FT_IN.qteCommandee]));
+  if (saisie !== null && saisie > 0) return saisie;
+  const duClasseur = m.num(FT_IN.qteCommandee);
+  if (duClasseur > 0) return duClasseur;
+  const deLaSoumission = m.num(IN.quantite);
+  return deLaSoumission > 0 ? deLaSoumission : 0;
+}
+
+/** Les saisies atelier d'un bon qu'on vient de créer, la quantité commandée semée depuis la
+ *  soumission.
+ *
+ *  Semer la SAISIE, et pas seulement la colonne plate, est le point important : la cellule
+ *  alimente les formules FT en cascade, l'écran de bon de travail la montre pré-remplie, et
+ *  l'atelier peut la corriger comme n'importe quelle autre. Une valeur déjà saisie n'est
+ *  jamais écrasée.
+ *
+ *  À appeler sur le `bt` d'une création de bon, avant `champsPlatsBT` et avant de sérialiser
+ *  `Donnees_BT` — les deux doivent porter la même chose. */
+export function semerSaisiesAtelier(
+  m: Moteur,
+  saisies: Record<string, CellValue>,
+): Record<string, CellValue> {
+  if (s(saisies[FT_IN.qteCommandee]) !== "") return saisies;
+  const qte = qteCommandeeFT(m, saisies);
+  return qte > 0 ? { ...saisies, [FT_IN.qteCommandee]: qte } : saisies;
+}
+
 /** Construit les colonnes plates du formulaire Bon_Travail à partir du moteur recalculé. */
 export function champsPlatsBT(
   m: Moteur,
@@ -255,7 +300,7 @@ export function champsPlatsBT(
     Format_Y: d4(m.num(FT_OUT.formatY)),
     Dim_Mrx_X: d4(m.num(FT_OUT.mrxX)),
     Dim_Mrx_Y: d4(m.num(FT_OUT.mrxY)),
-    Qte_Commandee: ent(m.num(FT_IN.qteCommandee)),
+    Qte_Commandee: ent(qteCommandeeFT(m, saisies)),
     Protection_Pct: d4(m.num(FT_IN.protectionPct) * 100),
     Qte_Produite: ent(m.num(FT_OUT.qteProduite)),
     Qte_Maximum: ent(m.num(FT_OUT.qteMaximum)),

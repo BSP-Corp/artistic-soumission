@@ -573,7 +573,7 @@ export default function AppPointage() {
     const f = bon.fiche;
     const quand = echeance(f.dateRequise);
 
-    const blocs: { titre: string; lignes: LigneFiche[] }[] = [
+    const blocsBruts: { titre: string; lignes: LigneFiche[] }[] = [
       {
         titre: "La pièce",
         lignes: [
@@ -619,7 +619,8 @@ export default function AppPointage() {
           ["Autre", f.autre],
         ],
       },
-    ]
+    ];
+    const blocs = blocsBruts
       .map((b) => ({ ...b, lignes: b.lignes.filter(([, v]) => v !== "") }))
       .filter((b) => b.lignes.length > 0);
 

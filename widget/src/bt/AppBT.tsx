@@ -10,6 +10,7 @@ import { chargerCouleurs, couleursSelectionnables, indexParCode, trouverCouleur,
 import { useSoumission } from "@/hooks/useSoumission";
 import type { CellValue } from "@/lib/moteur";
 import { toNum, minutes, dateOuTexte } from "@/lib/format";
+import { IN } from "@/lib/modele";
 import {
   initZohoEnv,
   isZohoEnv,
@@ -54,6 +55,19 @@ import {
 import "./bt.css";
 
 const SAISIE_SET = new Set(CELLULES_SAISIE);
+
+/** La quantité de la soumission (`S!E2`), lue dans son JSON tel quel. Renvoie 0 dès que le
+ *  JSON est illisible ou la cellule absente : un bon sans soumission derrière n'a pas de
+ *  quantité à pré-remplir, et ce n'est pas une erreur. */
+function qteDeLaSoumission(donneesSoum: string): number {
+  try {
+    const o = JSON.parse(donneesSoum || "{}") as Record<string, unknown>;
+    const n = Number(o?.[IN.quantite]);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  } catch {
+    return 0;
+  }
+}
 
 /** Étiquette d'un bon dans la liste. Le client et le n° de pièce se répètent souvent d'un
  *  bon à l'autre (sept bons « BSP · 4152464 » distincts) : sans le statut, des bons bien
@@ -284,6 +298,19 @@ export default function AppBT() {
       if (!ok) s.reset("vierge");
       const saisies = lireSaisiesBT(donneesBT);
       for (const [cell, v] of Object.entries(saisies)) set(cell, v);
+      // Quantité commandée : cellule d'atelier, mais la soumission l'a déjà chiffrée. Les bons
+      // créés avant le 25 novembre n'en portent aucune, et toute la cascade (protection,
+      // maximum, nbre de feuilles, mx à imprimer) restait donc à zéro. On la pré-remplit à
+      // l'ouverture quand elle est vide — visible, corrigeable, et enregistrée au prochain
+      // enregistrement comme n'importe quelle autre saisie. On ne touche jamais à une valeur
+      // déjà saisie.
+      //
+      // Lue dans le JSON brut et non dans le moteur : `chargerDonnees` vient de poser un état
+      // React, le moteur n'a pas encore recalculé à cet instant.
+      if (String(saisies[FT_IN.qteCommandee] ?? "").trim() === "") {
+        const qte = qteDeLaSoumission(donneesSoum);
+        if (qte > 0) set(FT_IN.qteCommandee, qte);
+      }
       return ok;
     },
     [s, set],

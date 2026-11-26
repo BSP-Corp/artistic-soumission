@@ -187,6 +187,48 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 25 nov., au soir — La quantité commandée descend de la soumission vers le bon *(Claude)*
+**Trouvé en regardant la fiche de BT-1019 dans Creator.** Elle n'annonçait aucune quantité — ni
+commandée, ni maximum, ni produite — et tout le bloc « La feuille » était absent.
+
+**Ce n'était pas un défaut de la fiche.** `FT!E38` (Qté commandée) **n'a ni formule ni valeur**
+dans le classeur : c'est une cellule jaune que l'atelier tape. Et toute la cascade en dépend —
+`E39` (protection), `E41` (maximum), `E44` (nbre de feuilles), `P47` (mx à imprimer). Un bon
+créé depuis une soumission naissait donc à zéro, alors que **la soumission a chiffré la job sur
+cette quantité-là** (`S!E2`). L'atelier devait la retaper.
+
+**Corrigé en un seul endroit, `bt/modeleFT.ts`.**
+
+- `qteCommandeeFT(m, saisies)` — ordre de préférence : la saisie de l'atelier, sinon la cellule
+  du classeur, sinon la quantité de la soumission. 0 quand rien n'est connu : **aucune invention**.
+- `semerSaisiesAtelier(m, saisies)` — écrit la **saisie** `FT!E38`, pas seulement la colonne
+  plate. C'est le point important : la cellule alimente les formules FT en cascade, l'écran de
+  bon de travail la montre **pré-remplie et corrigeable**, et une valeur déjà saisie n'est
+  jamais écrasée.
+- `champsPlatsBT` lit désormais `Qte_Commandee` par là.
+
+**Les trois chemins de création sont couverts, et la refonte n'a rien à changer.**
+
+| Chemin | Ce qui se passe |
+|---|---|
+| Écran de soumission → bon | semé à la création (`App.tsx`) |
+| `Soumission_essai` (refonte) → bon | `champsPlatsBT` retombe seul sur `S!E2` — **rien à modifier dans `s2/`** |
+| Écran de bon de travail | pré-remplie à l'ouverture d'un bon quand la case est vide |
+
+Le dernier point répare aussi **les bons déjà créés** : on ouvre BT-1019 dans *Bon de travail*,
+la quantité est là, on enregistre, et la fiche d'atelier l'affiche.
+
+**Vérifié sur le classeur réel**, huit contrôles : soumission à 3 150 → `E38` = 3 150, `E39` et
+`E41` = 3 465 (surplus Oui → × 1,1), colonne plate `Qte_Commandee` = 3 150, `Qte_Maximum` = 3 465 ;
+une saisie atelier à 2 000 l'emporte et n'est pas écrasée ; sans soumission, rien n'est semé.
+
+**Au passage, un défaut de la fiche corrigé** (`e642635`) : `FT!C11` vaut 4010 dans le master —
+une constante du classeur. Affichée sous un libellé « Codes » juste sous une ligne *Presse*
+absente, elle se lisait comme un numéro de presse, et un opérateur aurait pu monter la mauvaise.
+Seuls Code M, Code R et Code E restent.
+
+→ **Trois paquets à téléverser** : `canevas` (soumission), `bontravail`, `pointage2`.
+
 ### 25 nov., au soir — La fiche de production passe à l'écran *(Claude)*
 **Branche `tableau-atelier`.** Le tableau d'atelier montrait les jobs et leurs opérations ; il ne
 montrait pas **la job**. L'opérateur lisait encore la feuille imprimée pour savoir combien de

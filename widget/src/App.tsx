@@ -77,7 +77,7 @@ const ID_SUBSTITUTION = "__ID_SOUMISSION__";
  *  Recommandation BSP du 28 sept. (« verrou propre »), en attente de l'arbitrage de Christian :
  *  mettre à false lui redonne sa visibilité permanente, rien d'autre à changer. */
 const MASQUER_COUT = true;
-import { CELLULES_SAISIE, champsPlatsBT } from "@/bt/modeleFT";
+import { CELLULES_SAISIE, champsPlatsBT, semerSaisiesAtelier } from "@/bt/modeleFT";
 import { CATEGORIE_VERS_CHAMP } from "@/lib/parametres";
 import { PopupGuide } from "@/components/PopupGuide";
 import { PopupAdministration } from "@/components/PopupAdministration";
@@ -741,10 +741,16 @@ export default function App() {
     const soumission = await enregistrer("Valide");
     const saisieSet = new Set(CELLULES_SAISIE);
     const soum: Record<string, unknown> = {};
-    const bt: Record<string, unknown> = {};
-    for (const [cell, v] of Object.entries(s.entrees)) (saisieSet.has(cell) ? bt : soum)[cell] = v;
+    const brut: Record<string, CellValue> = {};
+    for (const [cell, v] of Object.entries(s.entrees)) {
+      if (saisieSet.has(cell)) brut[cell] = v as CellValue;
+      else soum[cell] = v;
+    }
+    // La quantité commandée (FT!E38) est une cellule d'atelier, mais la soumission la connaît
+    // déjà : on la sème ici pour que le bon naisse avec, plutôt que de la faire retaper.
+    const bt = semerSaisiesAtelier(s.moteur, brut);
     const res = await creerBonTravail({
-      plats: champsPlatsBT(s.moteur, bt as Record<string, never>, soumission.id ?? "", "Valide"),
+      plats: champsPlatsBT(s.moteur, bt, soumission.id ?? "", "Valide"),
       donnees_soum: JSON.stringify(soum),
       donnees_bt: JSON.stringify(bt),
     });
