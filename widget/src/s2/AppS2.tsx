@@ -23,7 +23,7 @@ import {
   listeCatalogue,
 } from "@/lib/modele";
 import { CATEGORIE_VERS_CHAMP } from "@/lib/parametres";
-import { controlesSoumission, SEUIL_DOUBLE_CHECK_DEFAUT, type Controle } from "@/lib/controles";
+import { controlePrixMinimum, controlesSoumission, PRIX_MIN_DEFAUT, SEUIL_DOUBLE_CHECK_DEFAUT, type Controle } from "@/lib/controles";
 import { REGLES_DEFAUT, fusionnerRegles, type RegleMateriau } from "@/lib/reglesMateriaux";
 import { deduireAdhesif } from "@/lib/adhesif";
 import { argent, dateOuTexte, nombre2, nombre3, toNum } from "@/lib/format";
@@ -91,6 +91,8 @@ import { MAJORATION_DEFAUT, achats, installationRequise, manquesSection09, monta
 import { CELL_MATIERE_NUM, chiffrerNumerique } from "./chiffrageNumerique";
 import { CONFIG_EMBARQUEE, chargerConfigNumerique } from "./configNumerique";
 import { comptesDoffice, valeursCachees } from "./caches";
+import { LIBELLE_MODE, LIBELLE_REPART, cellFenetre, eligibilites, inscrireMixte, reglagesMixte } from "./montageMixte";
+import { numerosEnregistres, prochaineRevision } from "./revision";
 import {
   CELL_ORIGINE_S2,
   avecGache,
@@ -557,8 +559,10 @@ export default function AppS2() {
 
   // Seuils d'approbation : réglables dans Taux_Calcul, aucun tant que le client n'a pas répondu.
   const marge = margeReelle(total, cout);
+  const prixMin = app?.PRIX_MIN ?? PRIX_MIN_DEFAUT;
+  const rappels = controlePrixMinimum(total, prixMin);
   const approbations = [
-    (app?.PRIX_MIN ?? 0) > 0 && total > 0 && total < app!.PRIX_MIN ? `Sous le prix minimum de commande (${argent(app!.PRIX_MIN)}).` : "",
+    prixMin > 0 && total > 0 && total < prixMin ? `Sous le prix minimum de commande (${argent(prixMin)}).` : "",
     (app?.MARGE_MIN ?? 0) > 0 && marge !== null && marge < app!.MARGE_MIN ? `Marge sous le seuil de ${nombre2(app!.MARGE_MIN * 100)} % : approbation requise.` : "",
     (app?.MONTANT_APPROB ?? 0) > 0 && total > app!.MONTANT_APPROB ? `Montant au-dessus de ${argent(app!.MONTANT_APPROB)} : approbation requise.` : "",
   ].filter(Boolean);
@@ -606,15 +610,39 @@ export default function AppS2() {
     if (!r.ok) return "";
     const annee = new Date().getFullYear();
     let max = 0;
-    for (const x of r.liste) {
-      const m = new RegExp(`"${CELL_NUMERO}":"S-${annee}-(\\d+)"`).exec(x.donnees);
+    for (const no of numerosEnregistres(r.liste.map((x) => x.donnees), CELL_NUMERO)) {
+      const m = new RegExp(`^S-${annee}-(\\d+)`).exec(no);
       if (m) max = Math.max(max, Number(m[1]));
     }
     return `S-${annee}-${String(max + 1).padStart(4, "0")}`;
   }
 
+  /** Révision : une nouvelle soumission qui garde le numéro, suivi de R1, R2… (Roberto). */
+  async function reviser() {
+    const no = String(s.saisie(CELL_NUMERO) ?? "").trim();
+    if (!no || !idSoumission) {
+      setMessage("Enregistrez d'abord la soumission : une révision part d'une soumission numérotée.");
+      return;
+    }
+    setOccupe(true);
+    try {
+      const r = await chargerSoumissions();
+      if (!r.ok) {
+        setMessage("Liste des soumissions illisible : révision annulée, rien n'a changé (" + r.cause + (r.detail ? " : " + r.detail : "") + ").");
+        return;
+      }
+      const suivant = prochaineRevision(no, numerosEnregistres(r.liste.map((x) => x.donnees), CELL_NUMERO));
+      setIdSoumission("");
+      for (const c of Object.keys(s.entrees)) if (/^X!S2_BT\d$/.test(c)) unset(c);
+      set(CELL_NUMERO, suivant);
+      setMessage(`Révision ${suivant} prête : ${no} reste intacte, « Enregistrer » crée la révision.`);
+    } finally {
+      setOccupe(false);
+    }
+  }
+
   async function enregistrerSans(): Promise<{ ok: boolean; id: string; entrees: Record<string, CellValue>; message: string }> {
-    const entrees: Record<string, CellValue> = { ...s.entrees, [CELL_ORIGINE_S2]: 1 };
+    const entrees: Record<string, CellValue> = { ...s.entrees, [CELL_ORIGINE_S2]: 1, ...inscrireMixte(s.entrees, s.params?.app) };
     if (!entrees[CELL_NUMERO]) entrees[CELL_NUMERO] = await prochainNumero();
     const dossier = dossierPour(entrees, idSoumission);
     const res = idSoumission ? await majSoumission(idSoumission, dossier) : await sauvegarderSoumission(dossier);
@@ -624,6 +652,7 @@ export default function AppS2() {
       setIdSoumission(id);
       set(CELL_ORIGINE_S2, 1);
       set(CELL_NUMERO, entrees[CELL_NUMERO]);
+      for (const [c, v] of Object.entries(inscrireMixte(entrees, s.params?.app))) set(c, v);
       const d = await majDatesCreator(id, { requise: s.saisie(IN.date), commande: "", expedition: s.saisie("X!DATE_EXP") });
       if (!d.ok) console.warn("majDatesCreator:", d.message);
     }
@@ -754,6 +783,7 @@ export default function AppS2() {
   const joindre = (...x: (string | false | null | undefined)[]) => x.filter(Boolean).join(" · ");
   const matieresChoisies = MATERIAUX.map(([, , cell]) => sv(cell)).filter(Boolean);
   const nbPieces = piecesPresentes(s.entrees).length;
+  const mixte = reglagesMixte(s.entrees, s.params?.app);
 
   const resumes: Record<string, string> = {
     "01": joindre(sv(IN.client), sv(CELL_PROP.contact)) || "à remplir",
@@ -820,6 +850,15 @@ export default function AppS2() {
         >
           Dupliquer
         </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={!pret || occupe || !idSoumission}
+          title={idSoumission ? "Nouvelle soumission au même numéro, suivi de R1, R2…" : "Enregistrez d'abord la soumission"}
+          onClick={() => void reviser()}
+        >
+          Réviser
+        </button>
         <button type="button" className="btn" disabled={!pret} onClick={ouvrir}>Ouvrir</button>
         <button type="button" className="btn" disabled={!prixVisible} title={prixVisible ? "Soumission client, deux pages" : seri ? "Le prix n'est pas encore validé" : "Un prix provisoire ne s'imprime pas"} onClick={() => setPopup("client")}>Imprimer</button>
         <button type="button" className="btn" disabled={!prixVisible} title={prixVisible ? "Ouvre le document, d'où part le courriel" : "Le prix n'est pas encore validé"} onClick={() => setPopup("client")}>Envoyer</button>
@@ -877,6 +916,24 @@ export default function AppS2() {
 
           <Section no="02" titre="Pièces et fichier" resume={resumes["02"]}>
             <TableauPieces a={acces} entrees={s.entrees} />
+            {nbPieces > 1 ? (
+              <div className="s2-mixte">
+                <h3>Montage sur une même feuille</h3>
+                <ul>
+                  {eligibilites(s.entrees).map((x) => (
+                    <li key={x.k}>
+                      <span>Pièce {x.k}</span>
+                      <b className={x.possible ? "ok" : "non"}>{x.possible ? "montage mixte possible" : "feuilles séparées — " + x.raison}</b>
+                      {C("Fenêtre", cellFenetre(x.k))}
+                    </li>
+                  ))}
+                </ul>
+                <p className="s2-note">
+                  Règle de Roberto : les pièces pleines peuvent partager une feuille, une pièce à fenêtre s'imprime seule.
+                  Chiffrage actuel : {LIBELLE_MODE.aucun}{mixte.mode !== "aucun" ? ` — le réglage « ${LIBELLE_MODE[mixte.mode]} », répartition ${LIBELLE_REPART[mixte.repartition]}, n'est pas encore appliqué au prix` : ""}.
+                </p>
+              </div>
+            ) : null}
             <Fichier a={acces} taux={s.params?.app?.TAUX_INFOGRAPHIE ?? 85} />
           </Section>
 
@@ -1135,7 +1192,7 @@ export default function AppS2() {
       )}
       {popup === "verifier" && (
         <PopupVerification
-          controles={tous}
+          controles={[...tous, ...rappels]}
           onAccepter={(drapeau) => set(drapeau, 1)}
           onRefuser={(c) => {
             setPopup(null);

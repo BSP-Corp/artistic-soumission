@@ -122,3 +122,11 @@
 @media print {
   .s2-actions, .s2-barre, .s2-essai { display: none; }
 }
+
+.s2-mixte { margin-top: 14px; }
+.s2-mixte h3 { margin: 0 0 6px; }
+.s2-mixte ul { margin: 0; padding: 0; list-style: none; }
+.s2-mixte li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding: 4px 0; }
+.s2-mixte li > span { min-width: 64px; }
+.s2-mixte b.ok { color: #1f6f3a; font-weight: 600; }
+.s2-mixte b.non { color: #8a5a00; font-weight: 600; }

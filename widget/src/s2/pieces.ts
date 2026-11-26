@@ -16,7 +16,7 @@ type Entrees = Record<string, CellValue>;
 
 export const MAX_PIECES = 5;
 export const champPiece = (k: number, champ: string) => `X!P${k}_${champ}`;
-const CHAMPS = ["NO", "MOD", "DESC", "L", "H", "ENS", "QU", "OFF"];
+const CHAMPS = ["NO", "MOD", "DESC", "L", "H", "ENS", "QU", "OFF", "FEN"];
 
 /** Numéros des pièces présentes, 1 toujours comprise. */
 export function piecesPresentes(e: Entrees): number[] {

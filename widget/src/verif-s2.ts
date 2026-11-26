@@ -4,6 +4,9 @@ import { IN } from "@/lib/modele";
 import { chiffrerNumerique, lireTaux, type DemandeNum } from "@/s2/chiffrageNumerique";
 import { configDepuisLignes } from "@/s2/configNumerique";
 import { cellulesPiece, modifsPiece, piecesPresentes, prochainePiece, quantitePiece } from "@/s2/pieces";
+import { controlePrixMinimum } from "@/lib/controles";
+import { cellFenetre, eligibilites, inscrireMixte, reglagesMixte } from "@/s2/montageMixte";
+import { numeroBase, numerosEnregistres, prochaineRevision } from "@/s2/revision";
 import { achats, manquesSection09, montantInstallation, nouvelAchat, parFournisseur, totauxAchats } from "@/s2/soustraitance";
 
 let ko = 0;
@@ -84,6 +87,32 @@ const trie = (x: object) => JSON.stringify(Object.entries(x).sort(([p], [q]) => 
 ok(cfg.alerte === "" && cfg.champs.length === CONFIG_CHAMPS_NUMERIQUE.length && cfg.champs.every((c, i) => trie(c) === trie(CONFIG_CHAMPS_NUMERIQUE[i])), `aller-retour de la table sans perte (${cfg.champs.length} lignes) ${cfg.alerte}`);
 ok(configDepuisLignes([...lignes, { Type_produit: "bannieres", Champ_technique: "X", Type_champ: "nimporte" }]).alerte !== "", "ligne illisible : repli annoncé");
 ok(configDepuisLignes(lignes.filter((x) => x.Champ_technique !== "Num_Type_produit")).alerte !== "", "sans le choix du produit : repli annoncé");
+
+// ── prix minimum (Roberto : 250 $) ──
+ok(controlePrixMinimum(249.99).length === 1 && controlePrixMinimum(249.99)[0].type === "info", "sous 250 $ : un rappel, jamais bloquant");
+ok(controlePrixMinimum(250).length === 0 && controlePrixMinimum(0).length === 0, "à 250 $ ou sans prix : rien");
+ok(controlePrixMinimum(100, 0).length === 0 && controlePrixMinimum(400, 500).length === 1, "minimum réglable, 0 le désactive");
+
+// ── révisions : S-2026-0002R1, R2… ──
+ok(numeroBase("S-2026-0002R12") === "S-2026-0002" && numeroBase("S-2026-0002") === "S-2026-0002", "base du numéro");
+ok(prochaineRevision("S-2026-0002", []) === "S-2026-0002R1", "première révision : R1");
+ok(prochaineRevision("S-2026-0002", ["S-2026-0002", "S-2026-0002R1", "S-2026-0002R2", "S-2026-0003R5"]) === "S-2026-0002R3", "la suivante, sans toucher aux autres numéros");
+ok(prochaineRevision("S-2026-0002R1", ["S-2026-0002R2"]) === "S-2026-0002R3", "réviser une révision : même suite");
+ok(prochaineRevision("", ["S-2026-0002"]) === "", "sans numéro : pas de révision");
+ok(numerosEnregistres(['{"X!S2_NO":"S-2026-0002R1","S!J9":5}', '{"S!J9":5}'], "X!S2_NO").join() === "S-2026-0002R1", "numéros lus dans les données");
+
+// ── montage mixte : éligibilité, aucun prix touché ──
+const mx: Entrees = { "X!P2": 1, "X!P3": 1, [cellFenetre(3)]: 1 };
+const el = eligibilites(mx);
+ok(el.map((x) => x.possible).join() === "true,true,false" && el[2].raison === "fenêtre", "une pièce à fenêtre s'imprime seule");
+ok(eligibilites({ ...mx, [IN.zundCoupeO]: 2 }).every((x) => !x.possible && /découpe intérieure/.test(x.raison)), "découpe intérieure commune : toutes exclues");
+ok(eligibilites({ ...mx, [IN.protecteurFenetre]: 1 }).every((x) => !x.possible), "protecteur fenêtre commun : toutes exclues");
+ok(cellulesPiece(mx, 3).includes(cellFenetre(3)), "retirer une pièce retire sa case fenêtre");
+ok(reglagesMixte({}, undefined).mode === "aucun" && reglagesMixte({}, undefined).repartition === "surface", "défaut : aucun montage mixte, répartition surface");
+ok(reglagesMixte({}, { MONTAGE_MIXTE: 1, REPARTITION_MIXTE: 2 }).mode === "bandes" && reglagesMixte({}, { MONTAGE_MIXTE: 1, REPARTITION_MIXTE: 2 }).repartition === "principale", "paramètres 1 et 2 : bandes, pièce principale");
+ok(reglagesMixte({ "X!MIXTE_MODE": "aucun" }, { MONTAGE_MIXTE: 2 }).mode === "aucun", "l'inscrit sur la soumission l'emporte sur le paramètre");
+ok(reglagesMixte({}, { MONTAGE_MIXTE: 9 }).mode === "aucun", "valeur hors liste : défaut");
+ok(JSON.stringify(inscrireMixte({}, undefined)) === '{"X!MIXTE_MODE":"aucun","X!MIXTE_REPART":"surface"}', "inscription à l'enregistrement");
 
 console.log(ko ? ">>> " + ko + " ECHEC(S)" : ">>> TOUT PASSE");
 if (ko) process.exit(1);

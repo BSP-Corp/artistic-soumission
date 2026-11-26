@@ -231,6 +231,21 @@ export function controleDoubleCheck(m: Moteur, seuil = SEUIL_DOUBLE_CHECK_DEFAUT
   ];
 }
 
+/** Prix minimum de commande (Roberto, 25 nov. 2026 : 250 $). Paramètre APP_PRIX_MIN de
+ *  Taux_Calcul. Un rappel, jamais bloquant : on peut vendre sous le minimum, en le sachant. */
+export const PRIX_MIN_DEFAUT = 250;
+export function controlePrixMinimum(total: number, minimum = PRIX_MIN_DEFAUT): Controle[] {
+  if (!(minimum > 0) || !(total > 0) || total >= minimum) return [];
+  return [
+    {
+      type: "info",
+      cle: "prix-minimum",
+      message: `Soumission de ${total.toLocaleString("fr-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} $ : sous le minimum de commande de ${Math.round(minimum).toLocaleString("fr-CA")} $.`,
+      conseil: "Montez le prix au minimum ou faites approuver l'exception (paramètre APP_PRIX_MIN de Taux_Calcul). N'empêche pas la validation.",
+    },
+  ];
+}
+
 /** Tous les contrôles, dans l'ordre du formulaire. */
 export function controlesSoumission(
   m: Moteur,
