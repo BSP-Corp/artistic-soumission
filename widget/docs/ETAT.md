@@ -187,6 +187,40 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 26 nov. — L'écran de soumission ne laisse plus 900 px de vide à droite *(Youssef + Claude)*
+**Écran de production (`canevas`).** Youssef a montré un trou au milieu de l'écran et demandé si
+le téléversement du matin l'avait décalé. **Non** : le paquet ne contenait ni JSX ni CSS, et les
+règles `.toprow` / `.midcol` / `.clientcol` n'avaient pas bougé depuis `4dfb2c8`, le **commit
+initial du 27 octobre**. Le défaut existait depuis le début.
+
+**Mesuré plutôt que deviné.** Colonne de gauche **2 437 px**, zone de droite **1 554 px** : la
+page gardait près de **900 px de vide** sous « Fournisseur » pendant que la gauche continuait
+seule sur cinq blocs.
+
+**Trois blocs descendent en rangée** sous Fournisseur : comparatif *Zund ou platine*, finition
+(décorticage → emballage), transport. Le choix des trois vient de leurs **largeurs minimales
+mesurées** — 157 / 326 / 149 px — qui tiennent ensemble dans les 1 040 px disponibles. Les poids
+flex suivent ces minimums, donc aucun bloc ne peut être comprimé sous son contenu.
+
+| | Avant | Après |
+|---|---|---|
+| Colonne de gauche | 2 437 px | **1 896 px** |
+| Zone de droite | 1 554 px | **1 810 px** |
+| Écart | **883 px** | **86 px** |
+
+Vérifié à 1 790, 1 440 et 1 280 px : **aucun débordement horizontal**. À 1 280 la rangée passe
+le transport à la ligne, proprement. **Aucun calcul n'est touché** — les blocs sont déplacés tels
+quels, mêmes cellules, mêmes formules.
+
+**Ce qui reste :** le trou sous le tableau des quantités (`midcol` 278 px contre `clientcol`
+787 px, soit ~500 px). Le combler demande de déplacer soit *Fournisseur*, soit la carte
+« Montant / Total / Prix vendu » sous les quantités — et celle-là, tout le monde la cherche
+des yeux au même endroit depuis toujours. **Décision à prendre avant de bouger.**
+
+**Filet.** La production a été téléversée ce matin sans qu'aucun paquet de retour n'existe chez
+Youssef. Reconstruit depuis `origin/main` : `secours/canevas-AVANT-26nov.zip` — tout le travail
+de Soufiane, rien du nôtre. À refaire après chaque mise en production.
+
 ### 25 nov., au soir — La quantité commandée descend de la soumission vers le bon *(Claude)*
 **Trouvé en regardant la fiche de BT-1019 dans Creator.** Elle n'annonçait aucune quantité — ni
 commandée, ni maximum, ni produite — et tout le bloc « La feuille » était absent.

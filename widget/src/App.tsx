@@ -1471,125 +1471,6 @@ export default function App() {
             </table>
             </div>
 
-            {/* comparatif découpe : Zund vs Platine — même moteur, même méthode de coût que le récap */}
-            <div className="carte comparatif">
-              <div className="cmp-titre">
-                Zund ou platine ?
-                <span>
-                  set-up découpe + découpe/numérique du récap, recalculés par le moteur pour chaque famille
-                  {comparatif ? ` — ${comparatif.operations.join(" + ")}` : ""}
-                </span>
-              </div>
-              {comparatif && (comparatif.zund || comparatif.platine) ? (
-                <>
-                  <div className="cmp-lignes">
-                    <div className={"cmp-box" + (comparatif.zund && (!comparatif.platine || comparatif.zund.total <= comparatif.platine.total) ? " gagnant" : "")}>
-                      <b>Numérique (Zund)</b>
-                      {comparatif.zund ? (
-                        <span title={`set-up ${argent(comparatif.zund.setup)} + découpe ${argent(comparatif.zund.decoupe)}`}>
-                          {comparatif.zund.machine ? comparatif.zund.machine.nom : "Zund générique (classeur)"}
-                          {comparatif.zund.selectionnee ? " (sélectionnée)" : ""} — {argent(comparatif.zund.total)} · {minutes(comparatif.zund.minutes)} min
-                        </span>
-                      ) : (
-                        <span>aucune machine active</span>
-                      )}
-                    </div>
-                    <div className={"cmp-box" + (comparatif.platine && (!comparatif.zund || comparatif.platine.total < comparatif.zund.total) ? " gagnant" : "")}>
-                      <b>Platine (die-cut)</b>
-                      {comparatif.platine ? (
-                        <span title={`set-up + matrice ${argent(comparatif.platine.setup)} + découpe ${argent(comparatif.platine.decoupe)}`}>
-                          {comparatif.platine.machine ? comparatif.platine.machine.nom : "Platine générique (classeur)"}
-                          {comparatif.platine.selectionnee ? " (sélectionnée)" : ""} — {argent(comparatif.platine.total)} · {minutes(comparatif.platine.minutes)} min
-                        </span>
-                      ) : (
-                        <span>aucune machine active</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="cmp-pied">
-                    <span className="cmp-matrice">
-                      matrice job : <b>{matriceJob ? argent(matriceJob) : "coûts classeur"}</b> (champ « Matrice job $ » du bloc Platine)
-                    </span>
-                    <span className="cmp-verdict">
-                      {comparatif.zund && comparatif.platine
-                        ? comparatif.bascule
-                          ? `bascule ≈ ${comparatif.bascule} pcs : en-dessous ${comparatif.zund.total <= comparatif.platine.total ? "le Zund" : "la platine"} gagne, au-dessus l'autre`
-                          : "un type domine à toutes les quantités (vérifiez le coût de matrice)"
-                        : "activez au moins une machine de chaque famille pour comparer"}
-                    </span>
-                  </div>
-                  {embossageActif && (
-                    <div className="machine-warn">⚠ Embossage demandé — seule une platine est éligible (le Zund ne fait pas d'embossage).</div>
-                  )}
-                </>
-              ) : (
-                <div className="cmp-vide">Renseignez la quantité et activez une machine Zund ou platine pour comparer les deux familles.</div>
-              )}
-            </div>
-
-            {/* finition */}
-            <div className="carte">
-            <table className="blk w100">
-              <tbody>
-                {/* §5 — Décorticage / Vérification / Emballage sont des interrupteurs dans le
-                    classeur (C!Q77-82 : la « qté » vaut 1 ou rien) ; le nombre à droite est le
-                    temps estimé par pièce, qui reste saisissable. Coins ronds retiré (plus
-                    utilisé) — sa cellule est remise à zéro par normaliserEntrees(). */}
-                <tr>
-                  <td className="lb" style={{ width: 175 }}>Décorticage</td>
-                  <td className="ct">{F(IN.decorticageQte, "Décorticage (activer)")}</td>
-                  <td className="ct">{N(IN.decorticageTaux, 52, "Décorticage — temps estimé par pièce")}</td>
-                  {HM("decorticage", "Décorticage")}
-                </tr>
-                <tr>
-                  <td className="lb">Impression Laser</td>
-                  <td className="ct">{N(IN.laserQte, 52, "Impression laser (qté)")}</td>
-                  <td className="ct">{P(IN.laserAjust, 56, "Impression laser (ajust)")}</td>
-                  {HM("laser", "Impression laser")}
-                </tr>
-                <tr>
-                  <td className="lb">{T(IN.autres1Label, 90, "Autres 1 (libellé)")}</td>
-                  <td className="ct">{N(IN.autres1A, 52)}</td>
-                  <td className="ct">{N(IN.autres1B, 52)}</td>
-                  {HM("autres1", "Autres 1")}
-                </tr>
-                <tr>
-                  <td className="lb">{T(IN.autres2Label, 90, "Autres 2 (libellé)")}</td>
-                  <td className="ct">{N(IN.autres2A, 52)}</td>
-                  <td className="ct">{N(IN.autres2B, 52)}</td>
-                  {HM("autres2", "Autres 2")}
-                </tr>
-                <tr>
-                  <td className="lb">Vérifi. / Comptage</td>
-                  <td className="ct">{F(IN.verifQte, "Vérification / comptage (activer)")}</td>
-                  <td className="ct">{N(IN.verifTaux, 52, "Vérification — temps estimé par pièce")}</td>
-                  {HM("verif", "Vérification / comptage")}
-                </tr>
-                <tr>
-                  <td className="lb">Emballage</td>
-                  <td className="ct">{F(IN.emballageQte, "Emballage (activer)")}</td>
-                  <td className="ct">{N(IN.emballageTaux, 52, "Emballage — temps estimé par pièce")}</td>
-                  {HM("emballage", "Emballage")}
-                </tr>
-              </tbody>
-            </table>
-            </div>
-
-            {/* transport */}
-            <div className="carte">
-            <table className="blk w100">
-              <tbody>
-                <tr>
-                  <td className="lb" style={{ width: 175 }}>Transport</td>
-                  <td className="ct">{N(IN.transport, 88, "Transport ($)")}</td>
-                </tr>
-                <tr>
-                  <td className="lb">Autres Frais</td>
-                  <td className="ct">{N(IN.autresFrais, 88, "Autres frais ($)")}</td>
-                </tr>
-              </tbody>
-            </table>
-            </div>
           </div>
 
           {/* ══════ ZONE DROITE ══════ */}
@@ -1995,6 +1876,133 @@ export default function App() {
                 ))}
               </tbody>
             </table>
+            </div>
+
+            {/* ══ BAS DE PAGE : comparatif découpe, finition, transport ══
+                Ces trois blocs fermaient la colonne de gauche, qui mesurait 2 437 px contre
+                1 554 à droite : près de 900 px de vide sous « Fournisseur ». Ils tiennent en
+                rangée ici (largeurs minimales 157 / 326 / 149 px), et les deux colonnes
+                finissent à 80 px l'une de l'autre. Aucun calcul n'est touché. ══ */}
+            <div className="basrow">
+              {/* comparatif découpe : Zund vs Platine — même moteur, même méthode de coût que le récap */}
+              <div className="carte comparatif">
+                <div className="cmp-titre">
+                  Zund ou platine ?
+                  <span>
+                    set-up découpe + découpe/numérique du récap, recalculés par le moteur pour chaque famille
+                    {comparatif ? ` — ${comparatif.operations.join(" + ")}` : ""}
+                  </span>
+                </div>
+                {comparatif && (comparatif.zund || comparatif.platine) ? (
+                  <>
+                    <div className="cmp-lignes">
+                      <div className={"cmp-box" + (comparatif.zund && (!comparatif.platine || comparatif.zund.total <= comparatif.platine.total) ? " gagnant" : "")}>
+                        <b>Numérique (Zund)</b>
+                        {comparatif.zund ? (
+                          <span title={`set-up ${argent(comparatif.zund.setup)} + découpe ${argent(comparatif.zund.decoupe)}`}>
+                            {comparatif.zund.machine ? comparatif.zund.machine.nom : "Zund générique (classeur)"}
+                            {comparatif.zund.selectionnee ? " (sélectionnée)" : ""} — {argent(comparatif.zund.total)} · {minutes(comparatif.zund.minutes)} min
+                          </span>
+                        ) : (
+                          <span>aucune machine active</span>
+                        )}
+                      </div>
+                      <div className={"cmp-box" + (comparatif.platine && (!comparatif.zund || comparatif.platine.total < comparatif.zund.total) ? " gagnant" : "")}>
+                        <b>Platine (die-cut)</b>
+                        {comparatif.platine ? (
+                          <span title={`set-up + matrice ${argent(comparatif.platine.setup)} + découpe ${argent(comparatif.platine.decoupe)}`}>
+                            {comparatif.platine.machine ? comparatif.platine.machine.nom : "Platine générique (classeur)"}
+                            {comparatif.platine.selectionnee ? " (sélectionnée)" : ""} — {argent(comparatif.platine.total)} · {minutes(comparatif.platine.minutes)} min
+                          </span>
+                        ) : (
+                          <span>aucune machine active</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="cmp-pied">
+                      <span className="cmp-matrice">
+                        matrice job : <b>{matriceJob ? argent(matriceJob) : "coûts classeur"}</b> (champ « Matrice job $ » du bloc Platine)
+                      </span>
+                      <span className="cmp-verdict">
+                        {comparatif.zund && comparatif.platine
+                          ? comparatif.bascule
+                            ? `bascule ≈ ${comparatif.bascule} pcs : en-dessous ${comparatif.zund.total <= comparatif.platine.total ? "le Zund" : "la platine"} gagne, au-dessus l'autre`
+                            : "un type domine à toutes les quantités (vérifiez le coût de matrice)"
+                          : "activez au moins une machine de chaque famille pour comparer"}
+                      </span>
+                    </div>
+                    {embossageActif && (
+                      <div className="machine-warn">⚠ Embossage demandé — seule une platine est éligible (le Zund ne fait pas d'embossage).</div>
+                    )}
+                  </>
+                ) : (
+                  <div className="cmp-vide">Renseignez la quantité et activez une machine Zund ou platine pour comparer les deux familles.</div>
+                )}
+              </div>
+
+              {/* finition */}
+              <div className="carte bloc-finition">
+              <table className="blk w100">
+                <tbody>
+                  {/* §5 — Décorticage / Vérification / Emballage sont des interrupteurs dans le
+                      classeur (C!Q77-82 : la « qté » vaut 1 ou rien) ; le nombre à droite est le
+                      temps estimé par pièce, qui reste saisissable. Coins ronds retiré (plus
+                      utilisé) — sa cellule est remise à zéro par normaliserEntrees(). */}
+                  <tr>
+                    <td className="lb" style={{ width: 175 }}>Décorticage</td>
+                    <td className="ct">{F(IN.decorticageQte, "Décorticage (activer)")}</td>
+                    <td className="ct">{N(IN.decorticageTaux, 52, "Décorticage — temps estimé par pièce")}</td>
+                    {HM("decorticage", "Décorticage")}
+                  </tr>
+                  <tr>
+                    <td className="lb">Impression Laser</td>
+                    <td className="ct">{N(IN.laserQte, 52, "Impression laser (qté)")}</td>
+                    <td className="ct">{P(IN.laserAjust, 56, "Impression laser (ajust)")}</td>
+                    {HM("laser", "Impression laser")}
+                  </tr>
+                  <tr>
+                    <td className="lb">{T(IN.autres1Label, 90, "Autres 1 (libellé)")}</td>
+                    <td className="ct">{N(IN.autres1A, 52)}</td>
+                    <td className="ct">{N(IN.autres1B, 52)}</td>
+                    {HM("autres1", "Autres 1")}
+                  </tr>
+                  <tr>
+                    <td className="lb">{T(IN.autres2Label, 90, "Autres 2 (libellé)")}</td>
+                    <td className="ct">{N(IN.autres2A, 52)}</td>
+                    <td className="ct">{N(IN.autres2B, 52)}</td>
+                    {HM("autres2", "Autres 2")}
+                  </tr>
+                  <tr>
+                    <td className="lb">Vérifi. / Comptage</td>
+                    <td className="ct">{F(IN.verifQte, "Vérification / comptage (activer)")}</td>
+                    <td className="ct">{N(IN.verifTaux, 52, "Vérification — temps estimé par pièce")}</td>
+                    {HM("verif", "Vérification / comptage")}
+                  </tr>
+                  <tr>
+                    <td className="lb">Emballage</td>
+                    <td className="ct">{F(IN.emballageQte, "Emballage (activer)")}</td>
+                    <td className="ct">{N(IN.emballageTaux, 52, "Emballage — temps estimé par pièce")}</td>
+                    {HM("emballage", "Emballage")}
+                  </tr>
+                </tbody>
+              </table>
+              </div>
+
+              {/* transport */}
+              <div className="carte bloc-transport">
+              <table className="blk w100">
+                <tbody>
+                  <tr>
+                    <td className="lb" style={{ width: 175 }}>Transport</td>
+                    <td className="ct">{N(IN.transport, 88, "Transport ($)")}</td>
+                  </tr>
+                  <tr>
+                    <td className="lb">Autres Frais</td>
+                    <td className="ct">{N(IN.autresFrais, 88, "Autres frais ($)")}</td>
+                  </tr>
+                </tbody>
+              </table>
+              </div>
             </div>
           </div>
         </div>
