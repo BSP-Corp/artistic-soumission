@@ -1471,6 +1471,125 @@ export default function App() {
             </table>
             </div>
 
+            {/* comparatif découpe : Zund vs Platine — même moteur, même méthode de coût que le récap */}
+            <div className="carte comparatif">
+              <div className="cmp-titre">
+                Zund ou platine ?
+                <span>
+                  set-up découpe + découpe/numérique du récap, recalculés par le moteur pour chaque famille
+                  {comparatif ? ` — ${comparatif.operations.join(" + ")}` : ""}
+                </span>
+              </div>
+              {comparatif && (comparatif.zund || comparatif.platine) ? (
+                <>
+                  <div className="cmp-lignes">
+                    <div className={"cmp-box" + (comparatif.zund && (!comparatif.platine || comparatif.zund.total <= comparatif.platine.total) ? " gagnant" : "")}>
+                      <b>Numérique (Zund)</b>
+                      {comparatif.zund ? (
+                        <span title={`set-up ${argent(comparatif.zund.setup)} + découpe ${argent(comparatif.zund.decoupe)}`}>
+                          {comparatif.zund.machine ? comparatif.zund.machine.nom : "Zund générique (classeur)"}
+                          {comparatif.zund.selectionnee ? " (sélectionnée)" : ""} — {argent(comparatif.zund.total)} · {minutes(comparatif.zund.minutes)} min
+                        </span>
+                      ) : (
+                        <span>aucune machine active</span>
+                      )}
+                    </div>
+                    <div className={"cmp-box" + (comparatif.platine && (!comparatif.zund || comparatif.platine.total < comparatif.zund.total) ? " gagnant" : "")}>
+                      <b>Platine (die-cut)</b>
+                      {comparatif.platine ? (
+                        <span title={`set-up + matrice ${argent(comparatif.platine.setup)} + découpe ${argent(comparatif.platine.decoupe)}`}>
+                          {comparatif.platine.machine ? comparatif.platine.machine.nom : "Platine générique (classeur)"}
+                          {comparatif.platine.selectionnee ? " (sélectionnée)" : ""} — {argent(comparatif.platine.total)} · {minutes(comparatif.platine.minutes)} min
+                        </span>
+                      ) : (
+                        <span>aucune machine active</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="cmp-pied">
+                    <span className="cmp-matrice">
+                      matrice job : <b>{matriceJob ? argent(matriceJob) : "coûts classeur"}</b> (champ « Matrice job $ » du bloc Platine)
+                    </span>
+                    <span className="cmp-verdict">
+                      {comparatif.zund && comparatif.platine
+                        ? comparatif.bascule
+                          ? `bascule ≈ ${comparatif.bascule} pcs : en-dessous ${comparatif.zund.total <= comparatif.platine.total ? "le Zund" : "la platine"} gagne, au-dessus l'autre`
+                          : "un type domine à toutes les quantités (vérifiez le coût de matrice)"
+                        : "activez au moins une machine de chaque famille pour comparer"}
+                    </span>
+                  </div>
+                  {embossageActif && (
+                    <div className="machine-warn">⚠ Embossage demandé — seule une platine est éligible (le Zund ne fait pas d'embossage).</div>
+                  )}
+                </>
+              ) : (
+                <div className="cmp-vide">Renseignez la quantité et activez une machine Zund ou platine pour comparer les deux familles.</div>
+              )}
+            </div>
+
+            {/* finition */}
+            <div className="carte">
+            <table className="blk w100">
+              <tbody>
+                {/* §5 — Décorticage / Vérification / Emballage sont des interrupteurs dans le
+                    classeur (C!Q77-82 : la « qté » vaut 1 ou rien) ; le nombre à droite est le
+                    temps estimé par pièce, qui reste saisissable. Coins ronds retiré (plus
+                    utilisé) — sa cellule est remise à zéro par normaliserEntrees(). */}
+                <tr>
+                  <td className="lb" style={{ width: 175 }}>Décorticage</td>
+                  <td className="ct">{F(IN.decorticageQte, "Décorticage (activer)")}</td>
+                  <td className="ct">{N(IN.decorticageTaux, 52, "Décorticage — temps estimé par pièce")}</td>
+                  {HM("decorticage", "Décorticage")}
+                </tr>
+                <tr>
+                  <td className="lb">Impression Laser</td>
+                  <td className="ct">{N(IN.laserQte, 52, "Impression laser (qté)")}</td>
+                  <td className="ct">{P(IN.laserAjust, 56, "Impression laser (ajust)")}</td>
+                  {HM("laser", "Impression laser")}
+                </tr>
+                <tr>
+                  <td className="lb">{T(IN.autres1Label, 90, "Autres 1 (libellé)")}</td>
+                  <td className="ct">{N(IN.autres1A, 52)}</td>
+                  <td className="ct">{N(IN.autres1B, 52)}</td>
+                  {HM("autres1", "Autres 1")}
+                </tr>
+                <tr>
+                  <td className="lb">{T(IN.autres2Label, 90, "Autres 2 (libellé)")}</td>
+                  <td className="ct">{N(IN.autres2A, 52)}</td>
+                  <td className="ct">{N(IN.autres2B, 52)}</td>
+                  {HM("autres2", "Autres 2")}
+                </tr>
+                <tr>
+                  <td className="lb">Vérifi. / Comptage</td>
+                  <td className="ct">{F(IN.verifQte, "Vérification / comptage (activer)")}</td>
+                  <td className="ct">{N(IN.verifTaux, 52, "Vérification — temps estimé par pièce")}</td>
+                  {HM("verif", "Vérification / comptage")}
+                </tr>
+                <tr>
+                  <td className="lb">Emballage</td>
+                  <td className="ct">{F(IN.emballageQte, "Emballage (activer)")}</td>
+                  <td className="ct">{N(IN.emballageTaux, 52, "Emballage — temps estimé par pièce")}</td>
+                  {HM("emballage", "Emballage")}
+                </tr>
+              </tbody>
+            </table>
+            </div>
+
+            {/* transport */}
+            <div className="carte">
+            <table className="blk w100">
+              <tbody>
+                <tr>
+                  <td className="lb" style={{ width: 175 }}>Transport</td>
+                  <td className="ct">{N(IN.transport, 88, "Transport ($)")}</td>
+                </tr>
+                <tr>
+                  <td className="lb">Autres Frais</td>
+                  <td className="ct">{N(IN.autresFrais, 88, "Autres frais ($)")}</td>
+                </tr>
+              </tbody>
+            </table>
+            </div>
           </div>
 
           {/* ══════ ZONE DROITE ══════ */}
@@ -1581,90 +1700,6 @@ export default function App() {
                   </tbody>
                 </table>
                 </div>
-
-                {/* ══ Le montant suit les quantités ══
-                    Cette carte vivait en colonne de droite, sous l'adresse du client. La colonne
-                    du milieu s'arrêtait alors à 318 px contre 787 : un trou de 509 px sous le
-                    tableau des prix. Ici, l'œil descend Qté → Prix → Vendu → Montant → Total
-                    sans changer de colonne, et le trou tombe à 208 px de l'autre côté.
-                    Le bloc reste dans la bande du haut : visible sans faire défiler. ══ */}
-                {/* bloc prix vedette */}
-                {/* La colonne latérale (Valeur / $Cda / vs / taux US) fait partie de la MÊME table
-                    que la carte prix : en table séparée, ses 4 lignes ne pouvaient pas s'aligner
-                    sur les 5 lignes du prix et le bloc se lisait comme un fragment détaché. */}
-                <div className="carte carte-prix pricewrap">
-                  <table className="pricecard w100">
-                    <tbody>
-                      {/* Montant et Total : masqués le 16 sept., RÉAFFICHÉS le 28 (décision
-                          inversée par Christian — visibles pour tout le monde, §3). */}
-                      <tr>
-                        <td className="lb" style={{ width: 96 }}>Montant</td>
-                        <td className="rt bold">{masque(<Va cell={OUT.montant} label="Montant (coût de revient)">{argent(s.val(OUT.montant))}</Va>)}</td>
-                        <td className="ct bold sidecol" style={{ width: 58 }}>Valeur</td>
-                      </tr>
-                      <tr>
-                        <td className="lb">Facteur</td>
-                        <td className="ct dark">{P(IN.facteur, 56, "Facteur (marge)")}</td>
-                        <td className="ct sidecol">$Cda</td>
-                      </tr>
-                      <tr>
-                        <td className="lb">Total</td>
-                        <td className="rt big">{masque(<Va cell={OUT.total} label="Total (prix vendant)">{argent(s.val(OUT.total))}</Va>)}</td>
-                        <td className="ct sidecol"></td>
-                      </tr>
-                      <tr>
-                        <td className="lb">Prix Unitaire</td>
-                        <td className="rt bold">{masque(<Va cell={OUT.prixUnitaire} label="Prix unitaire">{nombre2(s.val(OUT.prixUnitaire))}</Va>)}</td>
-                        <td className="ct sidecol"></td>
-                      </tr>
-                      <tr>
-                        <td className="lb">Prix vendu</td>
-                        <td className="rt big venducell" title={"Prix vendu unitaire, décidé par le chargé de projet — suggestion : " + nombre2(s.val(OUT.prixUnitaire))}>
-                          {masque(
-                            <CelluleNum
-                              cell={CELL_VENDU}
-                              value={s.saisie(CELL_VENDU)}
-                              onChange={setVenduPrincipal}
-                              label="Prix vendu unitaire (saisie libre)"
-                              placeholder={nombre2(s.val(OUT.prixUnitaire))}
-                            />,
-                          )}
-                        </td>
-                        <td className="ct or sidecol">vs</td>
-                      </tr>
-                      <tr>
-                        {/* §8 — 2 décimales arrondies (1,57 $), plus 3 */}
-                        <td className="lb">
-                          Prix Unit.Us{" "}
-                          {/* Cochée : le taux vient de Taux_Change (cascade jour → semaine →
-                              mois → standard) au lieu d'être tapé à la main. Décochée : le
-                              taux est effacé, donc plus aucun montant US nulle part. */}
-                          <CelluleFlag
-                            cell={CELL_TAUX_INV}
-                            value={s.saisie(CELL_TAUX_INV)}
-                            onChange={basculerTauxInventaire}
-                            label={
-                              tauxInv
-                                ? `Utiliser le taux de l'inventaire (${LIBELLE_NIVEAU[tauxInv.niveau]} : ${tauxInv.taux})`
-                                : "Aucun taux paramétré dans Taux_Change"
-                            }
-                          />
-                        </td>
-                        <td className="rt">
-                          {toNum(s.saisie(IN.tauxUs))
-                            ? masque(<Va cell={OUT.prixUnitaireUs} label="Prix unitaire US">{nombre2(s.val(OUT.prixUnitaireUs))}</Va>, true)
-                            : ""}
-                        </td>
-                        <td
-                          className="ct dark sidecol"
-                          title={tauxInvActif && tauxInv ? `Taux de l'inventaire — ${LIBELLE_NIVEAU[tauxInv.niveau]}` : "Taux saisi à la main"}
-                        >
-                          {tauxInvActif ? <b>{s.saisie(IN.tauxUs) || "—"}</b> : N(IN.tauxUs, 52, "Taux US")}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
               </div>
 
               <div className="clientcol">
@@ -1747,7 +1782,85 @@ export default function App() {
                 </table>
                 </div>
 
-                <div className="carte carte-temps">
+                {/* bloc prix vedette */}
+                {/* La colonne latérale (Valeur / $Cda / vs / taux US) fait partie de la MÊME table
+                    que la carte prix : en table séparée, ses 4 lignes ne pouvaient pas s'aligner
+                    sur les 5 lignes du prix et le bloc se lisait comme un fragment détaché. */}
+                <div className="carte carte-prix pricewrap">
+                  <table className="pricecard w100">
+                    <tbody>
+                      {/* Montant et Total : masqués le 16 sept., RÉAFFICHÉS le 28 (décision
+                          inversée par Christian — visibles pour tout le monde, §3). */}
+                      <tr>
+                        <td className="lb" style={{ width: 96 }}>Montant</td>
+                        <td className="rt bold">{masque(<Va cell={OUT.montant} label="Montant (coût de revient)">{argent(s.val(OUT.montant))}</Va>)}</td>
+                        <td className="ct bold sidecol" style={{ width: 58 }}>Valeur</td>
+                      </tr>
+                      <tr>
+                        <td className="lb">Facteur</td>
+                        <td className="ct dark">{P(IN.facteur, 56, "Facteur (marge)")}</td>
+                        <td className="ct sidecol">$Cda</td>
+                      </tr>
+                      <tr>
+                        <td className="lb">Total</td>
+                        <td className="rt big">{masque(<Va cell={OUT.total} label="Total (prix vendant)">{argent(s.val(OUT.total))}</Va>)}</td>
+                        <td className="ct sidecol"></td>
+                      </tr>
+                      <tr>
+                        <td className="lb">Prix Unitaire</td>
+                        <td className="rt bold">{masque(<Va cell={OUT.prixUnitaire} label="Prix unitaire">{nombre2(s.val(OUT.prixUnitaire))}</Va>)}</td>
+                        <td className="ct sidecol"></td>
+                      </tr>
+                      <tr>
+                        <td className="lb">Prix vendu</td>
+                        <td className="rt big venducell" title={"Prix vendu unitaire, décidé par le chargé de projet — suggestion : " + nombre2(s.val(OUT.prixUnitaire))}>
+                          {masque(
+                            <CelluleNum
+                              cell={CELL_VENDU}
+                              value={s.saisie(CELL_VENDU)}
+                              onChange={setVenduPrincipal}
+                              label="Prix vendu unitaire (saisie libre)"
+                              placeholder={nombre2(s.val(OUT.prixUnitaire))}
+                            />,
+                          )}
+                        </td>
+                        <td className="ct or sidecol">vs</td>
+                      </tr>
+                      <tr>
+                        {/* §8 — 2 décimales arrondies (1,57 $), plus 3 */}
+                        <td className="lb">
+                          Prix Unit.Us{" "}
+                          {/* Cochée : le taux vient de Taux_Change (cascade jour → semaine →
+                              mois → standard) au lieu d'être tapé à la main. Décochée : le
+                              taux est effacé, donc plus aucun montant US nulle part. */}
+                          <CelluleFlag
+                            cell={CELL_TAUX_INV}
+                            value={s.saisie(CELL_TAUX_INV)}
+                            onChange={basculerTauxInventaire}
+                            label={
+                              tauxInv
+                                ? `Utiliser le taux de l'inventaire (${LIBELLE_NIVEAU[tauxInv.niveau]} : ${tauxInv.taux})`
+                                : "Aucun taux paramétré dans Taux_Change"
+                            }
+                          />
+                        </td>
+                        <td className="rt">
+                          {toNum(s.saisie(IN.tauxUs))
+                            ? masque(<Va cell={OUT.prixUnitaireUs} label="Prix unitaire US">{nombre2(s.val(OUT.prixUnitaireUs))}</Va>, true)
+                            : ""}
+                        </td>
+                        <td
+                          className="ct dark sidecol"
+                          title={tauxInvActif && tauxInv ? `Taux de l'inventaire — ${LIBELLE_NIVEAU[tauxInv.niveau]}` : "Taux saisi à la main"}
+                        >
+                          {tauxInvActif ? <b>{s.saisie(IN.tauxUs) || "—"}</b> : N(IN.tauxUs, 52, "Taux US")}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="carte">
                 <table className="blk w100">
                   <tbody>
                     <tr>
@@ -1764,7 +1877,6 @@ export default function App() {
                   </tbody>
                 </table>
                 </div>
-
               </div>
             </div>
 
@@ -1883,133 +1995,6 @@ export default function App() {
                 ))}
               </tbody>
             </table>
-            </div>
-
-            {/* ══ BAS DE PAGE : comparatif découpe, finition, transport ══
-                Ces trois blocs fermaient la colonne de gauche, qui mesurait 2 437 px contre
-                1 554 à droite : près de 900 px de vide sous « Fournisseur ». Ils tiennent en
-                rangée ici (largeurs minimales 157 / 326 / 149 px), et les deux colonnes
-                finissent à 80 px l'une de l'autre. Aucun calcul n'est touché. ══ */}
-            <div className="basrow">
-              {/* comparatif découpe : Zund vs Platine — même moteur, même méthode de coût que le récap */}
-              <div className="carte comparatif">
-                <div className="cmp-titre">
-                  Zund ou platine ?
-                  <span>
-                    set-up découpe + découpe/numérique du récap, recalculés par le moteur pour chaque famille
-                    {comparatif ? ` — ${comparatif.operations.join(" + ")}` : ""}
-                  </span>
-                </div>
-                {comparatif && (comparatif.zund || comparatif.platine) ? (
-                  <>
-                    <div className="cmp-lignes">
-                      <div className={"cmp-box" + (comparatif.zund && (!comparatif.platine || comparatif.zund.total <= comparatif.platine.total) ? " gagnant" : "")}>
-                        <b>Numérique (Zund)</b>
-                        {comparatif.zund ? (
-                          <span title={`set-up ${argent(comparatif.zund.setup)} + découpe ${argent(comparatif.zund.decoupe)}`}>
-                            {comparatif.zund.machine ? comparatif.zund.machine.nom : "Zund générique (classeur)"}
-                            {comparatif.zund.selectionnee ? " (sélectionnée)" : ""} — {argent(comparatif.zund.total)} · {minutes(comparatif.zund.minutes)} min
-                          </span>
-                        ) : (
-                          <span>aucune machine active</span>
-                        )}
-                      </div>
-                      <div className={"cmp-box" + (comparatif.platine && (!comparatif.zund || comparatif.platine.total < comparatif.zund.total) ? " gagnant" : "")}>
-                        <b>Platine (die-cut)</b>
-                        {comparatif.platine ? (
-                          <span title={`set-up + matrice ${argent(comparatif.platine.setup)} + découpe ${argent(comparatif.platine.decoupe)}`}>
-                            {comparatif.platine.machine ? comparatif.platine.machine.nom : "Platine générique (classeur)"}
-                            {comparatif.platine.selectionnee ? " (sélectionnée)" : ""} — {argent(comparatif.platine.total)} · {minutes(comparatif.platine.minutes)} min
-                          </span>
-                        ) : (
-                          <span>aucune machine active</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="cmp-pied">
-                      <span className="cmp-matrice">
-                        matrice job : <b>{matriceJob ? argent(matriceJob) : "coûts classeur"}</b> (champ « Matrice job $ » du bloc Platine)
-                      </span>
-                      <span className="cmp-verdict">
-                        {comparatif.zund && comparatif.platine
-                          ? comparatif.bascule
-                            ? `bascule ≈ ${comparatif.bascule} pcs : en-dessous ${comparatif.zund.total <= comparatif.platine.total ? "le Zund" : "la platine"} gagne, au-dessus l'autre`
-                            : "un type domine à toutes les quantités (vérifiez le coût de matrice)"
-                          : "activez au moins une machine de chaque famille pour comparer"}
-                      </span>
-                    </div>
-                    {embossageActif && (
-                      <div className="machine-warn">⚠ Embossage demandé — seule une platine est éligible (le Zund ne fait pas d'embossage).</div>
-                    )}
-                  </>
-                ) : (
-                  <div className="cmp-vide">Renseignez la quantité et activez une machine Zund ou platine pour comparer les deux familles.</div>
-                )}
-              </div>
-
-              {/* finition */}
-              <div className="carte bloc-finition">
-              <table className="blk w100">
-                <tbody>
-                  {/* §5 — Décorticage / Vérification / Emballage sont des interrupteurs dans le
-                      classeur (C!Q77-82 : la « qté » vaut 1 ou rien) ; le nombre à droite est le
-                      temps estimé par pièce, qui reste saisissable. Coins ronds retiré (plus
-                      utilisé) — sa cellule est remise à zéro par normaliserEntrees(). */}
-                  <tr>
-                    <td className="lb" style={{ width: 175 }}>Décorticage</td>
-                    <td className="ct">{F(IN.decorticageQte, "Décorticage (activer)")}</td>
-                    <td className="ct">{N(IN.decorticageTaux, 52, "Décorticage — temps estimé par pièce")}</td>
-                    {HM("decorticage", "Décorticage")}
-                  </tr>
-                  <tr>
-                    <td className="lb">Impression Laser</td>
-                    <td className="ct">{N(IN.laserQte, 52, "Impression laser (qté)")}</td>
-                    <td className="ct">{P(IN.laserAjust, 56, "Impression laser (ajust)")}</td>
-                    {HM("laser", "Impression laser")}
-                  </tr>
-                  <tr>
-                    <td className="lb">{T(IN.autres1Label, 90, "Autres 1 (libellé)")}</td>
-                    <td className="ct">{N(IN.autres1A, 52)}</td>
-                    <td className="ct">{N(IN.autres1B, 52)}</td>
-                    {HM("autres1", "Autres 1")}
-                  </tr>
-                  <tr>
-                    <td className="lb">{T(IN.autres2Label, 90, "Autres 2 (libellé)")}</td>
-                    <td className="ct">{N(IN.autres2A, 52)}</td>
-                    <td className="ct">{N(IN.autres2B, 52)}</td>
-                    {HM("autres2", "Autres 2")}
-                  </tr>
-                  <tr>
-                    <td className="lb">Vérifi. / Comptage</td>
-                    <td className="ct">{F(IN.verifQte, "Vérification / comptage (activer)")}</td>
-                    <td className="ct">{N(IN.verifTaux, 52, "Vérification — temps estimé par pièce")}</td>
-                    {HM("verif", "Vérification / comptage")}
-                  </tr>
-                  <tr>
-                    <td className="lb">Emballage</td>
-                    <td className="ct">{F(IN.emballageQte, "Emballage (activer)")}</td>
-                    <td className="ct">{N(IN.emballageTaux, 52, "Emballage — temps estimé par pièce")}</td>
-                    {HM("emballage", "Emballage")}
-                  </tr>
-                </tbody>
-              </table>
-              </div>
-
-              {/* transport */}
-              <div className="carte bloc-transport">
-              <table className="blk w100">
-                <tbody>
-                  <tr>
-                    <td className="lb" style={{ width: 175 }}>Transport</td>
-                    <td className="ct">{N(IN.transport, 88, "Transport ($)")}</td>
-                  </tr>
-                  <tr>
-                    <td className="lb">Autres Frais</td>
-                    <td className="ct">{N(IN.autresFrais, 88, "Autres frais ($)")}</td>
-                  </tr>
-                </tbody>
-              </table>
-              </div>
             </div>
           </div>
         </div>

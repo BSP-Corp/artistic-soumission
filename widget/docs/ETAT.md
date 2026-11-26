@@ -187,6 +187,22 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 26 nov. — La mise en page de la soumission est annulée, l'écran reprend sa forme *(Youssef)*
+**Les deux passes de mise en page sont revertées** (`1dc074d` et `3de18d8`). Décision de Youssef
+après les avoir vues en ligne : *« tu changes carrément le positionnement des écrans, le client
+ne va pas se retrouver »*. `App.tsx` et `styles.css` sont **à l'octet près** ceux de `9d96d44`,
+le build du matin.
+
+**La leçon, pour ne pas la reperdre.** Les chiffres étaient bons — 1 392 px de vide, 2 437 px
+de haut à gauche contre 1 554 à droite — et la correction les réglait. Mais cet écran est la
+**réplique du formulaire papier** que l'atelier connaît par cœur. Ce que coûte un bloc déplacé
+ne se mesure pas en pixels : il se mesure en « où est passé mon total ». **Sur l'écran de
+production, la familiarité passe avant l'équilibre visuel.** Le bon de travail et le pointage,
+eux, sont des écrans neufs : on y a la main libre.
+
+Le travail reste dans l'historique (`1dc074d`, `3de18d8`) si la question revient un jour — par
+exemple si l'atelier passe aux tablettes et que l'écran doit être repensé de toute façon.
+
 ### 26 nov. — L'écran de soumission ne laisse plus 900 px de vide à droite *(Youssef + Claude)*
 **Écran de production (`canevas`).** Youssef a montré un trou au milieu de l'écran et demandé si
 le téléversement du matin l'avait décalé. **Non** : le paquet ne contenait ni JSX ni CSS, et les
