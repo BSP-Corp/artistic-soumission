@@ -212,10 +212,25 @@ Vérifié à 1 790, 1 440 et 1 280 px : **aucun débordement horizontal**. À 1 
 le transport à la ligne, proprement. **Aucun calcul n'est touché** — les blocs sont déplacés tels
 quels, mêmes cellules, mêmes formules.
 
-**Ce qui reste :** le trou sous le tableau des quantités (`midcol` 278 px contre `clientcol`
-787 px, soit ~500 px). Le combler demande de déplacer soit *Fournisseur*, soit la carte
-« Montant / Total / Prix vendu » sous les quantités — et celle-là, tout le monde la cherche
-des yeux au même endroit depuis toujours. **Décision à prendre avant de bouger.**
+**Deuxième passe, le trou du milieu.** La carte **Montant / Facteur / Total / Prix vendu**
+descend **sous le tableau des quantités**, dans la colonne du milieu. L'œil suit maintenant
+Qté → Prix → Vendu → **Montant → Total** sans changer de colonne, et le bloc reste dans la
+bande du haut : visible sans faire défiler. Plafonné à 440 px, la largeur qu'il avait à droite —
+étiré sur les 624 px de la colonne, le total se lisait de travers.
+
+**Le « Temps Total » ne bouge pas** : essayé dans la colonne du milieu, il y laissait 168 px de
+vide en pleine page contre 13 px en le laissant à droite. Un trou en bas de page se voit bien
+moins qu'un trou au milieu.
+
+| | Au départ | Après la 1re passe | Après la 2e |
+|---|---|---|---|
+| Trou sous les quantités | **509 px** | 509 px | **13 px** |
+| Vide en bas à droite | **883 px** | 86 px | 333 px |
+| Vide total | **1 392 px** | 595 px | **346 px** |
+| Hauteur de page | 2 437 px | 1 896 px | **1 896 px** |
+
+Vérifié à 1 280, 1 440, 1 790 et 2 200 px : trou du haut entre 13 et 53 px, **aucun débordement
+horizontal** nulle part.
 
 **Filet.** La production a été téléversée ce matin sans qu'aucun paquet de retour n'existe chez
 Youssef. Reconstruit depuis `origin/main` : `secours/canevas-AVANT-26nov.zip` — tout le travail

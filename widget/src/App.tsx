@@ -1581,6 +1581,90 @@ export default function App() {
                   </tbody>
                 </table>
                 </div>
+
+                {/* ══ Le montant suit les quantités ══
+                    Cette carte vivait en colonne de droite, sous l'adresse du client. La colonne
+                    du milieu s'arrêtait alors à 318 px contre 787 : un trou de 509 px sous le
+                    tableau des prix. Ici, l'œil descend Qté → Prix → Vendu → Montant → Total
+                    sans changer de colonne, et le trou tombe à 208 px de l'autre côté.
+                    Le bloc reste dans la bande du haut : visible sans faire défiler. ══ */}
+                {/* bloc prix vedette */}
+                {/* La colonne latérale (Valeur / $Cda / vs / taux US) fait partie de la MÊME table
+                    que la carte prix : en table séparée, ses 4 lignes ne pouvaient pas s'aligner
+                    sur les 5 lignes du prix et le bloc se lisait comme un fragment détaché. */}
+                <div className="carte carte-prix pricewrap">
+                  <table className="pricecard w100">
+                    <tbody>
+                      {/* Montant et Total : masqués le 16 sept., RÉAFFICHÉS le 28 (décision
+                          inversée par Christian — visibles pour tout le monde, §3). */}
+                      <tr>
+                        <td className="lb" style={{ width: 96 }}>Montant</td>
+                        <td className="rt bold">{masque(<Va cell={OUT.montant} label="Montant (coût de revient)">{argent(s.val(OUT.montant))}</Va>)}</td>
+                        <td className="ct bold sidecol" style={{ width: 58 }}>Valeur</td>
+                      </tr>
+                      <tr>
+                        <td className="lb">Facteur</td>
+                        <td className="ct dark">{P(IN.facteur, 56, "Facteur (marge)")}</td>
+                        <td className="ct sidecol">$Cda</td>
+                      </tr>
+                      <tr>
+                        <td className="lb">Total</td>
+                        <td className="rt big">{masque(<Va cell={OUT.total} label="Total (prix vendant)">{argent(s.val(OUT.total))}</Va>)}</td>
+                        <td className="ct sidecol"></td>
+                      </tr>
+                      <tr>
+                        <td className="lb">Prix Unitaire</td>
+                        <td className="rt bold">{masque(<Va cell={OUT.prixUnitaire} label="Prix unitaire">{nombre2(s.val(OUT.prixUnitaire))}</Va>)}</td>
+                        <td className="ct sidecol"></td>
+                      </tr>
+                      <tr>
+                        <td className="lb">Prix vendu</td>
+                        <td className="rt big venducell" title={"Prix vendu unitaire, décidé par le chargé de projet — suggestion : " + nombre2(s.val(OUT.prixUnitaire))}>
+                          {masque(
+                            <CelluleNum
+                              cell={CELL_VENDU}
+                              value={s.saisie(CELL_VENDU)}
+                              onChange={setVenduPrincipal}
+                              label="Prix vendu unitaire (saisie libre)"
+                              placeholder={nombre2(s.val(OUT.prixUnitaire))}
+                            />,
+                          )}
+                        </td>
+                        <td className="ct or sidecol">vs</td>
+                      </tr>
+                      <tr>
+                        {/* §8 — 2 décimales arrondies (1,57 $), plus 3 */}
+                        <td className="lb">
+                          Prix Unit.Us{" "}
+                          {/* Cochée : le taux vient de Taux_Change (cascade jour → semaine →
+                              mois → standard) au lieu d'être tapé à la main. Décochée : le
+                              taux est effacé, donc plus aucun montant US nulle part. */}
+                          <CelluleFlag
+                            cell={CELL_TAUX_INV}
+                            value={s.saisie(CELL_TAUX_INV)}
+                            onChange={basculerTauxInventaire}
+                            label={
+                              tauxInv
+                                ? `Utiliser le taux de l'inventaire (${LIBELLE_NIVEAU[tauxInv.niveau]} : ${tauxInv.taux})`
+                                : "Aucun taux paramétré dans Taux_Change"
+                            }
+                          />
+                        </td>
+                        <td className="rt">
+                          {toNum(s.saisie(IN.tauxUs))
+                            ? masque(<Va cell={OUT.prixUnitaireUs} label="Prix unitaire US">{nombre2(s.val(OUT.prixUnitaireUs))}</Va>, true)
+                            : ""}
+                        </td>
+                        <td
+                          className="ct dark sidecol"
+                          title={tauxInvActif && tauxInv ? `Taux de l'inventaire — ${LIBELLE_NIVEAU[tauxInv.niveau]}` : "Taux saisi à la main"}
+                        >
+                          {tauxInvActif ? <b>{s.saisie(IN.tauxUs) || "—"}</b> : N(IN.tauxUs, 52, "Taux US")}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
               </div>
 
               <div className="clientcol">
@@ -1663,85 +1747,7 @@ export default function App() {
                 </table>
                 </div>
 
-                {/* bloc prix vedette */}
-                {/* La colonne latérale (Valeur / $Cda / vs / taux US) fait partie de la MÊME table
-                    que la carte prix : en table séparée, ses 4 lignes ne pouvaient pas s'aligner
-                    sur les 5 lignes du prix et le bloc se lisait comme un fragment détaché. */}
-                <div className="carte carte-prix pricewrap">
-                  <table className="pricecard w100">
-                    <tbody>
-                      {/* Montant et Total : masqués le 16 sept., RÉAFFICHÉS le 28 (décision
-                          inversée par Christian — visibles pour tout le monde, §3). */}
-                      <tr>
-                        <td className="lb" style={{ width: 96 }}>Montant</td>
-                        <td className="rt bold">{masque(<Va cell={OUT.montant} label="Montant (coût de revient)">{argent(s.val(OUT.montant))}</Va>)}</td>
-                        <td className="ct bold sidecol" style={{ width: 58 }}>Valeur</td>
-                      </tr>
-                      <tr>
-                        <td className="lb">Facteur</td>
-                        <td className="ct dark">{P(IN.facteur, 56, "Facteur (marge)")}</td>
-                        <td className="ct sidecol">$Cda</td>
-                      </tr>
-                      <tr>
-                        <td className="lb">Total</td>
-                        <td className="rt big">{masque(<Va cell={OUT.total} label="Total (prix vendant)">{argent(s.val(OUT.total))}</Va>)}</td>
-                        <td className="ct sidecol"></td>
-                      </tr>
-                      <tr>
-                        <td className="lb">Prix Unitaire</td>
-                        <td className="rt bold">{masque(<Va cell={OUT.prixUnitaire} label="Prix unitaire">{nombre2(s.val(OUT.prixUnitaire))}</Va>)}</td>
-                        <td className="ct sidecol"></td>
-                      </tr>
-                      <tr>
-                        <td className="lb">Prix vendu</td>
-                        <td className="rt big venducell" title={"Prix vendu unitaire, décidé par le chargé de projet — suggestion : " + nombre2(s.val(OUT.prixUnitaire))}>
-                          {masque(
-                            <CelluleNum
-                              cell={CELL_VENDU}
-                              value={s.saisie(CELL_VENDU)}
-                              onChange={setVenduPrincipal}
-                              label="Prix vendu unitaire (saisie libre)"
-                              placeholder={nombre2(s.val(OUT.prixUnitaire))}
-                            />,
-                          )}
-                        </td>
-                        <td className="ct or sidecol">vs</td>
-                      </tr>
-                      <tr>
-                        {/* §8 — 2 décimales arrondies (1,57 $), plus 3 */}
-                        <td className="lb">
-                          Prix Unit.Us{" "}
-                          {/* Cochée : le taux vient de Taux_Change (cascade jour → semaine →
-                              mois → standard) au lieu d'être tapé à la main. Décochée : le
-                              taux est effacé, donc plus aucun montant US nulle part. */}
-                          <CelluleFlag
-                            cell={CELL_TAUX_INV}
-                            value={s.saisie(CELL_TAUX_INV)}
-                            onChange={basculerTauxInventaire}
-                            label={
-                              tauxInv
-                                ? `Utiliser le taux de l'inventaire (${LIBELLE_NIVEAU[tauxInv.niveau]} : ${tauxInv.taux})`
-                                : "Aucun taux paramétré dans Taux_Change"
-                            }
-                          />
-                        </td>
-                        <td className="rt">
-                          {toNum(s.saisie(IN.tauxUs))
-                            ? masque(<Va cell={OUT.prixUnitaireUs} label="Prix unitaire US">{nombre2(s.val(OUT.prixUnitaireUs))}</Va>, true)
-                            : ""}
-                        </td>
-                        <td
-                          className="ct dark sidecol"
-                          title={tauxInvActif && tauxInv ? `Taux de l'inventaire — ${LIBELLE_NIVEAU[tauxInv.niveau]}` : "Taux saisi à la main"}
-                        >
-                          {tauxInvActif ? <b>{s.saisie(IN.tauxUs) || "—"}</b> : N(IN.tauxUs, 52, "Taux US")}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="carte">
+                <div className="carte carte-temps">
                 <table className="blk w100">
                   <tbody>
                     <tr>
@@ -1758,6 +1764,7 @@ export default function App() {
                   </tbody>
                 </table>
                 </div>
+
               </div>
             </div>
 

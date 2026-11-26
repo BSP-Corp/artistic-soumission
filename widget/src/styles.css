@@ -463,6 +463,10 @@ td.calccell {
   flex-direction: column;
   gap: 14px;
 }
+/* La carte du montant et le temps total vivent maintenant sous les quantités, dans la colonne
+   du milieu, qui fait 624 px. Sans plafond ils s'étireraient sur toute cette largeur et le
+   total se lirait de travers : on les garde à la largeur qu'ils avaient en colonne de droite. */
+.midcol > .carte-prix { max-width: 440px; }
 .clientcol {
   width: 400px;
   flex: none;
