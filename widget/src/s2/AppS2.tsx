@@ -753,6 +753,9 @@ export default function AppS2() {
     <Texte label={label} cell={cell} value={s.saisie(cell)} onChange={set} {...o} />
   );
   const C = (label: string, cell: string) => <Coche label={label} cell={cell} value={s.saisie(cell)} onChange={set} />;
+  /** Case « 1 ou vide ». Une soumission qui porte plus que 1 garde un champ numérique : la case
+   *  la réécrirait à 1 au premier clic. Pour les indicateurs, le contrôle bloquant le signale. */
+  const CN = (label: string, cell: string) => (toNum(s.saisie(cell)) > 1 ? N(label, cell) : C(label, cell));
 
   const temps = dureeTexte(0, heures * 60);
   const unitaireUs = seri ? s.num(OUT.prixUnitaireUs) : 0;
@@ -795,7 +798,7 @@ export default function AppS2() {
     "03": joindre(nv("X!CERT_UL") ? "UL" : "", nv("X!CERT_CSA") ? "CSA" : "", nv("X!CERT_FAIR") ? "FAIR" : "") || "aucune",
     "04": joindre(
       actif && nv(actif) ? nv(actif).toLocaleString("fr-CA") + " ex." : "",
-      "gâche " + Math.round(gache * 100) + " %",
+      "perte " + Math.round(gache * 100) + " %",
     ),
     "05": seri
       ? joindre(
@@ -942,7 +945,7 @@ export default function AppS2() {
           <Section no="04" titre="Quantités" resume={resumes["04"]}>
             <table className="s2-table">
               <thead>
-                <tr><th>Retenue</th><th>Palier</th><th>Avec la gâche</th><th /></tr>
+                <tr><th>Retenue</th><th>Palier</th><th>Avec la perte</th><th /></tr>
               </thead>
               <tbody>
                 {paliers.map((c, i) => (
@@ -959,7 +962,7 @@ export default function AppS2() {
             </table>
             <div className="s2-champs">
               <button type="button" className="btn" disabled={paliers.length >= 10} onClick={() => set(prochainPalier(s.entrees), "")}>+ Ajouter un palier</button>
-              {N("Gâche", IN.perte, { pct: true })}
+              {N("Perte", IN.perte, { pct: true })}
             </div>
             <GrillePieces a={acces} entrees={s.entrees} paliers={paliers} />
           </Section>
@@ -997,12 +1000,12 @@ export default function AppS2() {
             </div>
             <h3>Réglages d'impression</h3>
             <div className="s2-champs">
-              {N("Séparateur avant", IN.separateur1)}
-              {N("Séparateur après", IN.separateur2)}
+              {CN("Séparateur avant", IN.separateur1)}
+              {CN("Séparateur après", IN.separateur2)}
               {N("Passe add. avant", IN.passeAdd1)}
               {N("Passe add. après", IN.passeAdd2)}
               {N("Recto / verso avant", IN.rectoVerso1)}
-              {N("Recto / verso après", IN.rectoVerso2)}
+              {CN("Recto / verso après", IN.rectoVerso2)}
               {N("Couverture d'encre", IN.encres, { pct: true })}
             </div>
             <h3>Ajouts de production</h3>
@@ -1023,8 +1026,8 @@ export default function AppS2() {
             </div>
             <h3>Pose de l'adhésif</h3>
             <div className="s2-champs">
-              {C("Adhésif laminé", IN.adhesifLamine)}
-              {C("Adhésif registre", IN.adhesifRegistre)}
+              {CN("Adhésif laminé", IN.adhesifLamine)}
+              {CN("Adhésif registre", IN.adhesifRegistre)}
             </div>
             {adhesif && !toNum(s.saisie(adhesif.cellule)) ? (
               <p className="s2-alerte">L'adhésif choisi demande « {adhesif.libelle} » ({adhesif.indice}), qui n'est pas coché : ce temps n'est pas compris dans le prix.</p>
@@ -1039,7 +1042,7 @@ export default function AppS2() {
               {C("Zünd, mi-chair", IN.zundKisscutC)}
               {N("Platine, matrices", IN.platCoupeDie)}
               {N("Platine, poses", IN.platCoupeUp)}
-              {N("Guillotine", IN.guillotineQte)}
+              {CN("Guillotine", IN.guillotineQte)}
             </div> : null}
             <Outillage a={acces} />
           </Section>
@@ -1112,7 +1115,7 @@ export default function AppS2() {
                   <dl className="s2-resume">
                     <dt>Feuille suggérée</dt><dd>{libelleFormat(montage.meilleur.format)} po</dd>
                     <dt>Poses par feuille</dt><dd>{montage.meilleur.upHorizontal} × {montage.meilleur.upVertical} = {montage.meilleur.upParFeuille}{montage.meilleur.pieceTournee ? ", pièce tournée de 90°" : ""}</dd>
-                    <dt>Feuilles, gâche comprise</dt><dd>{montage.meilleur.nbFeuilles.toLocaleString("fr-CA")}</dd>
+                    <dt>Feuilles, perte comprise</dt><dd>{montage.meilleur.nbFeuilles.toLocaleString("fr-CA")}</dd>
                     {montage.gainFeuilles !== null && montage.gainFeuilles > 0 && !retenu ? (<><dt>Feuilles économisées</dt><dd>{montage.gainFeuilles.toLocaleString("fr-CA")}</dd></>) : null}
                     <dt>Utilisation de la feuille</dt><dd>{Math.round(utilisation * 100)} %</dd>
                     <dt>Roulable sur</dt><dd>{montage.meilleur.presses.join(", ")}</dd>
