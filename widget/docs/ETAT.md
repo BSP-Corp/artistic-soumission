@@ -187,6 +187,40 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 25 nov., au soir — La fiche de production passe à l'écran *(Claude)*
+**Branche `tableau-atelier`.** Le tableau d'atelier montrait les jobs et leurs opérations ; il ne
+montrait pas **la job**. L'opérateur lisait encore la feuille imprimée pour savoir combien de
+pièces, sur quelle presse, avec quel cadre, et ce que le chargé de projet avait écrit comme
+consigne. C'était la dernière chose qui le retenait au papier.
+
+**On appuie sur l'entête d'une job, sa fiche s'ouvre en plein écran.** Dans l'ordre où on en a
+besoin : les quantités et la date requise en gros, puis la gamme — pointable depuis là, sans
+revenir en arrière —, puis la pièce, la feuille, les réglages, le dossier, puis les instructions
+et la procédure en pleine largeur. Un retour « Toutes les jobs » ramène au tableau.
+
+**Aucun appel de plus, aucun moteur.** La fiche lit les colonnes « plates » que
+`champsPlatsBT` écrit déjà à chaque enregistrement du bon de travail (`No_Presse`, `No_Cadre`,
+`Nb_Up`, `Nbre_Mrcx_Feuille`, `Instructions`, `Procedure`…). Elles arrivent dans **la même lecture**
+de `bon_travail_Report` que les cinq temps estimés. Le widget de pointage reste sans classeur.
+
+**Une fiche partielle ne casse rien** : chaque ligne vide disparaît, et un bloc entièrement vide
+ne s'affiche pas. Vérifié sur le jeu d'exemple — BT-1039, sans presse ni cadre ni consigne,
+n'affiche ni « Les réglages » ni les deux blocs de texte. Un bon jamais enregistré depuis
+l'écran de bon de travail affichera une fiche quasi vide, avec un mot qui le dit ; sa gamme
+reste pointable.
+
+**L'échéance se lit en mots.** « 27 novembre 2026 · requis · dans 2 jours », et la case vire à
+l'orange à trois jours ou moins. En atelier, « 2 décembre » et « demain » ne disent pas la même
+chose.
+
+Vérifié au navigateur à 375, 640, 768 px et en pleine largeur : les blocs **coulent en colonnes**
+(même correction qu'au bon de travail le 25 — une grille réserve une case par bloc et laisse des
+trous). Démarrage d'une opération testé depuis la fiche : la feuille du bas s'ouvre, le pointage
+part, et **on reste sur la fiche**.
+
+→ À téléverser dans l'entrée **`pointage2`** (page `Pointage_essai`), paquet
+`widget/pointage/dist/pointage.zip`.
+
 ### 25 nov. — Le repliage est en ligne, et un contrôle montre les valeurs sans case *(Soufiane + Claude)*
 **En ligne sur `Soumission_essai`, build `2026-11-25 15:51 UTC`** (branche `refonte-soumission`, `064a241`).
 Relu dans Creator : 01 à 08 ouvertes, 09 et 10 fermées, cinq soumissions au même prix que l'écran

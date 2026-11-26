@@ -34,6 +34,7 @@ import {
   dureeLisible,
   dureeCourte,
   heureLisible,
+  dateCreator,
   type Referentiels,
   type Pointage,
   type Operation,
@@ -47,6 +48,39 @@ const CLE_OPERATEUR = "bsp.pointage.operateur";
 const CLE_STATUT = "bsp.pointage.statut";
 
 type Avis = { ton: "ok" | "erreur"; texte: string } | null;
+
+/** Une ligne de la fiche. La valeur vide fait disparaître la ligne : une job dont le bon
+ *  n'a pas de n° de cadre ne doit pas afficher « Cadre — ». */
+type LigneFiche = [string, string];
+
+const nombre = (v: number, dec = 0) =>
+  v.toLocaleString("fr-CA", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+
+/** Une dimension : deux décimales au plus, sans zéros inutiles. */
+const mesure = (v: number) => v.toLocaleString("fr-CA", { maximumFractionDigits: 2 });
+
+const paire = (x: number, y: number) => (x > 0 || y > 0 ? mesure(x) + " × " + mesure(y) : "");
+
+/** `08-Dec-2026` → `8 décembre 2026`. Rend la chaîne telle quelle si elle est illisible :
+ *  mieux vaut une date au format Creator qu'un champ vide. */
+function jourLisible(v: string): string {
+  const d = dateCreator(v);
+  if (!d) return v;
+  return d.toLocaleDateString("fr-CA", { day: "numeric", month: "long", year: "numeric" });
+}
+
+/** Dans combien de jours, en mots — et si c'est déjà passé. En atelier, « 2 décembre »
+ *  ne dit pas la même chose que « demain ». */
+function echeance(v: string): { texte: string; urgent: boolean } | null {
+  const d = dateCreator(v);
+  if (!d) return null;
+  const jour = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const j = Math.round((jour(d) - jour(new Date())) / 86400000);
+  if (j < 0) return { texte: j === -1 ? "hier" : "il y a " + -j + " jours", urgent: true };
+  if (j === 0) return { texte: "aujourd'hui", urgent: true };
+  if (j === 1) return { texte: "demain", urgent: true };
+  return { texte: "dans " + j + " jours", urgent: j <= 3 };
+}
 
 /** Ce que la feuille du bas demande, quand elle est ouverte. */
 type Feuille =
@@ -83,6 +117,8 @@ export default function AppPointage() {
   const [maintenant, setMaintenant] = useState(() => new Date());
 
   const [feuille, setFeuille] = useState<Feuille>(null);
+  /** La job dont on regarde la fiche, par son identifiant. `null` = le tableau. */
+  const [jobOuverte, setJobOuverte] = useState<string | null>(null);
   const [recherche, setRecherche] = useState("");
   const [statutFiltre, setStatutFiltre] = useState(() => memoire(CLE_STATUT));
   const [dernierOperateur, setDernierOperateur] = useState(() => memoire(CLE_OPERATEUR));
@@ -226,6 +262,60 @@ export default function AppPointage() {
   }
 
   if (!pret) return <div className="pt-page pt-attente">Chargement…</div>;
+
+  // ── la gamme d'une job ────────────────────────────────────────────────────
+  // Les mêmes boutons servent sur le tableau et sur la fiche : un opérateur qui a appris à
+  // pointer depuis l'un n'a rien à réapprendre sur l'autre. `grand` ne change que la taille.
+  function rendreOps(bon: BonRef, grand = false) {
+    const gamme = gammeDuBon(bon, ref?.operations ?? [], pointages);
+    return (
+      <div className={"pt-ops" + (grand ? " pt-ops-grand" : "")}>
+        {gamme.map(({ operation: op, prevuMin }) => {
+          const ps = pointagesDe(bon.id, op.id);
+          const ouverts = ps.filter((p) => p.statut === "En cours" || p.statut === "En pause");
+          const fait = ps.length > 0 && !ouverts.length;
+          const enPause = ouverts.length > 0 && ouverts.every((p) => p.statut === "En pause");
+          const reel = reelDe(bon.id, op.id);
+          const etat = ouverts.length ? (enPause ? "pause" : "cours") : fait ? "fait" : "afaire";
+          const retard = reel > 0 && prevuMin > 0 && reel > prevuMin;
+
+          let detail: string;
+          if (ouverts.length) {
+            const qui = ouverts.map((p) => p.ressourceNom || "?").join(", ");
+            detail = (enPause ? "⏸ " : "▶ ") + qui + " · " + dureeLisible(reel);
+          } else if (fait) {
+            detail =
+              prevuMin > 0
+                ? dureeCourte(reel) + " / " + dureeCourte(prevuMin)
+                : dureeCourte(reel) + " · sans estimation";
+          } else {
+            detail = prevuMin > 0 ? "prévu " + dureeCourte(prevuMin) : "sans estimation";
+          }
+
+          return (
+            <button
+              key={op.id}
+              className={`pt-op pt-op-${etat}${retard ? " pt-op-retard" : ""}`}
+              disabled={occupe}
+              onClick={() =>
+                setFeuille(
+                  ouverts.length
+                    ? { quoi: "agir", bon, op, pointages: ps }
+                    : { quoi: "demarrer", bon, op },
+                )
+              }
+            >
+              <span className="pt-op-nom">{op.nom}</span>
+              <span className="pt-op-detail">{detail}</span>
+            </button>
+          );
+        })}
+        <button className="pt-op pt-op-plus" onClick={() => setFeuille({ quoi: "ajouter", bon })}>
+          + autre opération
+        </button>
+      </div>
+    );
+  }
 
   // ── feuille du bas ────────────────────────────────────────────────────────
   function fermer() {
@@ -475,6 +565,153 @@ export default function AppPointage() {
     );
   }
 
+  // ── la fiche d'une job ────────────────────────────────────────────────────
+  // Ce que l'opérateur lisait sur la feuille imprimée, à l'écran, dans l'ordre où il en a
+  // besoin : d'abord combien et pour quand, puis ce qu'il a à faire, puis les réglages, puis
+  // les consignes. Il déclare depuis la même vue — il n'a jamais à revenir en arrière.
+  function rendreFiche(bon: BonRef) {
+    const f = bon.fiche;
+    const quand = echeance(f.dateRequise);
+
+    const blocs: { titre: string; lignes: LigneFiche[] }[] = [
+      {
+        titre: "La pièce",
+        lignes: [
+          ["N° de pièce", bon.noPiece],
+          ["Format", paire(f.formatX, f.formatY)],
+          ["Matrice", paire(f.mrxX, f.mrxY)],
+          ["Poses (up)", f.nbUp > 0 ? nombre(f.nbUp) : ""],
+        ],
+      },
+      {
+        titre: "La feuille",
+        lignes: [
+          ["Morceaux par feuille", f.mrcxFeuille > 0 ? nombre(f.mrcxFeuille) : ""],
+          ["Feuilles", f.nbreFeuilles > 0 ? nombre(f.nbreFeuilles, f.nbreFeuilles % 1 ? 1 : 0) : ""],
+          ["Feuilles de correction", f.feuillesCorr > 0 ? nombre(f.feuillesCorr) : ""],
+          ["Morceaux à imprimer", f.mxAImpr > 0 ? nombre(f.mxAImpr) : ""],
+        ],
+      },
+      {
+        titre: "Les réglages",
+        lignes: [
+          ["Presse", f.noPresse],
+          ["Cadre", f.noCadre],
+          ["Codes", [f.code, f.codeM, f.codeR, f.codeE].filter(Boolean).join(" · ")],
+          ["Surplus", f.surplus],
+          ["Protection", f.protectionPct > 0 ? mesure(f.protectionPct) + " %" : ""],
+        ],
+      },
+      {
+        titre: "Le dossier",
+        lignes: [
+          ["Soumission", f.noSoum],
+          ["Bon de commande", f.po],
+          ["N° de client", f.noClient],
+          ["Commandé le", f.commandeLe ? jourLisible(f.commandeLe) : ""],
+          ["Représentant", f.initiales],
+          ["Autre", f.autre],
+        ],
+      },
+    ]
+      .map((b) => ({ ...b, lignes: b.lignes.filter(([, v]) => v !== "") }))
+      .filter((b) => b.lignes.length > 0);
+
+    const chiffres: LigneFiche[] = [
+      ["commandées", f.qteCommandee > 0 ? nombre(f.qteCommandee) : ""],
+      ["maximum", f.qteMaximum > 0 ? nombre(f.qteMaximum) : ""],
+      ["produites", f.qteProduite > 0 ? nombre(f.qteProduite) : ""],
+    ].filter(([, v]) => v !== "") as LigneFiche[];
+
+    const consignes: LigneFiche[] = [
+      ["Instructions", f.instructions],
+      ["Procédure", f.procedure],
+    ].filter(([, v]) => v.trim() !== "") as LigneFiche[];
+
+    return (
+      <div className={"pt-page" + (feuille ? " pt-page-figee" : "")}>
+        <header className="pt-fiche-entete">
+          <button className="pt-btn pt-retour" onClick={() => setJobOuverte(null)}>
+            ← Toutes les jobs
+          </button>
+          <div className="pt-fiche-titre">
+            <span className="pt-job-no">{bon.noBT}</span>
+            {bon.statut && <span className="pt-etiquette">{bon.statut}</span>}
+          </div>
+          <span className="pt-horloge">{heureLisible(maintenant)}</span>
+        </header>
+
+        <p className="pt-fiche-sous">
+          <strong>{bon.client || "client non renseigné"}</strong>
+          {bon.modele && <> · {bon.modele}</>}
+        </p>
+
+        {avis && <p className={`pt-avis pt-avis-${avis.ton}`}>{avis.texte}</p>}
+
+        {(chiffres.length > 0 || f.dateRequise) && (
+          <div className="pt-bandeau">
+            {chiffres.map(([libelle, valeur]) => (
+              <div className="pt-chiffre" key={libelle}>
+                <span className="pt-chiffre-val">{valeur}</span>
+                <span className="pt-chiffre-lab">{libelle}</span>
+              </div>
+            ))}
+            {f.dateRequise && (
+              <div className={"pt-chiffre pt-chiffre-date" + (quand?.urgent ? " pt-urgent" : "")}>
+                <span className="pt-chiffre-val">{jourLisible(f.dateRequise)}</span>
+                <span className="pt-chiffre-lab">requis {quand ? "· " + quand.texte : ""}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <section className="pt-fiche-bloc pt-fiche-gamme">
+          <h2>Ce qu'il y a à faire</h2>
+          {rendreOps(bon, true)}
+        </section>
+
+        {blocs.length > 0 && (
+          <div className="pt-fiche-grille">
+            {blocs.map((b) => (
+              <section className="pt-fiche-bloc" key={b.titre}>
+                <h2>{b.titre}</h2>
+                <dl className="pt-defs">
+                  {b.lignes.map(([libelle, valeur]) => (
+                    <div key={libelle}>
+                      <dt>{libelle}</dt>
+                      <dd>{valeur}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+            ))}
+          </div>
+        )}
+
+        {consignes.map(([titre, texte]) => (
+          <section className="pt-fiche-bloc pt-consigne" key={titre}>
+            <h2>{titre}</h2>
+            <p>{texte}</p>
+          </section>
+        ))}
+
+        {!blocs.length && !consignes.length && !chiffres.length && (
+          <p className="pt-note">
+            Ce bon n'a pas encore de fiche de production. Elle se remplit quand le bon est
+            enregistré depuis l'écran de bon de travail — la gamme ci-dessus, elle, reste
+            pointable.
+          </p>
+        )}
+
+        {feuille && <div className="pt-voile" onClick={fermer} role="presentation" />}
+        {rendreFeuille()}
+      </div>
+    );
+  }
+
+  const bonOuvert = jobOuverte ? (ref?.bons ?? []).find((b) => b.id === jobOuverte) : undefined;
+  if (bonOuvert) return rendreFiche(bonOuvert);
+
   // ── écran ─────────────────────────────────────────────────────────────────
   return (
     <div className={"pt-page" + (feuille ? " pt-page-figee" : "")}>
@@ -555,7 +792,11 @@ export default function AppPointage() {
 
           return (
             <section className="pt-job" key={bon.id} aria-label={bon.noBT}>
-              <div className="pt-job-tete">
+              <button
+                className="pt-job-tete"
+                onClick={() => setJobOuverte(bon.id)}
+                aria-label={"Fiche de " + bon.noBT}
+              >
                 <span className="pt-job-no">{bon.noBT}</span>
                 <span className="pt-job-client">{bon.client}</span>
                 <span className="pt-sous">
@@ -569,62 +810,15 @@ export default function AppPointage() {
                       {dureeCourte(Math.abs(ecart))}
                     </em>
                   )}
+                  <span className="pt-fleche" aria-hidden="true">›</span>
                 </span>
-              </div>
+              </button>
 
               <div className="pt-jauge" role="presentation">
                 <i style={{ width: gamme.length ? (faites / gamme.length) * 100 + "%" : "0%" }} />
               </div>
 
-              <div className="pt-ops">
-                {gamme.map(({ operation: op, prevuMin }) => {
-                  const ps = pointagesDe(bon.id, op.id);
-                  const ouverts = ps.filter(
-                    (p) => p.statut === "En cours" || p.statut === "En pause",
-                  );
-                  const fait = ps.length > 0 && !ouverts.length;
-                  const enPause = ouverts.length > 0 && ouverts.every((p) => p.statut === "En pause");
-                  const reel = reelDe(bon.id, op.id);
-                  const etat = ouverts.length ? (enPause ? "pause" : "cours") : fait ? "fait" : "afaire";
-                  const retard = reel > 0 && prevuMin > 0 && reel > prevuMin;
-
-                  let detail: string;
-                  if (ouverts.length) {
-                    const qui = ouverts.map((p) => p.ressourceNom || "?").join(", ");
-                    detail = (enPause ? "⏸ " : "▶ ") + qui + " · " + dureeLisible(reel);
-                  } else if (fait) {
-                    detail = prevuMin > 0
-                      ? dureeCourte(reel) + " / " + dureeCourte(prevuMin)
-                      : dureeCourte(reel) + " · sans estimation";
-                  } else {
-                    detail = prevuMin > 0 ? "prévu " + dureeCourte(prevuMin) : "sans estimation";
-                  }
-
-                  return (
-                    <button
-                      key={op.id}
-                      className={`pt-op pt-op-${etat}${retard ? " pt-op-retard" : ""}`}
-                      disabled={occupe}
-                      onClick={() =>
-                        setFeuille(
-                          ouverts.length
-                            ? { quoi: "agir", bon, op, pointages: ps }
-                            : { quoi: "demarrer", bon, op },
-                        )
-                      }
-                    >
-                      <span className="pt-op-nom">{op.nom}</span>
-                      <span className="pt-op-detail">{detail}</span>
-                    </button>
-                  );
-                })}
-                <button
-                  className="pt-op pt-op-plus"
-                  onClick={() => setFeuille({ quoi: "ajouter", bon })}
-                >
-                  + autre opération
-                </button>
-              </div>
+              {rendreOps(bon)}
             </section>
           );
         })}

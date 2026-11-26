@@ -195,3 +195,80 @@ body {
   box-shadow: inset 0 0 0 1px var(--pt-pause-bord);
 }
 .pt-op-pause .pt-op-nom, .pt-op-pause .pt-op-detail { color: #9a3412; }
+
+/* ── l'entête d'une job est le chemin vers sa fiche ──────────────────────── */
+.pt-job-tete {
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+  border: 0; background: transparent; padding: 2px 0; width: 100%; min-height: 44px;
+  border-radius: 8px;
+}
+.pt-job-tete:hover { background: #f1f5f9; }
+.pt-fleche { font-size: 22px; line-height: 1; color: var(--pt-discret); }
+
+/* ── la fiche d'une job ──────────────────────────────────────────────────── */
+/* La feuille imprimée, à l'écran. Même lecture qu'au mur : les chiffres d'abord, puis la
+   gamme, puis les réglages, puis les consignes. Tout est pointable depuis ici. */
+.pt-fiche-entete {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 4px;
+}
+.pt-retour {
+  min-height: 48px; padding: 10px 16px; font-size: 15px;
+  background: var(--pt-carte); border-color: var(--pt-trait);
+}
+.pt-fiche-titre { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pt-fiche-titre .pt-job-no { font-size: 28px; }
+.pt-fiche-entete .pt-horloge { margin-left: auto; }
+.pt-etiquette {
+  font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;
+  padding: 5px 11px; border-radius: 999px; background: var(--pt-fait); color: var(--pt-discret);
+}
+.pt-fiche-sous { margin: 0 0 14px; font-size: 17px; }
+
+/* le bandeau de chiffres : ce qu'on lit en premier, et de loin */
+.pt-bandeau {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px;
+  background: var(--pt-trait); border: 1px solid var(--pt-trait);
+  border-radius: 12px; overflow: hidden; margin-bottom: 14px;
+}
+.pt-chiffre { background: var(--pt-carte); padding: 13px 16px; display: grid; gap: 3px; }
+.pt-chiffre-val { font-size: 31px; font-weight: 700; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.pt-chiffre-lab { font-size: 13px; color: var(--pt-discret); }
+.pt-chiffre-date .pt-chiffre-val { font-size: 19px; font-weight: 600; align-self: end; }
+.pt-chiffre.pt-urgent { background: var(--pt-pause); }
+.pt-chiffre.pt-urgent .pt-chiffre-val, .pt-chiffre.pt-urgent .pt-chiffre-lab { color: var(--pt-retard); }
+
+.pt-fiche-bloc {
+  background: var(--pt-carte); border: 1px solid var(--pt-trait);
+  border-radius: 12px; padding: 13px 15px; margin-bottom: 12px;
+}
+.pt-fiche-bloc h2 {
+  margin: 0 0 10px; font-size: 13px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase; color: var(--pt-discret);
+}
+.pt-fiche-gamme { border-left: 4px solid var(--pt-accent); }
+.pt-ops-grand .pt-op { min-height: 68px; padding: 11px 16px; flex: 1 1 190px; }
+.pt-ops-grand .pt-op-nom { font-size: 16px; }
+.pt-ops-grand .pt-op-detail { font-size: 13px; }
+/* seul sur sa ligne, le « + » s’étirerait sur toute la largeur et passerait pour une opération. */
+.pt-ops-grand .pt-op-plus { flex: 0 1 190px; }
+
+/* les blocs de réglages coulent en colonnes : aucun ne réserve une case qu'il ne remplit pas */
+.pt-fiche-grille { columns: 3; column-gap: 12px; }
+.pt-fiche-grille > .pt-fiche-bloc { break-inside: avoid; -webkit-column-break-inside: avoid; display: flow-root; }
+@media (max-width: 1100px) { .pt-fiche-grille { columns: 2; } }
+@media (max-width: 680px) { .pt-fiche-grille { columns: 1; } }
+
+.pt-defs { margin: 0; display: grid; gap: 5px; }
+.pt-defs > div {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding-bottom: 5px; border-bottom: 1px solid var(--pt-fond);
+}
+.pt-defs > div:last-child { border-bottom: 0; padding-bottom: 0; }
+.pt-defs dt { font-size: 14px; color: var(--pt-discret); }
+.pt-defs dd {
+  margin: 0; font-size: 16px; font-weight: 600; text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.pt-consigne { border-left: 4px solid var(--pt-fin); }
+.pt-consigne p { margin: 0; font-size: 17px; line-height: 1.55; white-space: pre-wrap; }

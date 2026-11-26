@@ -57,6 +57,50 @@ export interface MachineRef {
   id: string;
   nom: string;
 }
+/** La fiche de production d'une job : ce qu'un opérateur lisait jusqu'ici sur la feuille
+ *  imprimée — combien, sur quelle presse, quel cadre, combien de poses, et les consignes.
+ *
+ *  Ces valeurs ne sont PAS recalculées ici. Ce sont les colonnes « plates » que l'écran de
+ *  bon de travail écrit à chaque enregistrement (voir `champsPlatsBT` dans `bt/modeleFT.ts`),
+ *  et elles arrivent dans la même lecture de `bon_travail_Report` que les temps estimés :
+ *  le tableau d'atelier n'a ni moteur à charger, ni appel supplémentaire à faire.
+ *
+ *  Conséquence à connaître : une job dont le bon n'a jamais été enregistré depuis l'écran de
+ *  bon de travail aura une fiche presque vide. L'affichage ne montre que les lignes remplies,
+ *  donc elle se dégrade sans casser. */
+export interface Fiche {
+  commandeLe: string;
+  dateRequise: string;
+  noClient: string;
+  noSoum: string;
+  po: string;
+  autre: string;
+  /** `Code_RB` — les initiales du représentant, telles que la fiche les porte. */
+  initiales: string;
+  code: string;
+  codeM: string;
+  codeR: string;
+  codeE: string;
+  noPresse: string;
+  noCadre: string;
+  surplus: string;
+  nbUp: number;
+  formatX: number;
+  formatY: number;
+  mrxX: number;
+  mrxY: number;
+  qteCommandee: number;
+  qteProduite: number;
+  qteMaximum: number;
+  protectionPct: number;
+  mrcxFeuille: number;
+  nbreFeuilles: number;
+  feuillesCorr: number;
+  mxAImpr: number;
+  instructions: string;
+  procedure: string;
+}
+
 export interface BonRef {
   id: string;
   noBT: string;
@@ -68,6 +112,9 @@ export interface BonRef {
    *  Les onze autres opérations de la gamme n'ont pas d'estimation : elles restent
    *  déclarables, simplement sans rien à quoi se comparer. */
   prevuMin: Record<string, number>;
+  /** La fiche de production, pour la vue de détail. Jamais null : les champs manquants
+   *  valent "" ou 0, et la vue ne montre que ce qui est rempli. */
+  fiche: Fiche;
 }
 
 /** Quels temps du bon de travail alimentent quelle opération. Même correspondance que
@@ -79,6 +126,50 @@ const PREVU_PAR_CODE: [string, string][] = [
   ["DEC_PLAT", "Temps_Decoupe_Min"],
   ["DEC_ZUND", "Temps_Zund_Min"],
 ];
+
+/** La fiche, lue telle quelle dans la ligne du rapport. Tolérante par construction : un
+ *  rapport mal configuré n'expose pas toutes les colonnes, et on préfère une fiche partielle
+ *  à un écran en erreur. */
+function lireFiche(r: Record<string, unknown>): Fiche {
+  const t = (c: string) => String(r[c] ?? "").trim();
+  const n = (c: string) => num(r[c]) ?? 0;
+  return {
+    commandeLe: t("Commande_Le"),
+    dateRequise: t("Date_Requise"),
+    noClient: t("No_Client"),
+    noSoum: t("No_Soum"),
+    po: t("PO"),
+    autre: t("Autre"),
+    initiales: t("Code_RB"),
+    code: t("Code"),
+    codeM: t("Code_M"),
+    codeR: t("Code_R"),
+    codeE: t("Code_E"),
+    noPresse: t("No_Presse"),
+    noCadre: t("No_Cadre"),
+    surplus: t("Surplus"),
+    nbUp: n("Nb_Up"),
+    formatX: n("Format_X"),
+    formatY: n("Format_Y"),
+    mrxX: n("Dim_Mrx_X"),
+    mrxY: n("Dim_Mrx_Y"),
+    qteCommandee: n("Qte_Commandee"),
+    qteProduite: n("Qte_Produite"),
+    qteMaximum: n("Qte_Maximum"),
+    protectionPct: n("Protection_Pct"),
+    mrcxFeuille: n("Nbre_Mrcx_Feuille"),
+    nbreFeuilles: n("Nbre_Feuilles"),
+    feuillesCorr: n("Feuilles_Corr"),
+    mxAImpr: n("Mx_A_Impr"),
+    instructions: t("Instructions"),
+    procedure: t("Procedure"),
+  };
+}
+
+/** Une fiche entièrement vide — pour les jeux d'exemple et les cas dégradés. */
+export function ficheVide(): Fiche {
+  return lireFiche({});
+}
 export interface Referentiel {
   id: string;
   nom: string;
@@ -271,6 +362,7 @@ export async function chargerReferentiels(): Promise<Referentiels | null> {
       prevuMin: Object.fromEntries(
         PREVU_PAR_CODE.map(([code, champ]) => [code, num(r[champ]) ?? 0]).filter(([, v]) => (v as number) > 0),
       ) as Record<string, number>,
+      fiche: lireFiche(r),
     }))
     .filter((b) => b.id && b.noBT)
     .sort((a, b) => b.noBT.localeCompare(a.noBT, "fr", { numeric: true }));
@@ -557,16 +649,46 @@ export function referentielsExemple(): Referentiels {
         id: "b1", noBT: "BT-1042", client: "Groupe Delmar",
         modele: "Panneau Lexan 7 × 1,4", noPiece: "4152464", statut: "En production",
         prevuMin: { SOIE: 32, IMPR: 158, DEC_PLAT: 52 },
+        fiche: {
+          ...ficheVide(),
+          dateRequise: "08-Dec-2026", commandeLe: "19-Nov-2026",
+          noClient: "C-2041", noSoum: "S-2026-0118", po: "PO-44821", initiales: "RB",
+          noPresse: "4010", noCadre: "CA-118", surplus: "Oui",
+          nbUp: 4, formatX: 7, formatY: 1.4, mrxX: 7.5, mrxY: 1.9,
+          qteCommandee: 3150, qteMaximum: 3312, qteProduite: 0, protectionPct: 5,
+          mrcxFeuille: 12, nbreFeuilles: 262.5, feuillesCorr: 3, mxAImpr: 3180,
+          instructions:
+            "Encre PMS 288 C, deuxième passe en blanc opaque. Laisser sécher 20 min entre les "
+            + "deux passes. Vérifier le registre sur la première feuille et faire approuver par "
+            + "le chargé de projet avant de lancer la série.",
+          procedure: "Mettre de côté 2 pièces d'échantillon pour le dossier client.",
+        },
       },
       {
         id: "b2", noBT: "BT-1041", client: "Ateliers Rivard",
         modele: "Plaque signalétique alu", noPiece: "88120", statut: "En production",
         prevuMin: { SOIE: 28, IMPR: 95, DEC_ZUND: 70 },
+        fiche: {
+          ...ficheVide(),
+          dateRequise: "02-Dec-2026", noClient: "C-1877", noSoum: "S-2026-0112",
+          initiales: "JT", noPresse: "4012", noCadre: "CA-073",
+          nbUp: 2, formatX: 4.25, formatY: 2, mrxX: 4.75, mrxY: 2.5,
+          qteCommandee: 800, qteMaximum: 840, qteProduite: 0,
+          mrcxFeuille: 8, nbreFeuilles: 100, feuillesCorr: 2, mxAImpr: 816,
+          instructions: "Adhésif permanent au verso. Découpe Zünd, kiss-cut seulement.",
+        },
       },
       {
         id: "b3", noBT: "BT-1039", client: "Norbec Industries",
         modele: "Étiquettes polyester", noPiece: "55566", statut: "En production",
         prevuMin: { NUM: 64, DEC_ZUND: 45 },
+        fiche: {
+          ...ficheVide(),
+          dateRequise: "27-Nov-2026", noClient: "C-0933", noSoum: "S-2026-0104",
+          initiales: "RB", nbUp: 1, formatX: 3, formatY: 3,
+          qteCommandee: 1500, qteMaximum: 1575, qteProduite: 1500,
+          mrcxFeuille: 24, nbreFeuilles: 63, mxAImpr: 1512,
+        },
       },
     ],
     departements: [...new Set(OPS_EXEMPLE.map((o) => o[2]))].map((nom, i) => ({ id: "d" + i, nom })),
