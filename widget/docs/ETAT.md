@@ -4,7 +4,7 @@
 > courriels entre nous. Chacun le met à jour **par un commit**, pas par un message : ce qui n'est
 > pas ici n'existe pas, et personne n'a à demander « où on en est ».
 >
-> Mis à jour en dernier : **25 novembre 2026** — Soufiane.
+> Mis à jour en dernier : **26 novembre 2026** — Soufiane.
 
 ---
 
@@ -35,7 +35,7 @@ soir (prix minimum, suffixe de révision), un affichage d'éligibilité livrable
 mixte lui-même mis en attente des deux arbitrages.
 
 **1. Le repliage des sections.** ✅ **Fait et en ligne** — Soufiane a fusionné, construit et
-téléversé le 25 novembre, build `2026-11-25 15:47 UTC`. Plus rien à faire ici. Écrit sur la branche
+téléversé le 25 novembre, build `2026-11-25 15:51 UTC`. Plus rien à faire ici. Écrit sur la branche
 `repliage-sections`, commit
 `4eb766b`, partie de `refonte-soumission`. Il restait à fusionner, `npm run pack:s2` et téléverser
 dans Creator : c'est fait. Les dix sections se replient, 01 à
@@ -187,6 +187,47 @@ Ce que le document devra couvrir, dans l'ordre où ça se vit :
 
 Le plus récent en haut. Une ligne par événement qui change l'état du chantier.
 
+### 26 nov. — Les réponses de Roberto sont dans l'écran d'essai *(Soufiane + Claude)*
+**En ligne sur `Soumission_essai`, build `2026-11-26 02:05 UTC`** (branche `refonte-soumission`,
+`64dd977` puis `b428a91`). Relu dans Creator : les cinq soumissions témoins au même prix que l'écran
+actuel, FC-940 à 62 723,50 $. Banc des 51 soumissions inchangé : 58 cas sur 60 égaux, les 2 autres
+masqués « à vérifier » des deux côtés. `verif:s2` (+18 cas), `verif:montage`, `verif:numerique` au
+vert. Copie des deux paquets dans `sauvegardes/`.
+
+**Prix minimum 250 $.** Le code le lisait déjà sous `APP_PRIX_MIN` (pas `APP_PRIX_MINIMUM`) : nom
+gardé, défaut 250 $ dans le code, et ligne créée dans `Taux_Calcul`. Sous le minimum, un rappel dans
+la vérification et au sommaire. **Jamais bloquant.**
+
+**Révisions.** Nouveau bouton **« Réviser »** : nouvelle soumission au même numéro suivi de R1, R2…
+(`S-2026-0002R1`), compté sur toutes les soumissions enregistrées. L'originale reste intacte, les bons
+de travail ne sont pas repris. Grisé tant que la soumission n'est pas enregistrée.
+
+**Montage mixte, points 1 et 2 du plan — aucun prix ne change.**
+- Section 02, dès deux pièces : chacune dit « montage mixte possible » ou « feuilles séparées » avec la
+  raison. Exclue si sa case **Fenêtre** est cochée (nouvelle, une par pièce), ou si les réglages
+  communs portent une découpe intérieure (`S!E39-41`) ou un protecteur fenêtre (`S!E27`) — ces deux-là
+  valent pour toutes les pièces, puisque les pièces 2 à 5 partagent les sections 05 à 07.
+- `APP_MONTAGE_MIXTE` (0 aucun · 1 bandes · 2 libre) et `APP_REPARTITION_MIXTE` (0 surface · 1 poses ·
+  2 pièce principale) créés dans `Taux_Calcul`, **à 0**. Codes numériques : la table ne stocke que des
+  nombres. Inscrits sur la soumission à l'enregistrement (`X!MIXTE_MODE`, `X!MIXTE_REPART`). Un réglage
+  autre que 0 s'affiche « pas encore appliqué au prix ».
+- Le placement en bandes (point 3) n'est pas commencé : rien à montrer jeudi qui touche un prix.
+
+**Cases à cocher.** Séparateur avant/après, recto/verso après, guillotine. Une soumission qui porte
+plus que 1 garde un champ numérique — la case la réécrirait à 1 — et le contrôle bloquant le signale.
+
+**Adhésif laminé / registre : ce sont des quantités.** Le classeur les multiplie (`C!G18 = S!E22 ×
+S!G9 × E18`, `C!N5`), et ils ne sont pas dans la garde des indicateurs. Sur les 51 soumissions,
+l'adhésif laminé vaut 15 fois 1, jamais plus, et le registre n'est jamais rempli. Case gardée, mais
+champ numérique dès qu'une valeur dépasse 1 : rien ne se perd. **Question pour Roberto :** deux passes
+d'adhésif existent-elles ?
+
+**« Gâche » devient « Perte »** partout dans l'écran d'essai (même cellule `S!I2`).
+
+**BT-1013 supprimé** (relu ensuite ; copie dans `sauvegardes/`). **BT-1014 gardé** : un pointage y est
+encore **« En cours » depuis le 19 octobre** (« Test bsp », Découpe Zünd, ID `4153107000023614015`).
+C'est votre piste : à fermer ou supprimer avec le bon, comme vous voulez.
+
 ### 25 nov. — Le repliage est en ligne, et un contrôle montre les valeurs sans case *(Soufiane + Claude)*
 **En ligne sur `Soumission_essai`, build `2026-11-25 15:51 UTC`** (branche `refonte-soumission`, `064a241`).
 Relu dans Creator : 01 à 08 ouvertes, 09 et 10 fermées, cinq soumissions au même prix que l'écran
@@ -276,14 +317,14 @@ Voici l'inventaire complet au soir du 25, puisque la question est posée.
 #### Pour Soufiane — la soumission
 | | Quoi | Taille |
 |---|---|---|
-| ☐ | **Prix minimum 250 $**, en contrôle paramétrable (`APP_PRIX_MINIMUM`) | petit |
-| ☐ | **Suffixe de révision R1, R2** à la fin de la séquence | petit |
-| ☐ | **Quatre champs 1-ou-vide** → cases à cocher (séparateurs, recto/verso après, guillotine) | petit |
-| ☐ | **Adhésif laminé / registre** : quantité ou drapeau ? arbitrage, puis conséquence | arbitrage |
-| ☐ | **« Gâche » → « Perte »** | une ligne |
-| ☐ | **Bouton « reprendre cette soumission dans le nouvel écran »** | moyen |
-| ☐ | **Montage mixte** — plan écrit, deux paramètres, placement en bandes | **le gros** |
-| ☐ | **BT-1013 et BT-1014** à supprimer (rattachés à l'essai YDOUAA) | une minute |
+| ✅ | **Prix minimum 250 $**, en contrôle paramétrable — le code existait déjà sous **`APP_PRIX_MIN`**, nom gardé ; ligne créée dans `Taux_Calcul` | petit |
+| ✅ | **Suffixe de révision R1, R2** à la fin de la séquence — bouton « Réviser » | petit |
+| ✅ | **Quatre champs 1-ou-vide** → cases à cocher (séparateurs, recto/verso après, guillotine) | petit |
+| ◐ | **Adhésif laminé / registre** : le classeur les multiplie, ce sont des quantités. Case gardée, champ numérique au-delà de 1 — reste à demander à Roberto si 2 passes existent | arbitrage |
+| ✅ | **« Gâche » → « Perte »** | une ligne |
+| ✅ | **Bouton « reprendre cette soumission dans le nouvel écran »** — existe déjà, c'est « Ouvrir » | moyen |
+| ◐ | **Montage mixte** — éligibilité affichée et deux paramètres en place (points 1 et 2 du plan) ; placement en bandes à faire | **le gros** |
+| ◐ | **BT-1013 supprimé. BT-1014 gardé** : un pointage « En cours » depuis le 19 oct. y est rattaché, c'est votre piste | une minute |
 
 #### Pour nous — pointage et bon de travail
 | | Quoi | Taille |
@@ -299,7 +340,7 @@ Voici l'inventaire complet au soir du 25, puisque la question est posée.
 |---|---|
 | ☐ | **`No_BT` sans contrainte d'unicité** → sept `BT-1000`. Nettoyer puis cocher « pas de doublons » |
 | ☐ | **BT-1018 annonce 268 h d'impression** contre 2 h 38 sur la même pièce — donnée aberrante à regarder |
-| ☐ | Confirmer que `APP_SEUIL_DOUBLE_CHECK` lit bien **3000** et non 4000 |
+| ✅ | Confirmer que `APP_SEUIL_DOUBLE_CHECK` lit bien **3000** et non 4000 — relu le 26 nov. : 3000 |
 
 #### À demander au client
 | | Quoi | À qui |
